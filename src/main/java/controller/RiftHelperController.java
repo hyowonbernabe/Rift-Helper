@@ -1,6 +1,7 @@
 package controller;
 
 import model.BenchChampion;
+import model.DDragonParser;
 import model.LCUPost;
 import no.stelar7.api.r4j.impl.lol.lcu.LCUSocketReader;
 import view.RiftHelperView;
@@ -33,53 +34,73 @@ public class RiftHelperController {
             if (benchChampions.get(0) == null) {
                 System.out.println("Bench Champion is null 1");
             } else {
-                this.riftHelperView.setButtonBench1Text(benchChampions.get(0).toString());
+                int champId = benchChampions.get(0).getChampionId();
+                String champName = DDragonParser.getChampionName(champId);
+                this.riftHelperView.setButtonBench1Text(champName);
             }
 
             if (benchChampions.get(1) == null) {
                 System.out.println("Bench Champion is null 2");
             } else {
-                this.riftHelperView.setButtonBench2Text(benchChampions.get(1).toString());
+                int champId = benchChampions.get(1).getChampionId();
+                String champName = DDragonParser.getChampionName(champId);
+                this.riftHelperView.setButtonBench2Text(champName);
             }
             if (benchChampions.get(2) == null) {
                 System.out.println("Bench Champion is null 3");
             } else {
-                this.riftHelperView.setButtonBench3Text(benchChampions.get(2).toString());
+                int champId = benchChampions.get(2).getChampionId();
+                String champName = DDragonParser.getChampionName(champId);
+                this.riftHelperView.setButtonBench3Text(champName);
             }
             if (benchChampions.get(3) == null) {
                 System.out.println("Bench Champion is null 4");
             } else {
-                this.riftHelperView.setButtonBench4Text(benchChampions.get(3).toString());
+                int champId = benchChampions.get(3).getChampionId();
+                String champName = DDragonParser.getChampionName(champId);
+                this.riftHelperView.setButtonBench4Text(champName);
             }
             if (benchChampions.get(4) == null) {
                 System.out.println("Bench Champion is null 5");
             } else {
-                this.riftHelperView.setButtonBench5Text(benchChampions.get(4).toString());
+                int champId = benchChampions.get(4).getChampionId();
+                String champName = DDragonParser.getChampionName(champId);
+                this.riftHelperView.setButtonBench5Text(champName);
             }
             if (benchChampions.get(5) == null) {
                 System.out.println("Bench Champion is null 6");
             } else {
-                this.riftHelperView.setButtonBench6Text(benchChampions.get(5).toString());
+                int champId = benchChampions.get(5).getChampionId();
+                String champName = DDragonParser.getChampionName(champId);
+                this.riftHelperView.setButtonBench6Text(champName);
             }
             if (benchChampions.get(6) == null) {
                 System.out.println("Bench Champion is null 7");
             } else {
-                this.riftHelperView.setButtonBench7Text(benchChampions.get(6).toString());
+                int champId = benchChampions.get(6).getChampionId();
+                String champName = DDragonParser.getChampionName(champId);
+                this.riftHelperView.setButtonBench7Text(champName);
             }
             if (benchChampions.get(7) == null) {
                 System.out.println("Bench Champion is null 8");
             } else {
-                this.riftHelperView.setButtonBench8Text(benchChampions.get(7).toString());
+                int champId = benchChampions.get(7).getChampionId();
+                String champName = DDragonParser.getChampionName(champId);
+                this.riftHelperView.setButtonBench8Text(champName);
             }
             if (benchChampions.get(8) == null) {
                 System.out.println("Bench Champion is null 9");
             } else {
-                this.riftHelperView.setButtonBench9Text(benchChampions.get(8).toString());
+                int champId = benchChampions.get(8).getChampionId();
+                String champName = DDragonParser.getChampionName(champId);
+                this.riftHelperView.setButtonBench9Text(champName);
             }
             if (benchChampions.get(9) == null) {
                 System.out.println("Bench Champion is null 10");
             } else {
-                this.riftHelperView.setButtonBench10Text(benchChampions.get(9).toString());
+                int champId = benchChampions.get(9).getChampionId();
+                String champName = DDragonParser.getChampionName(champId);
+                this.riftHelperView.setButtonBench10Text(champName);
             }
         });
 
