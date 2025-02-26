@@ -14,6 +14,9 @@ public class RiftHelperController {
         this.riftHelperView = riftHelperView;
         this.autoAccept = false;
 
+        // Trying to implement Websocket
+        LCUGet.getFromClient("/lol-champ-select/v1/session");
+
         this.riftHelperView.addAutoAcceptStartListener(e -> {
             autoAccept = true;
 
@@ -22,13 +25,9 @@ public class RiftHelperController {
 
             new Thread(() -> {
                 try {
-                    int i = 0;
                     while (autoAccept) {
                         int responseCodeAccept = LCUPost.postToClient("/lol-matchmaking/v1/ready-check/accept");
 
-                        System.out.println(responseCodeAccept + " " + i);
-
-                        i++;
                         if (responseCodeAccept == 500) {
                             System.out.println("Matchmaking in queue.");
                             Thread.sleep(3000);
