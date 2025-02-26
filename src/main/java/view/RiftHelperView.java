@@ -18,6 +18,13 @@ public class RiftHelperView extends JFrame {
     private JButton buttonBench8;
     private JButton buttonBench9;
     private JButton buttonBench10;
+    public JPanel panelBench2;
+    private JPanel panelSomething;
+    public JPanel panelBench1;
+    private JButton buttonAutoSwap;
+    private JLabel labelMatchmaking;
+    private JLabel labelAutoAccept;
+    private JLabel labelARAM;
 
     public RiftHelperView() {
         setTitle("Rift Helper");
@@ -27,6 +34,7 @@ public class RiftHelperView extends JFrame {
         pack();
         setLocationRelativeTo(null);
         setVisible(true);
+        panelBench2.setVisible(false);
     }
 
     public void setButtonBench1Text(String text) {
