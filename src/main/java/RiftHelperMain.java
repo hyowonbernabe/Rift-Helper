@@ -1,11 +1,11 @@
-import controller.RiftHelperController;
+import controller.RiftHelperMainController;
 import model.LCUAuth;
 import model.SSLBypass;
-import view.RiftHelperView;
+import view.RiftHelperMainView;
 
 public class RiftHelperMain {
-    private RiftHelperView riftHelperView = new RiftHelperView();
-    private RiftHelperController riftHelperController;
+    private RiftHelperMainView riftHelperMainView = new RiftHelperMainView();
+    private RiftHelperMainController riftHelperMainController;
 
     public RiftHelperMain() {
         try {
@@ -19,8 +19,8 @@ public class RiftHelperMain {
             System.out.println("Port: " + LCUAuth.port);
             System.out.println("Auth Token: " + LCUAuth.token);
 
-            riftHelperController = new RiftHelperController(riftHelperView);
-            riftHelperView.setVisible(true);
+            riftHelperMainController = new RiftHelperMainController(riftHelperMainView);
+            riftHelperMainView.setVisible(true);
         } catch (Exception e) {
             e.printStackTrace();
         }

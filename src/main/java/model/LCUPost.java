@@ -20,11 +20,7 @@ public class LCUPost {
             connection.setRequestProperty("Authorization", "Basic " + encodedAuth);
             connection.setRequestProperty("Content-Type", "application/json");
 
-            // Get the response code
-            int responseCode = connection.getResponseCode();
-            System.out.println("POST request to " + endpoint + ", response code: " + responseCode);
-
-            return responseCode;
+            return connection.getResponseCode();
         } catch (Exception e) {
             System.out.println("Error checking match status.");
             return -1;

@@ -19,11 +19,7 @@ public class LCUGet {
             String encodedAuth = java.util.Base64.getEncoder().encodeToString(auth.getBytes());
             connection.setRequestProperty("Authorization", "Basic " + encodedAuth);
 
-            // Get the response code
-            int responseCode = connection.getResponseCode();
-            System.out.println("GET request to " + endpoint + ", response code: " + responseCode);
-
-            return responseCode;
+            return connection.getResponseCode();
         } catch (Exception e) {
             System.out.println("Error checking match status.");
             return -1;

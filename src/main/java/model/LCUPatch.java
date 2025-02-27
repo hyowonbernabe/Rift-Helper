@@ -28,11 +28,7 @@ public class LCUPatch {
                 os.write(input, 0, input.length);
             }
 
-            // Get the response code
-            int responseCode = connection.getResponseCode();
-            System.out.println("PATCH request to " + endpoint + ", response code: " + responseCode);
-
-            return responseCode;
+            return connection.getResponseCode();
         } catch (Exception e) {
             System.out.println("Error sending PATCH request to " + endpoint);
             return -1;

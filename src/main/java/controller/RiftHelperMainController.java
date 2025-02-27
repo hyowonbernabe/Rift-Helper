@@ -4,23 +4,19 @@ import model.BenchChampion;
 import model.DDragonParser;
 import model.LCUPost;
 import no.stelar7.api.r4j.impl.lol.lcu.LCUSocketReader;
-import view.AutoSwapView;
-import view.RiftHelperView;
+import view.RiftHelperMainView;
 
 import javax.swing.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.List;
 
-public class RiftHelperController {
-    private RiftHelperView riftHelperView;
+public class RiftHelperMainController {
+    private RiftHelperMainView riftHelperMainView;
     private volatile boolean autoAccept;
     private List<BenchChampion> benchChampions;
 
-    public RiftHelperController(RiftHelperView riftHelperView) {
-        this.riftHelperView = riftHelperView;
+    public RiftHelperMainController(RiftHelperMainView riftHelperMainView) {
+        this.riftHelperMainView = riftHelperMainView;
         this.autoAccept = false;
-
 
         LCUSocketReader socketReader = new LCUSocketReader();
         socketReader.connect();
@@ -31,7 +27,7 @@ public class RiftHelperController {
             benchChampions = BenchChampion.parseFromJson(eventData);
 
             if (benchChampions.size() > 5) {
-                this.riftHelperView.panelBench2.setVisible(true);
+                this.riftHelperMainView.panelQuickSwitchBench2.setVisible(true);
             }
 
             if (benchChampions.get(0) == null) {
@@ -39,7 +35,7 @@ public class RiftHelperController {
             } else {
                 int champId = benchChampions.get(0).getChampionId();
                 String champName = DDragonParser.getChampionName(champId);
-                this.riftHelperView.setButtonBench1Text(champName);
+                this.riftHelperMainView.setButtonBench1Text(champName);
             }
 
             if (benchChampions.get(1) == null) {
@@ -47,171 +43,163 @@ public class RiftHelperController {
             } else {
                 int champId = benchChampions.get(1).getChampionId();
                 String champName = DDragonParser.getChampionName(champId);
-                this.riftHelperView.setButtonBench2Text(champName);
+                this.riftHelperMainView.setButtonBench2Text(champName);
             }
             if (benchChampions.get(2) == null) {
                 System.out.println("Bench Champion is null 3");
             } else {
                 int champId = benchChampions.get(2).getChampionId();
                 String champName = DDragonParser.getChampionName(champId);
-                this.riftHelperView.setButtonBench3Text(champName);
+                this.riftHelperMainView.setButtonBench3Text(champName);
             }
             if (benchChampions.get(3) == null) {
                 System.out.println("Bench Champion is null 4");
             } else {
                 int champId = benchChampions.get(3).getChampionId();
                 String champName = DDragonParser.getChampionName(champId);
-                this.riftHelperView.setButtonBench4Text(champName);
+                this.riftHelperMainView.setButtonBench4Text(champName);
             }
             if (benchChampions.get(4) == null) {
                 System.out.println("Bench Champion is null 5");
             } else {
                 int champId = benchChampions.get(4).getChampionId();
                 String champName = DDragonParser.getChampionName(champId);
-                this.riftHelperView.setButtonBench5Text(champName);
+                this.riftHelperMainView.setButtonBench5Text(champName);
             }
             if (benchChampions.get(5) == null) {
                 System.out.println("Bench Champion is null 6");
             } else {
                 int champId = benchChampions.get(5).getChampionId();
                 String champName = DDragonParser.getChampionName(champId);
-                this.riftHelperView.setButtonBench6Text(champName);
+                this.riftHelperMainView.setButtonBench6Text(champName);
             }
             if (benchChampions.get(6) == null) {
                 System.out.println("Bench Champion is null 7");
             } else {
                 int champId = benchChampions.get(6).getChampionId();
                 String champName = DDragonParser.getChampionName(champId);
-                this.riftHelperView.setButtonBench7Text(champName);
+                this.riftHelperMainView.setButtonBench7Text(champName);
             }
             if (benchChampions.get(7) == null) {
                 System.out.println("Bench Champion is null 8");
             } else {
                 int champId = benchChampions.get(7).getChampionId();
                 String champName = DDragonParser.getChampionName(champId);
-                this.riftHelperView.setButtonBench8Text(champName);
+                this.riftHelperMainView.setButtonBench8Text(champName);
             }
             if (benchChampions.get(8) == null) {
                 System.out.println("Bench Champion is null 9");
             } else {
                 int champId = benchChampions.get(8).getChampionId();
                 String champName = DDragonParser.getChampionName(champId);
-                this.riftHelperView.setButtonBench9Text(champName);
+                this.riftHelperMainView.setButtonBench9Text(champName);
             }
             if (benchChampions.get(9) == null) {
                 System.out.println("Bench Champion is null 10");
             } else {
                 int champId = benchChampions.get(9).getChampionId();
                 String champName = DDragonParser.getChampionName(champId);
-                this.riftHelperView.setButtonBench10Text(champName);
+                this.riftHelperMainView.setButtonBench10Text(champName);
             }
         });
 
-        this.riftHelperView.addBench1ActionListener(e -> {
+        this.riftHelperMainView.addBench1ActionListener(e -> {
             if (benchChampions.get(0) == null) {
                 System.out.println("Cannot swap. Bench Champion is null");
                 return;
             }
 
-            int responseCodeAccept = LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + benchChampions.get(0));
-            System.out.println(responseCodeAccept);
+            LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + benchChampions.get(0).getChampionId());
+            System.out.println(benchChampions.get(0));
+            System.out.println(benchChampions.get(0).getChampionId());
         });
 
-        this.riftHelperView.addBench2ActionListener(e -> {
+        this.riftHelperMainView.addBench2ActionListener(e -> {
             if (benchChampions.get(1) == null) {
                 System.out.println("Cannot swap. Bench Champion is null");
                 return;
             }
 
-            int responseCodeAccept = LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + benchChampions.get(1));
-            System.out.println(responseCodeAccept);
+            LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + benchChampions.get(1).getChampionId());
         });
 
-        this.riftHelperView.addBench3ActionListener(e -> {
+        this.riftHelperMainView.addBench3ActionListener(e -> {
             if (benchChampions.get(2) == null) {
                 System.out.println("Cannot swap. Bench Champion is null");
                 return;
             }
 
-            int responseCodeAccept = LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + benchChampions.get(2));
-            System.out.println(responseCodeAccept);
+            LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + benchChampions.get(2).getChampionId());
         });
 
-        this.riftHelperView.addBench4ActionListener(e -> {
+        this.riftHelperMainView.addBench4ActionListener(e -> {
             if (benchChampions.get(3) == null) {
                 System.out.println("Cannot swap. Bench Champion is null");
                 return;
             }
 
-            int responseCodeAccept = LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + benchChampions.get(3));
-            System.out.println(responseCodeAccept);
+            LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + benchChampions.get(3).getChampionId());
         });
 
-        this.riftHelperView.addBench5ActionListener(e -> {
+        this.riftHelperMainView.addBench5ActionListener(e -> {
             if (benchChampions.get(4) == null) {
                 System.out.println("Cannot swap. Bench Champion is null");
                 return;
             }
 
-            int responseCodeAccept = LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + benchChampions.get(4));
-            System.out.println(responseCodeAccept);
+            LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + benchChampions.get(4).getChampionId());
         });
 
-        this.riftHelperView.addBench6ActionListener(e -> {
+        this.riftHelperMainView.addBench6ActionListener(e -> {
             if (benchChampions.get(5) == null) {
                 System.out.println("Cannot swap. Bench Champion is null");
                 return;
             }
 
-            int responseCodeAccept = LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + benchChampions.get(5));
-            System.out.println(responseCodeAccept);
+            LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + benchChampions.get(5).getChampionId());
         });
 
-        this.riftHelperView.addBench7ActionListener(e -> {
+        this.riftHelperMainView.addBench7ActionListener(e -> {
             if (benchChampions.get(6) == null) {
                 System.out.println("Cannot swap. Bench Champion is null");
                 return;
             }
 
-            int responseCodeAccept = LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + benchChampions.get(6));
-            System.out.println(responseCodeAccept);
+            LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + benchChampions.get(6).getChampionId());
         });
 
-        this.riftHelperView.addBench8ActionListener(e -> {
+        this.riftHelperMainView.addBench8ActionListener(e -> {
             if (benchChampions.get(7) == null) {
                 System.out.println("Cannot swap. Bench Champion is null");
                 return;
             }
 
-            int responseCodeAccept = LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + benchChampions.get(7));
-            System.out.println(responseCodeAccept);
+            LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + benchChampions.get(7).getChampionId());
         });
 
-        this.riftHelperView.addBench9ActionListener(e -> {
+        this.riftHelperMainView.addBench9ActionListener(e -> {
             if (benchChampions.get(8) == null) {
                 System.out.println("Cannot swap. Bench Champion is null");
                 return;
             }
 
-            int responseCodeAccept = LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + benchChampions.get(8));
-            System.out.println(responseCodeAccept);
+            LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + benchChampions.get(8).getChampionId());
         });
 
-        this.riftHelperView.addBench10ActionListener(e -> {
+        this.riftHelperMainView.addBench10ActionListener(e -> {
             if (benchChampions.get(9) == null) {
                 System.out.println("Cannot swap. Bench Champion is null");
                 return;
             }
 
-            int responseCodeAccept = LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + benchChampions.get(9));
-            System.out.println(responseCodeAccept);
+            LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + benchChampions.get(9).getChampionId());
         });
 
-        this.riftHelperView.addAutoAcceptStartListener(e -> {
+        this.riftHelperMainView.addAutoAcceptStartListener(e -> {
             autoAccept = true;
 
-            riftHelperView.buttonAutoAcceptStart.setEnabled(false);
-            riftHelperView.buttonAutoAcceptStop.setEnabled(true);
+            riftHelperMainView.buttonAutoAcceptStart.setEnabled(false);
+            riftHelperMainView.buttonAutoAcceptStop.setEnabled(true);
 
             new Thread(() -> {
                 try {
@@ -219,10 +207,8 @@ public class RiftHelperController {
                         int responseCodeAccept = LCUPost.postToClient("/lol-matchmaking/v1/ready-check/accept");
 
                         if (responseCodeAccept == 500) {
-                            System.out.println("Matchmaking in queue.");
                             Thread.sleep(3000);
                         } else {
-                            System.out.println("Matchmaking not in queue.");
                             Thread.sleep(3000);
                         }
                     }
@@ -232,20 +218,13 @@ public class RiftHelperController {
             }).start();
         });
 
-        this.riftHelperView.addAutoAcceptStopListener(e -> {
+        this.riftHelperMainView.addAutoAcceptStopListener(e -> {
             autoAccept = false;
 
             SwingUtilities.invokeLater(() -> {
-                riftHelperView.buttonAutoAcceptStart.setEnabled(true);
-                riftHelperView.buttonAutoAcceptStop.setEnabled(false);
+                riftHelperMainView.buttonAutoAcceptStart.setEnabled(true);
+                riftHelperMainView.buttonAutoAcceptStop.setEnabled(false);
             });
         });
-
-        this.riftHelperView.addAutoSwapListener(e -> toAutoSwap());
-    }
-
-    private void toAutoSwap() {
-        AutoSwapView autoSwapView = new AutoSwapView();
-        autoSwapView.setVisible(true);
     }
 }
