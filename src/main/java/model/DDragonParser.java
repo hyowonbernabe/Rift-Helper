@@ -5,7 +5,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class DDragonParser {
@@ -32,6 +34,26 @@ public class DDragonParser {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public static List<String> fetchChampionNames() {
+        List<String> championNames = new ArrayList<>();
+
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode root = objectMapper.readTree(new URL(DDRAGON_URL));
+            JsonNode data = root.get("data");
+
+            if (data != null) {
+                for (JsonNode champ : data) {
+                    championNames.add(champ.get("name").asText());
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return championNames;
     }
 
     public static String getChampionName(int championId) {

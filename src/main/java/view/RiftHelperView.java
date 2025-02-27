@@ -124,4 +124,8 @@ public class RiftHelperView extends JFrame {
     public void addAutoAcceptStopListener(ActionListener listener) {
         buttonAutoAcceptStop.addActionListener(listener);
     }
+
+    public void addAutoSwapListener(ActionListener listener) {
+        buttonAutoSwap.addActionListener(listener);
+    }
 }

@@ -4,9 +4,12 @@ import model.BenchChampion;
 import model.DDragonParser;
 import model.LCUPost;
 import no.stelar7.api.r4j.impl.lol.lcu.LCUSocketReader;
+import view.AutoSwapView;
 import view.RiftHelperView;
 
 import javax.swing.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.List;
 
 public class RiftHelperController {
@@ -237,5 +240,12 @@ public class RiftHelperController {
                 riftHelperView.buttonAutoAcceptStop.setEnabled(false);
             });
         });
+
+        this.riftHelperView.addAutoSwapListener(e -> toAutoSwap());
+    }
+
+    private void toAutoSwap() {
+        AutoSwapView autoSwapView = new AutoSwapView();
+        autoSwapView.setVisible(true);
     }
 }
