@@ -37,8 +37,8 @@ public class RiftHelperMainView extends JFrame {
     private JComboBox comboBoxAutoSwapPriority9;
     private JComboBox comboBoxAutoSwapPriority10;
     private JPanel panelAutoSwapButtons;
-    private JButton buttonAutoSwapStart;
-    private JButton buttonAutoSwapStop;
+    public JButton buttonAutoSwapStart;
+    public JButton buttonAutoSwapStop;
     private JButton buttonAutoSwapAdd;
     private JButton buttonAutoSwapSubtract;
     private JLabel labelAutoReroll;
@@ -77,9 +77,11 @@ public class RiftHelperMainView extends JFrame {
         setContentPane(panelRiftHelper);
         panelRiftHelper.setBorder(new EmptyBorder(20, 20, 20, 20));
 
-        // Initialize Buttons
+        // Hide Elements for ARURF
         buttonAutoAcceptStop.setEnabled(false);
         buttonAutoDeclineStop.setEnabled(false);
+        buttonAutoSwapStop.setEnabled(false);
+        panelQuickSwitchBench2.setVisible(false);
 
         List<String> championNames = DDragonParser.fetchChampionNames();
 
@@ -145,7 +147,7 @@ public class RiftHelperMainView extends JFrame {
 
     private void populateComboBox(JComboBox<String> comboBox, List<String> items) {
         comboBox.removeAllItems();
-        comboBox.addItem(null);
+        comboBox.addItem(" ");
         for (String item : items) {
             comboBox.addItem(item);
         }
@@ -237,6 +239,14 @@ public class RiftHelperMainView extends JFrame {
 
     public void addAutoAcceptStopListener(ActionListener listener) {
         buttonAutoAcceptStop.addActionListener(listener);
+    }
+
+    public void addAutoSwapStartListener(ActionListener listener) {
+        buttonAutoSwapStart.addActionListener(listener);
+    }
+
+    public void addAutoSwapStopListener(ActionListener listener) {
+        buttonAutoSwapStop.addActionListener(listener);
     }
 
     public static void main(String[] args) {
