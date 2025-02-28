@@ -165,9 +165,10 @@ public class RiftHelperMainController {
             });
 
             new Thread(() -> {
-                while (autoSwap) {
 
-                    int priority = 1;
+                int priority = 1;
+
+                while (autoSwap) {
 
                     if (benchChampions == null) {
                         continue;
