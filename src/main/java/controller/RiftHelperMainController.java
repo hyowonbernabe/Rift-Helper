@@ -26,7 +26,7 @@ public class RiftHelperMainController {
         this.riftHelperMainView = riftHelperMainView;
         this.autoAccept = false;
         this.autoSwap = false;
-        this.autoSwapSlots = 1;
+        this.autoSwapSlots = 5;
         this.priority = 1;
         this.centerGUI = true;
         this.autoReroll = false;
@@ -284,6 +284,11 @@ public class RiftHelperMainController {
         // Increase Champion Bench if more than 5
         if (benchChampions.size() > 5) {
             this.riftHelperMainView.panelQuickSwitchBench2.setVisible(true);
+            this.riftHelperMainView.pack();
+
+            if (centerGUI) {
+                this.riftHelperMainView.setLocationRelativeTo(null);
+            }
         }
 
         if (benchChampions == null) {
