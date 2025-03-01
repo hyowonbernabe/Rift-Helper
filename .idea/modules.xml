@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/Rift Helper.iml" filepath="$PROJECT_DIR$/Rift Helper.iml" />
+      <module fileurl="file://$PROJECT_DIR$/jre/jre.iml" filepath="$PROJECT_DIR$/jre/jre.iml" />
     </modules>
   </component>
 </project>

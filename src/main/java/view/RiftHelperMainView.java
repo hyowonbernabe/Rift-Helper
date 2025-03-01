@@ -6,7 +6,6 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.event.ActionListener;
 import java.util.List;
-import java.util.Objects;
 
 public class RiftHelperMainView extends JFrame {
     private JTabbedPane tabbedPaneRiftHelper;
