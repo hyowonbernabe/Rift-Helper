@@ -6,6 +6,8 @@ import view.RiftHelperMainView;
 
 import javax.swing.*;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class RiftHelperMainController {
     private RiftHelperMainView riftHelperMainView;
@@ -19,6 +21,7 @@ public class RiftHelperMainController {
     private List<BenchChampion> benchChampions;
     private String[] priorityChampions;
     private int rerollsRemaining;
+    private final ExecutorService executorService = Executors.newFixedThreadPool(1);
 
     public RiftHelperMainController(RiftHelperMainView riftHelperMainView) {
         this.riftHelperMainView = riftHelperMainView;
@@ -60,7 +63,6 @@ public class RiftHelperMainController {
         System.out.println("Connected to Client: " + socketReader.isConnected());
 
         socketReader.subscribe("OnJsonApiEvent_lol-champ-select_v1_session", eventData -> {
-            System.out.println(eventData);
             benchChampions = BenchChampion.parseFromJson(eventData);
             rerollsRemaining = RerollsRemaining.parseFromJson(eventData);
 
@@ -424,7 +426,7 @@ public class RiftHelperMainController {
     }
 
     public void autoSwap() {
-        new Thread(() -> {
+        executorService.submit(() -> {
             while (autoSwap) {
 
                 if (benchChampions == null) {
@@ -476,7 +478,7 @@ public class RiftHelperMainController {
                     }
                 }
             }
-        }).start();
+        });
     }
 
     private void saveAutoSwap() {

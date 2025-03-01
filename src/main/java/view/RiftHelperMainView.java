@@ -325,8 +325,4 @@ public class RiftHelperMainView extends JFrame {
     public void addExportListener(ActionListener listener) {
         buttonExport.addActionListener(listener);
     }
-
-    public static void main(String[] args) {
-        new RiftHelperMainView();
-    }
 }

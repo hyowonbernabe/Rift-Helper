@@ -66,17 +66,4 @@ public class DDragonParser {
     public static int getChampionId(String championName) {
         return NAME_TO_ID_MAP.getOrDefault(championName, -1);
     }
-
-    public static void main(String[] args) {
-        System.out.println("Champion Map: " + DDragonParser.CHAMPION_MAP);
-        System.out.println("Name to ID Map: " + DDragonParser.NAME_TO_ID_MAP);
-
-        // Testing fetching champion names
-        System.out.println("Champion Names: " + DDragonParser.fetchChampionNames());
-
-        // Testing individual lookups
-        int champId = DDragonParser.getChampionId("Ahri");
-        System.out.println("Ahri's ID: " + champId);
-        System.out.println("Champion with ID " + champId + ": " + DDragonParser.getChampionName(champId));
-    }
 }
