@@ -1,4 +1,5 @@
 controller\RiftHelperMainController.class
+main\RiftHelperMain.class
 model\BenchChampion.class
 model\SSLBypass$1.class
 view\RiftHelperMainView.class
@@ -9,7 +10,6 @@ model\SSLBypass.class
 model\BenchChampion$1.class
 model\RerollsRemaining.class
 model\LCUPut.class
-RiftHelperMain.class
 model\LCUPatch.class
 model\PreferenceManager.class
 model\LCUPost.class
