@@ -37,18 +37,18 @@ public class RiftHelperMainView extends JFrame {
     public JComboBox comboBoxAutoSwapPriority9;
     public JComboBox comboBoxAutoSwapPriority10;
     private JPanel panelAutoSwapButtons;
-    public JButton buttonAutoSwapStart;
-    public JButton buttonAutoSwapStop;
+    public JButton buttonAutoSwapEnable;
+    public JButton buttonAutoSwapDisable;
     private JButton buttonAutoSwapAdd;
     private JButton buttonAutoSwapSubtract;
     private JLabel labelAutoReroll;
     private JPanel panelAutoAccept;
     private JLabel labelAutoAccept;
-    public JButton buttonAutoAcceptStart;
-    public JButton buttonAutoAcceptStop;
+    public JButton buttonAutoAcceptEnable;
+    public JButton buttonAutoAcceptDisable;
     private JLabel labelAutoDecline;
-    private JButton buttonAutoDeclineStart;
-    private JButton buttonAutoDeclineStop;
+    private JButton buttonAutoDeclineEnable;
+    private JButton buttonAutoDeclineDisable;
     private JPanel panelSave;
     private JLabel labelSaveLoad;
     private JButton buttonImport;
@@ -78,6 +78,8 @@ public class RiftHelperMainView extends JFrame {
     private JLabel labelCenterGUI;
     private JPanel panelCenterGUI;
     private JPanel panelAlwaysOnTop;
+    public JButton buttonAutoRerollEnable;
+    public JButton buttonAutoRerollDisable;
 
     public RiftHelperMainView() {
         setTitle("Rift Helper");
@@ -86,9 +88,9 @@ public class RiftHelperMainView extends JFrame {
         panelRiftHelper.setBorder(new EmptyBorder(20, 20, 20, 20));
 
         // Hide Elements for ARURF
-        buttonAutoAcceptStop.setEnabled(false);
-        buttonAutoDeclineStop.setEnabled(false);
-        buttonAutoSwapStop.setEnabled(false);
+        buttonAutoAcceptDisable.setEnabled(false);
+        buttonAutoDeclineDisable.setEnabled(false);
+        buttonAutoSwapDisable.setEnabled(false);
         panelQuickSwitchBench2.setVisible(false);
         comboBoxAutoSwapPriority2.setVisible(false);
         comboBoxAutoSwapPriority3.setVisible(false);
@@ -263,20 +265,20 @@ public class RiftHelperMainView extends JFrame {
         buttonBench10.addActionListener(actionListener);
     }
 
-    public void addAutoAcceptStartListener(ActionListener listener) {
-        buttonAutoAcceptStart.addActionListener(listener);
+    public void addAutoAcceptEnableListener(ActionListener listener) {
+        buttonAutoAcceptEnable.addActionListener(listener);
     }
 
-    public void addAutoAcceptStopListener(ActionListener listener) {
-        buttonAutoAcceptStop.addActionListener(listener);
+    public void addAutoAcceptDisableListener(ActionListener listener) {
+        buttonAutoAcceptDisable.addActionListener(listener);
     }
 
-    public void addAutoSwapStartListener(ActionListener listener) {
-        buttonAutoSwapStart.addActionListener(listener);
+    public void addAutoSwapEnableListener(ActionListener listener) {
+        buttonAutoSwapEnable.addActionListener(listener);
     }
 
-    public void addAutoSwapStopListener(ActionListener listener) {
-        buttonAutoSwapStop.addActionListener(listener);
+    public void addAutoSwapDisableListener(ActionListener listener) {
+        buttonAutoSwapDisable.addActionListener(listener);
     }
 
     public void addAutoSwapAddListener(ActionListener listener) {
@@ -287,20 +289,28 @@ public class RiftHelperMainView extends JFrame {
         buttonAutoSwapSubtract.addActionListener(listener);
     }
 
-    public void addAlwaysOnTopEnabledListener(ActionListener listener) {
+    public void addAlwaysOnTopEnableListener(ActionListener listener) {
         buttonAlwaysOnTopEnable.addActionListener(listener);
     }
 
-    public void addAlwaysOnTopDisabledListener(ActionListener listener) {
+    public void addAlwaysOnTopDisableListener(ActionListener listener) {
         buttonAlwaysOnTopDisable.addActionListener(listener);
     }
 
-    public void addCenterGUIEnabledListener(ActionListener listener) {
+    public void addCenterGUIEnableListener(ActionListener listener) {
         buttonCenterGUIEnable.addActionListener(listener);
     }
 
-    public void addCenterGUIDisabledListener(ActionListener listener) {
+    public void addCenterGUIDisableListener(ActionListener listener) {
         buttonCenterGUIDisable.addActionListener(listener);
+    }
+
+    public void addAutoRerollEnableListener(ActionListener listener) {
+        buttonAutoRerollEnable.addActionListener(listener);
+    }
+
+    public void addAutoRerollDisableListener(ActionListener listener) {
+        buttonAutoRerollDisable.addActionListener(listener);
     }
 
     public static void main(String[] args) {

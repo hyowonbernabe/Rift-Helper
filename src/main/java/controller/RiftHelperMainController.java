@@ -3,6 +3,7 @@ package controller;
 import model.BenchChampion;
 import model.DDragonParser;
 import model.LCUPost;
+import model.RerollsRemaining;
 import no.stelar7.api.r4j.impl.lol.lcu.LCUSocketReader;
 import view.RiftHelperMainView;
 
@@ -17,7 +18,9 @@ public class RiftHelperMainController {
     private volatile int priority;
     private volatile boolean alwaysOnTop;
     private volatile boolean centerGUI;
+    private volatile boolean autoReroll;
     private List<BenchChampion> benchChampions;
+    private int rerollsRemaining;
 
     public RiftHelperMainController(RiftHelperMainView riftHelperMainView) {
         this.riftHelperMainView = riftHelperMainView;
@@ -26,6 +29,7 @@ public class RiftHelperMainController {
         this.autoSwapSlots = 1;
         this.priority = 1;
         this.centerGUI = true;
+        this.autoReroll = false;
 
         LCUSocketReader socketReader = new LCUSocketReader();
         socketReader.connect();
@@ -33,8 +37,11 @@ public class RiftHelperMainController {
         System.out.println("Connected to Client: " + socketReader.isConnected());
 
         socketReader.subscribe("OnJsonApiEvent_lol-champ-select_v1_session", eventData -> {
+            System.out.println(eventData);
             benchChampions = BenchChampion.parseFromJson(eventData);
+            rerollsRemaining = RerollsRemaining.parseFromJson(eventData);
 
+            autoReroll(rerollsRemaining);
             autoSwap();
             nameButtons();
         });
@@ -129,12 +136,12 @@ public class RiftHelperMainController {
             LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + benchChampions.get(9).getChampionId());
         });
 
-        this.riftHelperMainView.addAutoAcceptStartListener(e -> {
+        this.riftHelperMainView.addAutoAcceptEnableListener(e -> {
             autoAccept = true;
             System.out.println("Auto Accept Turned On: " + autoAccept);
 
-            riftHelperMainView.buttonAutoAcceptStart.setEnabled(false);
-            riftHelperMainView.buttonAutoAcceptStop.setEnabled(true);
+            riftHelperMainView.buttonAutoAcceptEnable.setEnabled(false);
+            riftHelperMainView.buttonAutoAcceptDisable.setEnabled(true);
 
             new Thread(() -> {
                 try {
@@ -153,38 +160,38 @@ public class RiftHelperMainController {
             }).start();
         });
 
-        this.riftHelperMainView.addAutoAcceptStopListener(e -> {
+        this.riftHelperMainView.addAutoAcceptDisableListener(e -> {
             autoAccept = false;
             System.out.println("Auto Accept Turned Off: " + autoAccept);
 
             SwingUtilities.invokeLater(() -> {
-                riftHelperMainView.buttonAutoAcceptStart.setEnabled(true);
-                riftHelperMainView.buttonAutoAcceptStop.setEnabled(false);
+                riftHelperMainView.buttonAutoAcceptEnable.setEnabled(true);
+                riftHelperMainView.buttonAutoAcceptDisable.setEnabled(false);
             });
         });
 
-        this.riftHelperMainView.addAutoSwapStartListener(e -> {
+        this.riftHelperMainView.addAutoSwapEnableListener(e -> {
             autoSwap = true;
             System.out.println("Auto Swap Turned On: " + autoSwap);
 
             SwingUtilities.invokeLater(() -> {
-                riftHelperMainView.buttonAutoSwapStart.setEnabled(false);
-                riftHelperMainView.buttonAutoSwapStop.setEnabled(true);
+                riftHelperMainView.buttonAutoSwapEnable.setEnabled(false);
+                riftHelperMainView.buttonAutoSwapDisable.setEnabled(true);
             });
         });
 
-        this.riftHelperMainView.addAutoSwapStopListener(e -> {
+        this.riftHelperMainView.addAutoSwapDisableListener(e -> {
             autoSwap = false;
             priority = 1;
             System.out.println("Auto Swap Turned Off: " + autoSwap);
 
             SwingUtilities.invokeLater(() -> {
-                riftHelperMainView.buttonAutoSwapStart.setEnabled(true);
-                riftHelperMainView.buttonAutoSwapStop.setEnabled(false);
+                riftHelperMainView.buttonAutoSwapEnable.setEnabled(true);
+                riftHelperMainView.buttonAutoSwapDisable.setEnabled(false);
             });
         });
 
-        this.riftHelperMainView.addAlwaysOnTopEnabledListener(e -> {
+        this.riftHelperMainView.addAlwaysOnTopEnableListener(e -> {
             alwaysOnTop = true;
             this.riftHelperMainView.setAlwaysOnTop(alwaysOnTop);
 
@@ -194,7 +201,7 @@ public class RiftHelperMainController {
             });
         });
 
-        this.riftHelperMainView.addAlwaysOnTopDisabledListener(e -> {
+        this.riftHelperMainView.addAlwaysOnTopDisableListener(e -> {
             alwaysOnTop = false;
             this.riftHelperMainView.setAlwaysOnTop(alwaysOnTop);
 
@@ -226,7 +233,7 @@ public class RiftHelperMainController {
             updateAutoSwapSlots();
         });
 
-        this.riftHelperMainView.addCenterGUIEnabledListener(e -> {
+        this.riftHelperMainView.addCenterGUIEnableListener(e -> {
             centerGUI = true;
 
             SwingUtilities.invokeLater(() -> {
@@ -235,7 +242,7 @@ public class RiftHelperMainController {
             });
         });
 
-        this.riftHelperMainView.addCenterGUIDisabledListener(e -> {
+        this.riftHelperMainView.addCenterGUIDisableListener(e -> {
             centerGUI = false;
 
             SwingUtilities.invokeLater(() -> {
@@ -243,6 +250,34 @@ public class RiftHelperMainController {
                 riftHelperMainView.buttonCenterGUIDisable.setEnabled(false);
             });
         });
+
+        this.riftHelperMainView.addAutoRerollEnableListener(e -> {
+            autoReroll = true;
+            System.out.println("Auto Reroll Turned On: " + autoReroll);
+
+            SwingUtilities.invokeLater(() -> {
+                riftHelperMainView.buttonAutoRerollEnable.setEnabled(false);
+                riftHelperMainView.buttonAutoRerollDisable.setEnabled(true);
+            });
+        });
+
+        this.riftHelperMainView.addAutoRerollDisableListener(e -> {
+            autoReroll = false;
+            System.out.println("Auto Reroll Turned Off: " + autoReroll);
+
+            SwingUtilities.invokeLater(() -> {
+                riftHelperMainView.buttonAutoRerollEnable.setEnabled(true);
+                riftHelperMainView.buttonAutoRerollDisable.setEnabled(false);
+            });
+        });
+    }
+
+    public void autoReroll(int rerollsRemaining) {
+        if (rerollsRemaining > 0 && autoReroll) {
+            for (int i = 0; i < rerollsRemaining; i++) {
+                LCUPost.postToClient("/lol-champ-select/v1/session/my-selection/reroll");
+            }
+        }
     }
 
     public void nameButtons() {
@@ -263,6 +298,7 @@ public class RiftHelperMainController {
             this.riftHelperMainView.setButtonBench9Text(null);
             this.riftHelperMainView.setButtonBench10Text(null);
             this.riftHelperMainView.panelQuickSwitchBench2.setVisible(false);
+            return;
         }
 
         // Set Champion ID to Champion Name
