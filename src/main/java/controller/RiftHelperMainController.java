@@ -1,9 +1,6 @@
 package controller;
 
-import model.BenchChampion;
-import model.DDragonParser;
-import model.LCUPost;
-import model.RerollsRemaining;
+import model.*;
 import no.stelar7.api.r4j.impl.lol.lcu.LCUSocketReader;
 import view.RiftHelperMainView;
 
@@ -20,16 +17,42 @@ public class RiftHelperMainController {
     private volatile boolean centerGUI;
     private volatile boolean autoReroll;
     private List<BenchChampion> benchChampions;
+    private String[] priorityChampions;
     private int rerollsRemaining;
 
     public RiftHelperMainController(RiftHelperMainView riftHelperMainView) {
         this.riftHelperMainView = riftHelperMainView;
+
+        // Initialize Variables
         this.autoAccept = false;
         this.autoSwap = false;
-        this.autoSwapSlots = 5;
         this.priority = 1;
-        this.centerGUI = true;
         this.autoReroll = false;
+
+        // Store Preferences
+        this.priorityChampions = PreferenceManager.getAutoSwapPriority();
+        this.autoSwapSlots = PreferenceManager.getAutoSwapSlots();
+        this.alwaysOnTop = PreferenceManager.getAlwaysOnTop();
+        this.centerGUI = PreferenceManager.getCenterGUI();
+
+        // Load Preferences
+        updateAutoSwapSlots();
+        this.riftHelperMainView.setAlwaysOnTop(alwaysOnTop);
+        if (this.alwaysOnTop) {
+            this.riftHelperMainView.buttonAlwaysOnTopEnable.setEnabled(false);
+            this.riftHelperMainView.buttonAlwaysOnTopDisable.setEnabled(true);
+        } else {
+            this.riftHelperMainView.buttonAlwaysOnTopEnable.setEnabled(true);
+            this.riftHelperMainView.buttonAlwaysOnTopDisable.setEnabled(false);
+        }
+        if (this.centerGUI) {
+            this.riftHelperMainView.buttonCenterGUIEnable.setEnabled(false);
+            this.riftHelperMainView.buttonCenterGUIDisable.setEnabled(true);
+        } else {
+            this.riftHelperMainView.buttonCenterGUIEnable.setEnabled(true);
+            this.riftHelperMainView.buttonCenterGUIDisable.setEnabled(false);
+        }
+        this.riftHelperMainView.setComboBoxAutoSwapPriority(priorityChampions);
 
         LCUSocketReader socketReader = new LCUSocketReader();
         socketReader.connect();
@@ -199,6 +222,8 @@ public class RiftHelperMainController {
                 riftHelperMainView.buttonAlwaysOnTopEnable.setEnabled(false);
                 riftHelperMainView.buttonAlwaysOnTopDisable.setEnabled(true);
             });
+
+            PreferenceManager.setAlwaysOnTop(alwaysOnTop);
         });
 
         this.riftHelperMainView.addAlwaysOnTopDisableListener(e -> {
@@ -209,6 +234,8 @@ public class RiftHelperMainController {
                 riftHelperMainView.buttonAlwaysOnTopEnable.setEnabled(true);
                 riftHelperMainView.buttonAlwaysOnTopDisable.setEnabled(false);
             });
+
+            PreferenceManager.setAlwaysOnTop(alwaysOnTop);
         });
 
         this.riftHelperMainView.addAutoSwapAddListener(e -> {
@@ -218,6 +245,8 @@ public class RiftHelperMainController {
             }
 
             autoSwapSlots++;
+
+            PreferenceManager.setAutoSwapSlots(autoSwapSlots);
 
             updateAutoSwapSlots();
         });
@@ -230,7 +259,14 @@ public class RiftHelperMainController {
 
             autoSwapSlots--;
 
+            PreferenceManager.setAutoSwapSlots(autoSwapSlots);
+
             updateAutoSwapSlots();
+        });
+
+        this.riftHelperMainView.addAutoSwapSaveListener(e -> {
+            saveAutoSwap();
+            System.out.println("Saved");
         });
 
         this.riftHelperMainView.addCenterGUIEnableListener(e -> {
@@ -240,6 +276,8 @@ public class RiftHelperMainController {
                 riftHelperMainView.buttonCenterGUIEnable.setEnabled(false);
                 riftHelperMainView.buttonCenterGUIDisable.setEnabled(true);
             });
+
+            PreferenceManager.setCenterGUI(centerGUI);
         });
 
         this.riftHelperMainView.addCenterGUIDisableListener(e -> {
@@ -249,6 +287,8 @@ public class RiftHelperMainController {
                 riftHelperMainView.buttonCenterGUIEnable.setEnabled(true);
                 riftHelperMainView.buttonCenterGUIDisable.setEnabled(false);
             });
+
+            PreferenceManager.setCenterGUI(centerGUI);
         });
 
         this.riftHelperMainView.addAutoRerollEnableListener(e -> {
@@ -269,6 +309,10 @@ public class RiftHelperMainController {
                 riftHelperMainView.buttonAutoRerollEnable.setEnabled(true);
                 riftHelperMainView.buttonAutoRerollDisable.setEnabled(false);
             });
+        });
+
+        this.riftHelperMainView.addExportListener(e -> {
+            PreferenceManager.exportPreferences();
         });
     }
 
@@ -433,6 +477,20 @@ public class RiftHelperMainController {
                 }
             }
         }).start();
+    }
+
+    private void saveAutoSwap() {
+        String[] comboBoxes = {
+                riftHelperMainView.getComboBoxAutoSwapPriority1(), riftHelperMainView.getComboBoxAutoSwapPriority2(),
+                riftHelperMainView.getComboBoxAutoSwapPriority3(), riftHelperMainView.getComboBoxAutoSwapPriority4(),
+                riftHelperMainView.getComboBoxAutoSwapPriority5(), riftHelperMainView.getComboBoxAutoSwapPriority6(),
+                riftHelperMainView.getComboBoxAutoSwapPriority7(), riftHelperMainView.getComboBoxAutoSwapPriority8(),
+                riftHelperMainView.getComboBoxAutoSwapPriority9(), riftHelperMainView.getComboBoxAutoSwapPriority10()
+        };
+
+        JOptionPane.showMessageDialog(riftHelperMainView, "Successfully saved!", "Success", JOptionPane.INFORMATION_MESSAGE);
+
+        PreferenceManager.setAutoSwapPriority(comboBoxes);
     }
 
     private void updateAutoSwapSlots() {

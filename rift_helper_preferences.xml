@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE preferences SYSTEM "http://java.sun.com/dtd/preferences.dtd">
+<preferences EXTERNAL_XML_VERSION="1.0">
+  <root type="user">
+    <map/>
+    <node name="model">
+      <map>
+        <entry key="centerGUI" value="true"/>
+        <entry key="alwaysOnTop" value="false"/>
+        <entry key="autoSwapSlots" value="6"/>
+        <entry key="autoSwapPriority1" value="Mel"/>
+        <entry key="autoSwapPriority2" value="Jayce"/>
+        <entry key="autoSwapPriority3" value="Zed"/>
+        <entry key="autoSwapPriority4" value="LeBlanc"/>
+        <entry key="autoSwapPriority5" value="Shaco"/>
+      </map>
+    </node>
+  </root>
+</preferences>

@@ -6,6 +6,7 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.event.ActionListener;
 import java.util.List;
+import java.util.Objects;
 
 public class RiftHelperMainView extends JFrame {
     private JTabbedPane tabbedPaneRiftHelper;
@@ -80,6 +81,9 @@ public class RiftHelperMainView extends JFrame {
     private JPanel panelAlwaysOnTop;
     public JButton buttonAutoRerollEnable;
     public JButton buttonAutoRerollDisable;
+    private JButton buttonSave;
+    private JButton buttonReset;
+    private JButton buttonAutoSwapSave;
 
     public RiftHelperMainView() {
         setTitle("Rift Helper");
@@ -92,20 +96,6 @@ public class RiftHelperMainView extends JFrame {
         buttonAutoDeclineDisable.setEnabled(false);
         buttonAutoSwapDisable.setEnabled(false);
         panelQuickSwitchBench2.setVisible(false);
-        comboBoxAutoSwapPriority6.setVisible(false);
-        comboBoxAutoSwapPriority7.setVisible(false);
-        comboBoxAutoSwapPriority8.setVisible(false);
-        comboBoxAutoSwapPriority9.setVisible(false);
-        comboBoxAutoSwapPriority10.setVisible(false);
-        labelAutoSwapPriority6.setVisible(false);
-        labelAutoSwapPriority7.setVisible(false);
-        labelAutoSwapPriority8.setVisible(false);
-        labelAutoSwapPriority9.setVisible(false);
-        labelAutoSwapPriority10.setVisible(false);
-
-        // Hide Elements for Settings
-        buttonAlwaysOnTopDisable.setEnabled(false);
-        buttonCenterGUIEnable.setEnabled(false);
 
         List<String> championNames = DDragonParser.fetchChampionNames();
 
@@ -129,44 +119,67 @@ public class RiftHelperMainView extends JFrame {
         setVisible(true);
     }
 
+    public void setComboBoxAutoSwapPriority(String[] priorityChampions) {
+        comboBoxAutoSwapPriority1.setSelectedItem(priorityChampions[0]);
+        comboBoxAutoSwapPriority2.setSelectedItem(priorityChampions[1]);
+        comboBoxAutoSwapPriority3.setSelectedItem(priorityChampions[2]);
+        comboBoxAutoSwapPriority4.setSelectedItem(priorityChampions[3]);
+        comboBoxAutoSwapPriority5.setSelectedItem(priorityChampions[4]);
+        comboBoxAutoSwapPriority6.setSelectedItem(priorityChampions[5]);
+        comboBoxAutoSwapPriority7.setSelectedItem(priorityChampions[6]);
+        comboBoxAutoSwapPriority8.setSelectedItem(priorityChampions[7]);
+        comboBoxAutoSwapPriority9.setSelectedItem(priorityChampions[8]);
+        comboBoxAutoSwapPriority10.setSelectedItem(priorityChampions[9]);
+    }
+
     public String getComboBoxAutoSwapPriority1() {
-        return comboBoxAutoSwapPriority1.getSelectedItem().toString();
+        Object selectedItem = comboBoxAutoSwapPriority1.getSelectedItem();
+        return (selectedItem != null) ? selectedItem.toString() : null;
     }
 
     public String getComboBoxAutoSwapPriority2() {
-        return comboBoxAutoSwapPriority2.getSelectedItem().toString();
+        Object selectedItem = comboBoxAutoSwapPriority2.getSelectedItem();
+        return (selectedItem != null) ? selectedItem.toString() : null;
     }
 
     public String getComboBoxAutoSwapPriority3() {
-        return comboBoxAutoSwapPriority3.getSelectedItem().toString();
+        Object selectedItem = comboBoxAutoSwapPriority3.getSelectedItem();
+        return (selectedItem != null) ? selectedItem.toString() : null;
     }
 
     public String getComboBoxAutoSwapPriority4() {
-        return comboBoxAutoSwapPriority4.getSelectedItem().toString();
+        Object selectedItem = comboBoxAutoSwapPriority4.getSelectedItem();
+        return (selectedItem != null) ? selectedItem.toString() : null;
     }
 
     public String getComboBoxAutoSwapPriority5() {
-        return comboBoxAutoSwapPriority5.getSelectedItem().toString();
+        Object selectedItem = comboBoxAutoSwapPriority5.getSelectedItem();
+        return (selectedItem != null) ? selectedItem.toString() : null;
     }
 
     public String getComboBoxAutoSwapPriority6() {
-        return comboBoxAutoSwapPriority6.getSelectedItem().toString();
+        Object selectedItem = comboBoxAutoSwapPriority6.getSelectedItem();
+        return (selectedItem != null) ? selectedItem.toString() : null;
     }
 
     public String getComboBoxAutoSwapPriority7() {
-        return comboBoxAutoSwapPriority7.getSelectedItem().toString();
+        Object selectedItem = comboBoxAutoSwapPriority7.getSelectedItem();
+        return (selectedItem != null) ? selectedItem.toString() : null;
     }
 
     public String getComboBoxAutoSwapPriority8() {
-        return comboBoxAutoSwapPriority8.getSelectedItem().toString();
+        Object selectedItem = comboBoxAutoSwapPriority8.getSelectedItem();
+        return (selectedItem != null) ? selectedItem.toString() : null;
     }
 
     public String getComboBoxAutoSwapPriority9() {
-        return comboBoxAutoSwapPriority9.getSelectedItem().toString();
+        Object selectedItem = comboBoxAutoSwapPriority9.getSelectedItem();
+        return (selectedItem != null) ? selectedItem.toString() : null;
     }
 
     public String getComboBoxAutoSwapPriority10() {
-        return comboBoxAutoSwapPriority10.getSelectedItem().toString();
+        Object selectedItem = comboBoxAutoSwapPriority10.getSelectedItem();
+        return (selectedItem != null) ? selectedItem.toString() : null;
     }
 
     private void populateComboBox(JComboBox<String> comboBox, List<String> items) {
@@ -281,6 +294,10 @@ public class RiftHelperMainView extends JFrame {
         buttonAutoSwapSubtract.addActionListener(listener);
     }
 
+    public void addAutoSwapSaveListener(ActionListener listener) {
+        buttonAutoSwapSave.addActionListener(listener);
+    }
+
     public void addAlwaysOnTopEnableListener(ActionListener listener) {
         buttonAlwaysOnTopEnable.addActionListener(listener);
     }
@@ -303,6 +320,10 @@ public class RiftHelperMainView extends JFrame {
 
     public void addAutoRerollDisableListener(ActionListener listener) {
         buttonAutoRerollDisable.addActionListener(listener);
+    }
+
+    public void addExportListener(ActionListener listener) {
+        buttonExport.addActionListener(listener);
     }
 
     public static void main(String[] args) {
