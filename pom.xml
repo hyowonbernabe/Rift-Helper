@@ -4,9 +4,9 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.rifthelpr</groupId>
+    <groupId>com.rifthelper</groupId>
     <artifactId>rift-helper</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0.0</version>
 
     <repositories>
         <repository>
@@ -43,8 +43,6 @@
             <artifactId>jackson-databind</artifactId>
             <version>2.18.2</version>
         </dependency>
-
-
     </dependencies>
 
 </project>
