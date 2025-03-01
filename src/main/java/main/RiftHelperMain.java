@@ -1,3 +1,5 @@
+package main;
+
 import controller.RiftHelperMainController;
 import model.LCUAuth;
 import model.SSLBypass;
