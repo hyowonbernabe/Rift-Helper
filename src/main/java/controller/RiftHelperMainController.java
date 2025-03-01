@@ -14,6 +14,7 @@ public class RiftHelperMainController {
     private volatile boolean autoAccept;
     private volatile boolean autoSwap;
     private volatile int priority;
+    private volatile boolean alwaysOnTop;
     private List<BenchChampion> benchChampions;
 
     public RiftHelperMainController(RiftHelperMainView riftHelperMainView) {
@@ -35,7 +36,7 @@ public class RiftHelperMainController {
         });
 
         this.riftHelperMainView.addBench1ActionListener(e -> {
-            if (benchChampions.get(0) == null) {
+            if (benchChampions.get(0) == null || benchChampions.isEmpty()) {
                 System.out.println("Cannot swap. Bench Champion is null");
                 return;
             }
@@ -44,7 +45,7 @@ public class RiftHelperMainController {
         });
 
         this.riftHelperMainView.addBench2ActionListener(e -> {
-            if (benchChampions.get(1) == null) {
+            if (benchChampions.get(1) == null || benchChampions.size() < 2) {
                 System.out.println("Cannot swap. Bench Champion is null");
                 return;
             }
@@ -53,7 +54,7 @@ public class RiftHelperMainController {
         });
 
         this.riftHelperMainView.addBench3ActionListener(e -> {
-            if (benchChampions.get(2) == null) {
+            if (benchChampions.get(2) == null || benchChampions.size() < 3) {
                 System.out.println("Cannot swap. Bench Champion is null");
                 return;
             }
@@ -62,7 +63,7 @@ public class RiftHelperMainController {
         });
 
         this.riftHelperMainView.addBench4ActionListener(e -> {
-            if (benchChampions.get(3) == null) {
+            if (benchChampions.get(3) == null || benchChampions.size() < 4) {
                 System.out.println("Cannot swap. Bench Champion is null");
                 return;
             }
@@ -71,7 +72,7 @@ public class RiftHelperMainController {
         });
 
         this.riftHelperMainView.addBench5ActionListener(e -> {
-            if (benchChampions.get(4) == null) {
+            if (benchChampions.get(4) == null || benchChampions.size() < 5) {
                 System.out.println("Cannot swap. Bench Champion is null");
                 return;
             }
@@ -80,7 +81,7 @@ public class RiftHelperMainController {
         });
 
         this.riftHelperMainView.addBench6ActionListener(e -> {
-            if (benchChampions.get(5) == null) {
+            if (benchChampions.get(5) == null || benchChampions.size() < 6) {
                 System.out.println("Cannot swap. Bench Champion is null");
                 return;
             }
@@ -89,7 +90,7 @@ public class RiftHelperMainController {
         });
 
         this.riftHelperMainView.addBench7ActionListener(e -> {
-            if (benchChampions.get(6) == null) {
+            if (benchChampions.get(6) == null || benchChampions.size() < 7) {
                 System.out.println("Cannot swap. Bench Champion is null");
                 return;
             }
@@ -98,7 +99,7 @@ public class RiftHelperMainController {
         });
 
         this.riftHelperMainView.addBench8ActionListener(e -> {
-            if (benchChampions.get(7) == null) {
+            if (benchChampions.get(7) == null || benchChampions.size() < 8) {
                 System.out.println("Cannot swap. Bench Champion is null");
                 return;
             }
@@ -107,7 +108,7 @@ public class RiftHelperMainController {
         });
 
         this.riftHelperMainView.addBench9ActionListener(e -> {
-            if (benchChampions.get(8) == null) {
+            if (benchChampions.get(8) == null || benchChampions.size() < 9) {
                 System.out.println("Cannot swap. Bench Champion is null");
                 return;
             }
@@ -116,7 +117,7 @@ public class RiftHelperMainController {
         });
 
         this.riftHelperMainView.addBench10ActionListener(e -> {
-            if (benchChampions.get(9) == null) {
+            if (benchChampions.get(9) == null || benchChampions.size() < 10) {
                 System.out.println("Cannot swap. Bench Champion is null");
                 return;
             }
@@ -176,6 +177,26 @@ public class RiftHelperMainController {
             SwingUtilities.invokeLater(() -> {
                 riftHelperMainView.buttonAutoSwapStart.setEnabled(true);
                 riftHelperMainView.buttonAutoSwapStop.setEnabled(false);
+            });
+        });
+
+        this.riftHelperMainView.addAlwaysOnTopEnabledListener(e -> {
+            alwaysOnTop = true;
+            this.riftHelperMainView.setAlwaysOnTop(alwaysOnTop);
+
+            SwingUtilities.invokeLater(() -> {
+                riftHelperMainView.buttonAlwaysOnTopEnable.setEnabled(false);
+                riftHelperMainView.buttonAlwaysOnTopDisable.setEnabled(true);
+            });
+        });
+
+        this.riftHelperMainView.addAlwaysOnTopDisabledListener(e -> {
+            alwaysOnTop = false;
+            this.riftHelperMainView.setAlwaysOnTop(alwaysOnTop);
+
+            SwingUtilities.invokeLater(() -> {
+                riftHelperMainView.buttonAlwaysOnTopEnable.setEnabled(true);
+                riftHelperMainView.buttonAlwaysOnTopDisable.setEnabled(false);
             });
         });
     }

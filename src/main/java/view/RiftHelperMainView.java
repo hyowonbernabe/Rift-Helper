@@ -70,6 +70,9 @@ public class RiftHelperMainView extends JFrame {
     private JButton buttonBench8;
     private JButton buttonBench9;
     private JButton buttonBench10;
+    public JButton buttonAlwaysOnTopEnable;
+    public JButton buttonAlwaysOnTopDisable;
+    private JLabel labelAlwaysOnTop;
 
     public RiftHelperMainView() {
         setTitle("Rift Helper");
@@ -82,6 +85,9 @@ public class RiftHelperMainView extends JFrame {
         buttonAutoDeclineStop.setEnabled(false);
         buttonAutoSwapStop.setEnabled(false);
         panelQuickSwitchBench2.setVisible(false);
+
+        // Hide Elements for Settings
+        buttonAlwaysOnTopDisable.setEnabled(false);
 
         List<String> championNames = DDragonParser.fetchChampionNames();
 
@@ -247,6 +253,14 @@ public class RiftHelperMainView extends JFrame {
 
     public void addAutoSwapStopListener(ActionListener listener) {
         buttonAutoSwapStop.addActionListener(listener);
+    }
+
+    public void addAlwaysOnTopEnabledListener(ActionListener listener) {
+        buttonAlwaysOnTopEnable.addActionListener(listener);
+    }
+
+    public void addAlwaysOnTopDisabledListener(ActionListener listener) {
+        buttonAlwaysOnTopDisable.addActionListener(listener);
     }
 
     public static void main(String[] args) {
