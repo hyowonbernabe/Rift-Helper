@@ -13,6 +13,7 @@ public class RiftHelperMainController {
     private RiftHelperMainView riftHelperMainView;
     private volatile boolean autoAccept;
     private volatile boolean autoSwap;
+    private volatile int autoSwapSlots;
     private volatile int priority;
     private volatile boolean alwaysOnTop;
     private List<BenchChampion> benchChampions;
@@ -21,6 +22,7 @@ public class RiftHelperMainController {
         this.riftHelperMainView = riftHelperMainView;
         this.autoAccept = false;
         this.autoSwap = false;
+        this.autoSwapSlots = 1;
         this.priority = 1;
 
         LCUSocketReader socketReader = new LCUSocketReader();
@@ -199,6 +201,28 @@ public class RiftHelperMainController {
                 riftHelperMainView.buttonAlwaysOnTopDisable.setEnabled(false);
             });
         });
+
+        this.riftHelperMainView.addAutoSwapAddListener(e -> {
+            if (autoSwapSlots >= 10) {
+                JOptionPane.showMessageDialog(riftHelperMainView, "You cannot add more slots.\nThe maximum is 10.", "Error Adding", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            autoSwapSlots++;
+
+            updateAutoSwapSlots();
+        });
+
+        this.riftHelperMainView.addAutoSwapSubtractListener(e -> {
+            if (autoSwapSlots <= 1) {
+                JOptionPane.showMessageDialog(riftHelperMainView, "You cannot subtract more slots.\nThe maximum is 1.", "Error Subtracting", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            autoSwapSlots--;
+
+            updateAutoSwapSlots();
+        });
     }
 
     public void nameButtons() {
@@ -348,5 +372,39 @@ public class RiftHelperMainController {
                 }
             }
         }).start();
+    }
+
+    private void updateAutoSwapSlots() {
+        JLabel[] labels = {
+                riftHelperMainView.labelAutoSwapPriority1, riftHelperMainView.labelAutoSwapPriority2,
+                riftHelperMainView.labelAutoSwapPriority3, riftHelperMainView.labelAutoSwapPriority4,
+                riftHelperMainView.labelAutoSwapPriority5, riftHelperMainView.labelAutoSwapPriority6,
+                riftHelperMainView.labelAutoSwapPriority7, riftHelperMainView.labelAutoSwapPriority8,
+                riftHelperMainView.labelAutoSwapPriority9, riftHelperMainView.labelAutoSwapPriority10
+        };
+
+        JComboBox[] comboBoxes = {
+                riftHelperMainView.comboBoxAutoSwapPriority1, riftHelperMainView.comboBoxAutoSwapPriority2,
+                riftHelperMainView.comboBoxAutoSwapPriority3, riftHelperMainView.comboBoxAutoSwapPriority4,
+                riftHelperMainView.comboBoxAutoSwapPriority5, riftHelperMainView.comboBoxAutoSwapPriority6,
+                riftHelperMainView.comboBoxAutoSwapPriority7, riftHelperMainView.comboBoxAutoSwapPriority8,
+                riftHelperMainView.comboBoxAutoSwapPriority9, riftHelperMainView.comboBoxAutoSwapPriority10
+        };
+
+        for (int i = 0; i < 10; i++) {
+            if (i < autoSwapSlots) {
+                labels[i].setVisible(true);
+                comboBoxes[i].setVisible(true);
+            } else {
+                labels[i].setVisible(false);
+                comboBoxes[i].setVisible(false);
+                comboBoxes[i].setSelectedIndex(-1);
+            }
+        }
+
+        riftHelperMainView.revalidate();
+        riftHelperMainView.repaint();
+        riftHelperMainView.pack();
+        riftHelperMainView.setLocationRelativeTo(null);
     }
 }

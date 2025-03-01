@@ -14,28 +14,28 @@ public class RiftHelperMainView extends JFrame {
     private JPanel panelARAM;
     private JPanel panelRift;
     private JPanel panelSettings;
-    private JComboBox comboBoxAutoSwapPriority1;
     private JPanel panelAutoSwap;
     private JLabel labelAutoSwap;
-    private JLabel labelAutoSwapPriority1;
-    private JLabel labelAutoSwapPriority2;
-    private JLabel labelPriority3labelAutoSwapPriority3;
-    private JLabel labelAutoSwapPriority4;
-    private JLabel labelAutoSwapPriority5;
-    private JLabel labelAutoSwapPriority6;
-    private JLabel labelAutoSwapPriority7;
-    private JLabel labelAutoSwapPriority8;
-    private JLabel labelAutoSwapPriority9;
-    private JLabel labelAutoSwapPriority10;
-    private JComboBox comboBoxAutoSwapPriority2;
-    private JComboBox comboBoxAutoSwapPriority3;
-    private JComboBox comboBoxAutoSwapPriority4;
-    private JComboBox comboBoxAutoSwapPriority5;
-    private JComboBox comboBoxAutoSwapPriority6;
-    private JComboBox comboBoxAutoSwapPriority7;
-    private JComboBox comboBoxAutoSwapPriority8;
-    private JComboBox comboBoxAutoSwapPriority9;
-    private JComboBox comboBoxAutoSwapPriority10;
+    public JLabel labelAutoSwapPriority1;
+    public JLabel labelAutoSwapPriority2;
+    public JLabel labelAutoSwapPriority3;
+    public JLabel labelAutoSwapPriority4;
+    public JLabel labelAutoSwapPriority5;
+    public JLabel labelAutoSwapPriority6;
+    public JLabel labelAutoSwapPriority7;
+    public JLabel labelAutoSwapPriority8;
+    public JLabel labelAutoSwapPriority9;
+    public JLabel labelAutoSwapPriority10;
+    public JComboBox comboBoxAutoSwapPriority1;
+    public JComboBox comboBoxAutoSwapPriority2;
+    public JComboBox comboBoxAutoSwapPriority3;
+    public JComboBox comboBoxAutoSwapPriority4;
+    public JComboBox comboBoxAutoSwapPriority5;
+    public JComboBox comboBoxAutoSwapPriority6;
+    public JComboBox comboBoxAutoSwapPriority7;
+    public JComboBox comboBoxAutoSwapPriority8;
+    public JComboBox comboBoxAutoSwapPriority9;
+    public JComboBox comboBoxAutoSwapPriority10;
     private JPanel panelAutoSwapButtons;
     public JButton buttonAutoSwapStart;
     public JButton buttonAutoSwapStop;
@@ -85,6 +85,24 @@ public class RiftHelperMainView extends JFrame {
         buttonAutoDeclineStop.setEnabled(false);
         buttonAutoSwapStop.setEnabled(false);
         panelQuickSwitchBench2.setVisible(false);
+        comboBoxAutoSwapPriority2.setVisible(false);
+        comboBoxAutoSwapPriority3.setVisible(false);
+        comboBoxAutoSwapPriority4.setVisible(false);
+        comboBoxAutoSwapPriority5.setVisible(false);
+        comboBoxAutoSwapPriority6.setVisible(false);
+        comboBoxAutoSwapPriority7.setVisible(false);
+        comboBoxAutoSwapPriority8.setVisible(false);
+        comboBoxAutoSwapPriority9.setVisible(false);
+        comboBoxAutoSwapPriority10.setVisible(false);
+        labelAutoSwapPriority2.setVisible(false);
+        labelAutoSwapPriority3.setVisible(false);
+        labelAutoSwapPriority4.setVisible(false);
+        labelAutoSwapPriority5.setVisible(false);
+        labelAutoSwapPriority6.setVisible(false);
+        labelAutoSwapPriority7.setVisible(false);
+        labelAutoSwapPriority8.setVisible(false);
+        labelAutoSwapPriority9.setVisible(false);
+        labelAutoSwapPriority10.setVisible(false);
 
         // Hide Elements for Settings
         buttonAlwaysOnTopDisable.setEnabled(false);
@@ -253,6 +271,14 @@ public class RiftHelperMainView extends JFrame {
 
     public void addAutoSwapStopListener(ActionListener listener) {
         buttonAutoSwapStop.addActionListener(listener);
+    }
+
+    public void addAutoSwapAddListener(ActionListener listener) {
+        buttonAutoSwapAdd.addActionListener(listener);
+    }
+
+    public void addAutoSwapSubtractListener(ActionListener listener) {
+        buttonAutoSwapSubtract.addActionListener(listener);
     }
 
     public void addAlwaysOnTopEnabledListener(ActionListener listener) {
