@@ -16,6 +16,7 @@ public class RiftHelperMainController {
     private volatile int autoSwapSlots;
     private volatile int priority;
     private volatile boolean alwaysOnTop;
+    private volatile boolean centerGUI;
     private List<BenchChampion> benchChampions;
 
     public RiftHelperMainController(RiftHelperMainView riftHelperMainView) {
@@ -24,6 +25,7 @@ public class RiftHelperMainController {
         this.autoSwap = false;
         this.autoSwapSlots = 1;
         this.priority = 1;
+        this.centerGUI = true;
 
         LCUSocketReader socketReader = new LCUSocketReader();
         socketReader.connect();
@@ -223,6 +225,24 @@ public class RiftHelperMainController {
 
             updateAutoSwapSlots();
         });
+
+        this.riftHelperMainView.addCenterGUIEnabledListener(e -> {
+            centerGUI = true;
+
+            SwingUtilities.invokeLater(() -> {
+                riftHelperMainView.buttonCenterGUIEnable.setEnabled(false);
+                riftHelperMainView.buttonCenterGUIDisable.setEnabled(true);
+            });
+        });
+
+        this.riftHelperMainView.addCenterGUIDisabledListener(e -> {
+            centerGUI = false;
+
+            SwingUtilities.invokeLater(() -> {
+                riftHelperMainView.buttonCenterGUIEnable.setEnabled(true);
+                riftHelperMainView.buttonCenterGUIDisable.setEnabled(false);
+            });
+        });
     }
 
     public void nameButtons() {
@@ -405,6 +425,9 @@ public class RiftHelperMainController {
         riftHelperMainView.revalidate();
         riftHelperMainView.repaint();
         riftHelperMainView.pack();
-        riftHelperMainView.setLocationRelativeTo(null);
+
+        if (centerGUI) {
+            riftHelperMainView.setLocationRelativeTo(null);
+        }
     }
 }
