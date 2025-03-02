@@ -14,6 +14,7 @@ Rift Helper leverages the *League Client Update (LCU) API* to communicate direct
 
 ## Disclaimer
 
-- The *LCU API* is **not officially supported** by Riot Games, and its usage may carry risks, including potential account penalties.  
-- By using this software, you acknowledge and accept any risks involved.  
+- The *LCU API* is a **community-documented API** that interacts with the League of Legends client through its existing endpoints. While not part of Riot Games' official developer offerings, it is widely used for client automation and third-party tools.  
+- The risk of using the LCU API is **extremely low**, as it operates within the client’s normal functionality without modifying game files or injecting code.  
+- While there are no known cases of penalties from using the LCU API for automation, use this tool at your own discretion.  
 - I am **not responsible** for any consequences, including but not limited to, account restrictions, bans, or other issues that may arise from using Rift Helper.
