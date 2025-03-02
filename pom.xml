@@ -51,12 +51,20 @@
             <version>12.0</version>
         </dependency>
 
+        <!-- Flatlaf -->
+        <dependency>
+            <groupId>com.formdev</groupId>
+            <artifactId>flatlaf</artifactId>
+            <version>3.5.4</version>
+        </dependency>
+
         <!-- Forms RT -->
         <dependency>
             <groupId>com.intellij</groupId>
             <artifactId>forms_rt</artifactId>
             <version>7.0.3</version>
         </dependency>
+
     </dependencies>
 
     <build>
