@@ -1,10 +1,8 @@
 package main;
 
 import com.formdev.flatlaf.FlatDarkLaf;
-import com.formdev.flatlaf.FlatLightLaf;
 import controller.RiftHelperMainController;
 import model.LCUAuth;
-import model.PreferenceManager;
 import model.SSLBypass;
 import view.RiftHelperMainView;
 

@@ -39,23 +39,7 @@ public class RiftHelperMainController {
         this.centerGUI = PreferenceManager.getCenterGUI();
 
         // Load Preferences
-        updateAutoSwapSlots();
-        this.riftHelperMainView.setAlwaysOnTop(alwaysOnTop);
-        if (this.alwaysOnTop) {
-            this.riftHelperMainView.buttonAlwaysOnTopEnable.setEnabled(false);
-            this.riftHelperMainView.buttonAlwaysOnTopDisable.setEnabled(true);
-        } else {
-            this.riftHelperMainView.buttonAlwaysOnTopEnable.setEnabled(true);
-            this.riftHelperMainView.buttonAlwaysOnTopDisable.setEnabled(false);
-        }
-        if (this.centerGUI) {
-            this.riftHelperMainView.buttonCenterGUIEnable.setEnabled(false);
-            this.riftHelperMainView.buttonCenterGUIDisable.setEnabled(true);
-        } else {
-            this.riftHelperMainView.buttonCenterGUIEnable.setEnabled(true);
-            this.riftHelperMainView.buttonCenterGUIDisable.setEnabled(false);
-        }
-        this.riftHelperMainView.setComboBoxAutoSwapPriority(priorityChampions);
+        loadPreferences();
 
         LCUSocketReader socketReader = new LCUSocketReader();
         socketReader.connect();
@@ -316,6 +300,26 @@ public class RiftHelperMainController {
         this.riftHelperMainView.addExportListener(e -> {
             PreferenceManager.exportPreferences();
         });
+    }
+
+    private void loadPreferences() {
+        updateAutoSwapSlots();
+        this.riftHelperMainView.setAlwaysOnTop(alwaysOnTop);
+        if (this.alwaysOnTop) {
+            this.riftHelperMainView.buttonAlwaysOnTopEnable.setEnabled(false);
+            this.riftHelperMainView.buttonAlwaysOnTopDisable.setEnabled(true);
+        } else {
+            this.riftHelperMainView.buttonAlwaysOnTopEnable.setEnabled(true);
+            this.riftHelperMainView.buttonAlwaysOnTopDisable.setEnabled(false);
+        }
+        if (this.centerGUI) {
+            this.riftHelperMainView.buttonCenterGUIEnable.setEnabled(false);
+            this.riftHelperMainView.buttonCenterGUIDisable.setEnabled(true);
+        } else {
+            this.riftHelperMainView.buttonCenterGUIEnable.setEnabled(true);
+            this.riftHelperMainView.buttonCenterGUIDisable.setEnabled(false);
+        }
+        this.riftHelperMainView.setComboBoxAutoSwapPriority(priorityChampions);
     }
 
     public void autoReroll(int rerollsRemaining) {

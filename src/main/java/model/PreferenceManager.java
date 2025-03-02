@@ -1,6 +1,5 @@
 package model;
 
-import javax.swing.*;
 import java.io.FileOutputStream;
 import java.util.prefs.Preferences;
 
@@ -18,7 +17,6 @@ public class PreferenceManager {
     private static final String PREF_CENTER_GUI = "centerGUI";
     private static final String PREF_AUTO_SWAP_SLOTS = "autoSwapSlots";
     private static final String PREF_ALWAYS_ON_TOP = "alwaysOnTop";
-    private static final String PREF_THEME = "theme";
 
     private static Preferences prefs;
 
