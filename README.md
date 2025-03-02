@@ -1,6 +1,6 @@
 # Rift Helper
 
-Rift Helper is a Java-based automation tool designed to streamline the queuing process in *League of Legends*, enhancing efficiency and user experience.
+Rift Helper is a Java-based automation tool designed to streamline the queuing, matchmaking, and other processes in *League of Legends*, enhancing efficiency and user experience.
 
 ## How It Works
 
