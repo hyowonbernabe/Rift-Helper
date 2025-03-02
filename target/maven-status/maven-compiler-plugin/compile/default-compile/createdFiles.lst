@@ -4,6 +4,8 @@ model\BenchChampion.class
 model\SSLBypass$1.class
 view\RiftHelperMainView.class
 model\LCUGet.class
+model\CurrentDirectory.class
+view\FileChooserView.class
 model\LCUAuth.class
 model\DDragonParser.class
 model\SSLBypass.class

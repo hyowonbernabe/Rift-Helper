@@ -2,12 +2,16 @@ package controller;
 
 import model.*;
 import no.stelar7.api.r4j.impl.lol.lcu.LCUSocketReader;
+import view.FileChooserView;
 import view.RiftHelperMainView;
 
 import javax.swing.*;
+import java.io.File;
+import java.io.FileInputStream;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.prefs.Preferences;
 
 public class RiftHelperMainController {
     private RiftHelperMainView riftHelperMainView;
@@ -299,6 +303,35 @@ public class RiftHelperMainController {
 
         this.riftHelperMainView.addExportListener(e -> {
             PreferenceManager.exportPreferences();
+            String currDir = CurrentDirectory.getCurrentDirectory();
+            JOptionPane.showMessageDialog(riftHelperMainView, "Preferences saved on: \n" + currDir, "Export Success", JOptionPane.INFORMATION_MESSAGE);
+        });
+
+        this.riftHelperMainView.addImportListener(e -> {
+            FileChooserView fileChooserView = new FileChooserView();
+            File file = fileChooserView.selectFile();
+            if (file != null) {
+                try (FileInputStream fis = new FileInputStream(file)) {
+                    Preferences.importPreferences(fis);
+
+                    JOptionPane.showMessageDialog(riftHelperMainView, "Preferences imported!", "Import Success", JOptionPane.INFORMATION_MESSAGE);
+
+                    reset();
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(riftHelperMainView, "Preferences not imported.", "Import Failed", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        });
+
+        this.riftHelperMainView.addResetListener( e -> {
+           int result = JOptionPane.showConfirmDialog(riftHelperMainView, "Are you sure you want to reset the preferences?", "Reset Preferences", JOptionPane.YES_NO_OPTION);
+           if (result == JOptionPane.YES_OPTION) {
+               PreferenceManager.resetPreferences();
+
+               JOptionPane.showMessageDialog(riftHelperMainView, "Preferences Successfully Reset!", "Reset Success", JOptionPane.INFORMATION_MESSAGE);
+
+               reset();
+           }
         });
     }
 
@@ -334,11 +367,8 @@ public class RiftHelperMainController {
         // Increase Champion Bench if more than 5
         if (benchChampions.size() > 5) {
             this.riftHelperMainView.panelQuickSwitchBench2.setVisible(true);
-            this.riftHelperMainView.pack();
 
-            if (centerGUI) {
-                this.riftHelperMainView.setLocationRelativeTo(null);
-            }
+            reInitialize();
         }
 
         if (benchChampions == null) {
@@ -494,7 +524,7 @@ public class RiftHelperMainController {
                 riftHelperMainView.getComboBoxAutoSwapPriority9(), riftHelperMainView.getComboBoxAutoSwapPriority10()
         };
 
-        JOptionPane.showMessageDialog(riftHelperMainView, "Successfully saved!", "Success", JOptionPane.INFORMATION_MESSAGE);
+        JOptionPane.showMessageDialog(riftHelperMainView, "Successfully saved!", "Save Success", JOptionPane.INFORMATION_MESSAGE);
 
         PreferenceManager.setAutoSwapPriority(comboBoxes);
     }
@@ -527,6 +557,29 @@ public class RiftHelperMainController {
             }
         }
 
+        reInitialize();
+    }
+
+    public void reset() {
+        // Initialize Variables
+        this.autoAccept = false;
+        this.autoSwap = false;
+        this.priority = 1;
+        this.autoReroll = false;
+
+        // Store Preferences
+        this.priorityChampions = PreferenceManager.getAutoSwapPriority();
+        this.autoSwapSlots = PreferenceManager.getAutoSwapSlots();
+        this.alwaysOnTop = PreferenceManager.getAlwaysOnTop();
+        this.centerGUI = PreferenceManager.getCenterGUI();
+
+        // Load Preferences
+        loadPreferences();
+
+        reInitialize();
+    }
+
+    public void reInitialize() {
         riftHelperMainView.revalidate();
         riftHelperMainView.repaint();
         riftHelperMainView.pack();
@@ -535,4 +588,5 @@ public class RiftHelperMainController {
             riftHelperMainView.setLocationRelativeTo(null);
         }
     }
+
 }

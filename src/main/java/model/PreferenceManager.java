@@ -1,6 +1,9 @@
 package model;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 
 public class PreferenceManager {
@@ -103,7 +106,26 @@ public class PreferenceManager {
 
     public static void exportPreferences() {
         try {
-            prefs.exportNode(new FileOutputStream("rift_helper_preferences.xml"));
+            String currentDir = CurrentDirectory.getCurrentDirectory();
+            File outputFile = new File(currentDir, "rift_helper_preferences.xml");
+
+            prefs.exportNode(new FileOutputStream(outputFile));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void importPreferences(FileInputStream input) {
+        try {
+            prefs.importPreferences(input);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void resetPreferences() {
+        try {
+            prefs.clear();
         } catch (Exception e) {
             e.printStackTrace();
         }
