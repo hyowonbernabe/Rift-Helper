@@ -53,8 +53,8 @@ public class RiftHelperMainView extends JFrame {
     public JButton buttonAutoAcceptEnable;
     public JButton buttonAutoAcceptDisable;
     private JLabel labelAutoDecline;
-    private JButton buttonAutoDeclineEnable;
-    private JButton buttonAutoDeclineDisable;
+    public JButton buttonAutoDeclineEnable;
+    public JButton buttonAutoDeclineDisable;
     private JPanel panelSave;
     private JLabel labelSaveLoad;
     private JButton buttonImport;
@@ -88,6 +88,14 @@ public class RiftHelperMainView extends JFrame {
     public JButton buttonAutoRerollDisable;
     private JButton buttonReset;
     private JButton buttonAutoSwapSave;
+    private JPanel panelLoot;
+    private JButton buttonDisenchantChampions;
+    private JLabel labelMassChampionDisenchant;
+    private JButton buttonDisenchantSkins;
+    private JPanel panelAutoDisenchantButtons;
+    private JButton safeModeDisenchantAlreadyButton;
+    private JButton hardModeDisenchantEverythingButton;
+    private JLabel labelMassSkinDisenchant;
 
     public RiftHelperMainView() {
         setTitle("Rift Helper");
@@ -100,7 +108,6 @@ public class RiftHelperMainView extends JFrame {
         // Hide Elements for ARURF
         buttonAutoAcceptDisable.setEnabled(false);
         buttonAutoDeclineDisable.setEnabled(false);
-        buttonAutoSwapDisable.setEnabled(false);
         panelQuickSwitchBench2.setVisible(false);
 
         List<String> championNames = DDragonParser.fetchChampionNames();
@@ -297,6 +304,14 @@ public class RiftHelperMainView extends JFrame {
         buttonAutoAcceptDisable.addActionListener(listener);
     }
 
+    public void addAutoDeclineEnableListener(ActionListener listener) {
+        buttonAutoDeclineEnable.addActionListener(listener);
+    }
+
+    public void addAutoDeclineDisableListener(ActionListener listener) {
+        buttonAutoDeclineDisable.addActionListener(listener);
+    }
+
     public void addAutoSwapEnableListener(ActionListener listener) {
         buttonAutoSwapEnable.addActionListener(listener);
     }
@@ -339,6 +354,14 @@ public class RiftHelperMainView extends JFrame {
 
     public void addAutoRerollDisableListener(ActionListener listener) {
         buttonAutoRerollDisable.addActionListener(listener);
+    }
+
+    public void addAutoDisenchantChampionsListener(ActionListener listener) {
+        buttonDisenchantChampions.addActionListener(listener);
+    }
+
+    public void addAutoDisenchantSkinsListener(ActionListener listener) {
+        buttonDisenchantSkins.addActionListener(listener);
     }
 
     public void addExportListener(ActionListener listener) {
@@ -547,6 +570,35 @@ public class RiftHelperMainView extends JFrame {
         buttonAutoRerollDisable = new JButton();
         buttonAutoRerollDisable.setText("Disable");
         panel2.add(buttonAutoRerollDisable, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panelLoot = new JPanel();
+        panelLoot.setLayout(new GridLayoutManager(3, 1, new Insets(0, 0, 0, 0), -1, -1));
+        tabbedPaneRiftHelper.addTab("Loot", panelLoot);
+        labelMassChampionDisenchant = new JLabel();
+        labelMassChampionDisenchant.setText("Mass Champion Disenchant");
+        panelLoot.add(labelMassChampionDisenchant, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final Spacer spacer4 = new Spacer();
+        panelLoot.add(spacer4, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        panelAutoDisenchantButtons = new JPanel();
+        panelAutoDisenchantButtons.setLayout(new GridLayoutManager(4, 1, new Insets(0, 0, 0, 0), -1, -1));
+        panelLoot.add(panelAutoDisenchantButtons, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        buttonDisenchantChampions = new JButton();
+        buttonDisenchantChampions.setText("Safe Mode (Disenchant Already Owned Champions)");
+        panelAutoDisenchantButtons.add(buttonDisenchantChampions, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        buttonDisenchantSkins = new JButton();
+        buttonDisenchantSkins.setText("Hard Mode (Disenchant Everything)");
+        panelAutoDisenchantButtons.add(buttonDisenchantSkins, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        labelMassSkinDisenchant = new JLabel();
+        labelMassSkinDisenchant.setText("Mass Skin Disenchant");
+        panelAutoDisenchantButtons.add(labelMassSkinDisenchant, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JPanel panel3 = new JPanel();
+        panel3.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
+        panelAutoDisenchantButtons.add(panel3, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        safeModeDisenchantAlreadyButton = new JButton();
+        safeModeDisenchantAlreadyButton.setText("Safe Mode (Disenchant Already Owned Skins)");
+        panel3.add(safeModeDisenchantAlreadyButton, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        hardModeDisenchantEverythingButton = new JButton();
+        hardModeDisenchantEverythingButton.setText("Hard Mode (Disenchant Everything)");
+        panel3.add(hardModeDisenchantEverythingButton, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         panelSettings = new JPanel();
         panelSettings.setLayout(new GridLayoutManager(8, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPaneRiftHelper.addTab("Settings", panelSettings);
@@ -559,8 +611,8 @@ public class RiftHelperMainView extends JFrame {
         buttonExport = new JButton();
         buttonExport.setText("Export");
         panelSave.add(buttonExport, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        final Spacer spacer4 = new Spacer();
-        panelSettings.add(spacer4, new GridConstraints(7, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        final Spacer spacer5 = new Spacer();
+        panelSettings.add(spacer5, new GridConstraints(7, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         labelSaveLoad = new JLabel();
         labelSaveLoad.setText("Save/Load");
         panelSettings.add(labelSaveLoad, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));

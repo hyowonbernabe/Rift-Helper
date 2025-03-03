@@ -16,6 +16,7 @@ import java.util.prefs.Preferences;
 public class RiftHelperMainController {
     private RiftHelperMainView riftHelperMainView;
     private volatile boolean autoAccept;
+    private volatile boolean autoDecline;
     private volatile boolean autoSwap;
     private volatile int autoSwapSlots;
     private volatile int priority;
@@ -150,6 +151,11 @@ public class RiftHelperMainController {
         });
 
         this.riftHelperMainView.addAutoAcceptEnableListener(e -> {
+            if (autoDecline) {
+                JOptionPane.showMessageDialog(riftHelperMainView, "Auto Decline is enabled.", "Cannot Auto Accept", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
             autoAccept = true;
             System.out.println("Auto Accept Turned On: " + autoAccept);
 
@@ -180,6 +186,29 @@ public class RiftHelperMainController {
             SwingUtilities.invokeLater(() -> {
                 riftHelperMainView.buttonAutoAcceptEnable.setEnabled(true);
                 riftHelperMainView.buttonAutoAcceptDisable.setEnabled(false);
+            });
+        });
+
+        this.riftHelperMainView.addAutoDeclineEnableListener(e -> {
+            if (autoAccept) {
+                JOptionPane.showMessageDialog(riftHelperMainView, "Auto Accept is enabled.", "Cannot Auto Decline", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            autoDecline = true;
+
+            SwingUtilities.invokeLater(() -> {
+                riftHelperMainView.buttonAutoDeclineEnable.setEnabled(false);
+                riftHelperMainView.buttonAutoDeclineDisable.setEnabled(true);
+            });
+        });
+
+        this.riftHelperMainView.addAutoDeclineDisableListener(e -> {
+            autoDecline = false;
+
+            SwingUtilities.invokeLater(() -> {
+                riftHelperMainView.buttonAutoDeclineEnable.setEnabled(true);
+                riftHelperMainView.buttonAutoDeclineDisable.setEnabled(false);
             });
         });
 
@@ -309,7 +338,7 @@ public class RiftHelperMainController {
 
         this.riftHelperMainView.addImportListener(e -> {
             FileChooserView fileChooserView = new FileChooserView();
-            File file = fileChooserView.selectFile();
+            File file = fileChooserView.selectFile("Select Preference File");
             if (file != null) {
                 try (FileInputStream fis = new FileInputStream(file)) {
                     Preferences.importPreferences(fis);
