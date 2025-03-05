@@ -581,7 +581,7 @@
                 <properties/>
                 <border type="none"/>
                 <children>
-                  <component id="3f12" class="javax.swing.JButton" binding="buttonDisenchantChampions">
+                  <component id="3f12" class="javax.swing.JButton" binding="buttonDisenchantChampionsSafe">
                     <constraints>
                       <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                     </constraints>
@@ -589,7 +589,7 @@
                       <text value="Safe Mode (Disenchant Already Owned Champions)"/>
                     </properties>
                   </component>
-                  <component id="7aadf" class="javax.swing.JButton" binding="buttonDisenchantSkins">
+                  <component id="7aadf" class="javax.swing.JButton" binding="buttonDisenchantChampionsHard">
                     <constraints>
                       <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                     </constraints>
@@ -613,7 +613,7 @@
                     <properties/>
                     <border type="none"/>
                     <children>
-                      <component id="cc093" class="javax.swing.JButton" binding="safeModeDisenchantAlreadyButton" default-binding="true">
+                      <component id="cc093" class="javax.swing.JButton" binding="buttonDisenchantSkinsSafe">
                         <constraints>
                           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                         </constraints>
@@ -621,7 +621,7 @@
                           <text value="Safe Mode (Disenchant Already Owned Skins)"/>
                         </properties>
                       </component>
-                      <component id="c1dfe" class="javax.swing.JButton" binding="hardModeDisenchantEverythingButton" default-binding="true">
+                      <component id="c1dfe" class="javax.swing.JButton" binding="buttonDisenchantSkinsHard">
                         <constraints>
                           <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                         </constraints>

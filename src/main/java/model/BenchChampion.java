@@ -10,6 +10,7 @@ import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class BenchChampion {
+    @JsonProperty("championId")
     private int championId;
 
     @JsonProperty("isPriority")

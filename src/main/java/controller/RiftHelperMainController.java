@@ -9,6 +9,7 @@ import javax.swing.*;
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.prefs.Preferences;
@@ -361,6 +362,108 @@ public class RiftHelperMainController {
 
                reset();
            }
+        });
+
+        this.riftHelperMainView.addAutoDisenchantChampionsSafeListener(e -> {
+            String eventData = LCUGet.getFromClient("/lol-loot/v1/player-loot");
+            List<ChampionShardsLoot> championShardsLoots = ChampionShardsLoot.parseFromJson(eventData);
+
+            int totalChampions = 0;
+            int totalShards = 0;
+            int totalEssenceToDisenchant = 0;
+            int totalEssenceBeforeDisenchant = 0;
+
+            for (ChampionShardsLoot csi : championShardsLoots) {
+                if (csi.getDisenchantLootName().equals("CURRENCY_champion")) {
+                    if (csi.getItemStatus().equals("OWNED")) {
+                        totalChampions++;
+                        totalShards += csi.getCount();
+                        totalEssenceToDisenchant += csi.getDisenchantValue();
+                    }
+                }
+
+                if (csi.getLootId().equals("CURRENCY_champion")) {
+                    totalEssenceBeforeDisenchant = csi.getCount();
+                }
+            }
+
+            int totalEssenceAfterDisenchant = totalEssenceBeforeDisenchant + totalEssenceToDisenchant;
+
+            if (totalShards == 0 && totalChampions == 0) {
+                JOptionPane.showMessageDialog(riftHelperMainView, "There are no champions that are already owned to disenchant!", "Mass Champion Disenchant", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            int result = JOptionPane.showConfirmDialog(riftHelperMainView, "Total Champions: " + totalChampions +
+                    "\nTotal Shards: " + totalShards +
+                    "\nTotal Essence: " + totalEssenceToDisenchant +
+                    "\nEssence Before Disenchanting: " + totalEssenceBeforeDisenchant +
+                    "\nEssence After Disenchanting: " + totalEssenceAfterDisenchant, "Mass Champion Disenchant", JOptionPane.YES_NO_OPTION);
+
+            if (result == JOptionPane.YES_OPTION) {
+                String endpoint = "/lol-loot/v1/recipes/CHAMPION_RENTAL_disenchant/craft?repeat=";
+
+                for (ChampionShardsLoot cs : championShardsLoots) {
+                    if (cs.getDisenchantLootName().equals("CURRENCY_champion")) {
+                        if (cs.getItemStatus().equals("OWNED")) {
+                            int count = cs.getCount();
+                            String champion = cs.getLootId();
+
+                            int responseCode = LCUPost.postToClientWithBody(endpoint + count, "[\"" + champion + "\"]");
+                            System.out.println(responseCode);
+                        }
+                    }
+                }
+            }
+        });
+
+        this.riftHelperMainView.addAutoDisenchantChampionsHardListener(e -> {
+            String eventData = LCUGet.getFromClient("/lol-loot/v1/player-loot");
+            List<ChampionShardsLoot> championShardsLoots = ChampionShardsLoot.parseFromJson(eventData);
+
+            int totalChampions = 0;
+            int totalShards = 0;
+            int totalEssenceToDisenchant = 0;
+            int totalEssenceBeforeDisenchant = 0;
+
+            for (ChampionShardsLoot csi : championShardsLoots) {
+                if (csi.getDisenchantLootName().equals("CURRENCY_champion")) {
+                    totalChampions++;
+                    totalShards += csi.getCount();
+                    totalEssenceToDisenchant += csi.getDisenchantValue();
+                }
+
+                if (csi.getLootId().equals("CURRENCY_champion")) {
+                    totalEssenceBeforeDisenchant = csi.getCount();
+                }
+            }
+
+            int totalEssenceAfterDisenchant = totalEssenceBeforeDisenchant + totalEssenceToDisenchant;
+
+            if (totalShards == 0 && totalChampions == 0) {
+                JOptionPane.showMessageDialog(riftHelperMainView, "There are no champions that are already owned to disenchant!", "Mass Champion Disenchant", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            int result = JOptionPane.showConfirmDialog(riftHelperMainView, "Total Champions: " + totalChampions +
+                    "\nTotal Shards: " + totalShards +
+                    "\nTotal Essence: " + totalEssenceToDisenchant +
+                    "\nEssence Before Disenchanting: " + totalEssenceBeforeDisenchant +
+                    "\nEssence After Disenchanting: " + totalEssenceAfterDisenchant, "Mass Champion Disenchant", JOptionPane.YES_NO_OPTION);
+
+            if (result == JOptionPane.YES_OPTION) {
+                String endpoint = "/lol-loot/v1/recipes/CHAMPION_RENTAL_disenchant/craft?repeat=";
+
+                for (ChampionShardsLoot cs : championShardsLoots) {
+                    if (cs.getDisenchantLootName().equals("CURRENCY_champion")) {
+                        int count = cs.getCount();
+                        String champion = cs.getLootId();
+
+                        int responseCode = LCUPost.postToClientWithBody(endpoint + count, "[\"" + champion + "\"]");
+                        System.out.println(responseCode);
+                    }
+                }
+            }
         });
     }
 

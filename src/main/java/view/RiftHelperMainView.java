@@ -89,12 +89,12 @@ public class RiftHelperMainView extends JFrame {
     private JButton buttonReset;
     private JButton buttonAutoSwapSave;
     private JPanel panelLoot;
-    private JButton buttonDisenchantChampions;
+    private JButton buttonDisenchantChampionsSafe;
     private JLabel labelMassChampionDisenchant;
-    private JButton buttonDisenchantSkins;
+    private JButton buttonDisenchantChampionsHard;
     private JPanel panelAutoDisenchantButtons;
-    private JButton safeModeDisenchantAlreadyButton;
-    private JButton hardModeDisenchantEverythingButton;
+    private JButton buttonDisenchantSkinsSafe;
+    private JButton buttonDisenchantSkinsHard;
     private JLabel labelMassSkinDisenchant;
 
     public RiftHelperMainView() {
@@ -356,12 +356,12 @@ public class RiftHelperMainView extends JFrame {
         buttonAutoRerollDisable.addActionListener(listener);
     }
 
-    public void addAutoDisenchantChampionsListener(ActionListener listener) {
-        buttonDisenchantChampions.addActionListener(listener);
+    public void addAutoDisenchantChampionsSafeListener(ActionListener listener) {
+        buttonDisenchantChampionsSafe.addActionListener(listener);
     }
 
-    public void addAutoDisenchantSkinsListener(ActionListener listener) {
-        buttonDisenchantSkins.addActionListener(listener);
+    public void addAutoDisenchantChampionsHardListener(ActionListener listener) {
+        buttonDisenchantChampionsHard.addActionListener(listener);
     }
 
     public void addExportListener(ActionListener listener) {
@@ -581,24 +581,24 @@ public class RiftHelperMainView extends JFrame {
         panelAutoDisenchantButtons = new JPanel();
         panelAutoDisenchantButtons.setLayout(new GridLayoutManager(4, 1, new Insets(0, 0, 0, 0), -1, -1));
         panelLoot.add(panelAutoDisenchantButtons, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        buttonDisenchantChampions = new JButton();
-        buttonDisenchantChampions.setText("Safe Mode (Disenchant Already Owned Champions)");
-        panelAutoDisenchantButtons.add(buttonDisenchantChampions, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        buttonDisenchantSkins = new JButton();
-        buttonDisenchantSkins.setText("Hard Mode (Disenchant Everything)");
-        panelAutoDisenchantButtons.add(buttonDisenchantSkins, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        buttonDisenchantChampionsSafe = new JButton();
+        buttonDisenchantChampionsSafe.setText("Safe Mode (Disenchant Already Owned Champions)");
+        panelAutoDisenchantButtons.add(buttonDisenchantChampionsSafe, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        buttonDisenchantChampionsHard = new JButton();
+        buttonDisenchantChampionsHard.setText("Hard Mode (Disenchant Everything)");
+        panelAutoDisenchantButtons.add(buttonDisenchantChampionsHard, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         labelMassSkinDisenchant = new JLabel();
         labelMassSkinDisenchant.setText("Mass Skin Disenchant");
         panelAutoDisenchantButtons.add(labelMassSkinDisenchant, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JPanel panel3 = new JPanel();
         panel3.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
         panelAutoDisenchantButtons.add(panel3, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        safeModeDisenchantAlreadyButton = new JButton();
-        safeModeDisenchantAlreadyButton.setText("Safe Mode (Disenchant Already Owned Skins)");
-        panel3.add(safeModeDisenchantAlreadyButton, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        hardModeDisenchantEverythingButton = new JButton();
-        hardModeDisenchantEverythingButton.setText("Hard Mode (Disenchant Everything)");
-        panel3.add(hardModeDisenchantEverythingButton, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        buttonDisenchantSkinsSafe = new JButton();
+        buttonDisenchantSkinsSafe.setText("Safe Mode (Disenchant Already Owned Skins)");
+        panel3.add(buttonDisenchantSkinsSafe, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        buttonDisenchantSkinsHard = new JButton();
+        buttonDisenchantSkinsHard.setText("Hard Mode (Disenchant Everything)");
+        panel3.add(buttonDisenchantSkinsHard, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         panelSettings = new JPanel();
         panelSettings.setLayout(new GridLayoutManager(8, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPaneRiftHelper.addTab("Settings", panelSettings);

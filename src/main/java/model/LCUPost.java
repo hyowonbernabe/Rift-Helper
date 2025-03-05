@@ -24,19 +24,21 @@ public class LCUPost {
 
             return connection.getResponseCode();
         } catch (Exception e) {
-            System.out.println("Error checking match status.");
+            System.out.println("Error sending POST request to \" + endpoint");
             return -1;
         }
     }
 
     public static int postToClientWithBody(String endpoint, String jsonBody) {
         try {
+            // Construct the request URL
             String urlString = "https://127.0.0.1:" + LCUAuth.port + endpoint;
             URL url = new URL(urlString);
 
+            // Open an HTTP connection
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("POST");
-            connection.setDoOutput(true); // Required to send body
+            connection.setDoOutput(true);
 
             // Set authentication headers
             String auth = "riot:" + LCUAuth.token;
@@ -44,17 +46,13 @@ public class LCUPost {
             connection.setRequestProperty("Authorization", "Basic " + encodedAuth);
             connection.setRequestProperty("Content-Type", "application/json");
 
-            // Send JSON body
+            // Write the JSON body
             try (OutputStream os = connection.getOutputStream()) {
                 byte[] input = jsonBody.getBytes("utf-8");
                 os.write(input, 0, input.length);
             }
 
-            // Get response code
-            int responseCode = connection.getResponseCode();
-            System.out.println("Response Code: " + responseCode);
-            return responseCode;
-
+            return connection.getResponseCode();
         } catch (Exception e) {
             System.out.println("Error sending POST request with body: " + e.getMessage());
             return -1;

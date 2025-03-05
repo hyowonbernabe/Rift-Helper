@@ -15,8 +15,6 @@ public class LCUAuth {
             String line;
             while ((line = reader.readLine()) != null) {
                 if (line.contains("--app-port=") && line.contains("--remoting-auth-token=")) {
-                    System.out.println("League Client Detected!");
-
                     port = line.replaceAll(".*--app-port=([0-9]+).*", "$1");
                     token = line.replaceAll(".*--remoting-auth-token=([\\w-]+).*", "$1");
 
