@@ -499,6 +499,46 @@ public class RiftHelperMainController {
 
             PreferenceManager.setSystemTray(systemTray);
         });
+
+        this.riftHelperMainView.addTopListener(e -> {
+            this.riftHelperMainView.showTop();
+            this.riftHelperMainView.hideJungle();
+            this.riftHelperMainView.hideMid();
+            this.riftHelperMainView.hideBot();
+            this.riftHelperMainView.hideSupport();
+        });
+
+        this.riftHelperMainView.addJungleListener(e -> {
+            this.riftHelperMainView.hideTop();
+            this.riftHelperMainView.showJungle();
+            this.riftHelperMainView.hideMid();
+            this.riftHelperMainView.hideBot();
+            this.riftHelperMainView.hideSupport();
+        });
+
+        this.riftHelperMainView.addMidListener(e -> {
+            this.riftHelperMainView.hideTop();
+            this.riftHelperMainView.hideJungle();
+            this.riftHelperMainView.showMid();
+            this.riftHelperMainView.hideBot();
+            this.riftHelperMainView.hideSupport();
+        });
+
+        this.riftHelperMainView.addBotListener(e -> {
+            this.riftHelperMainView.hideTop();
+            this.riftHelperMainView.hideJungle();
+            this.riftHelperMainView.hideMid();
+            this.riftHelperMainView.showBot();
+            this.riftHelperMainView.hideSupport();
+        });
+
+        this.riftHelperMainView.addSupportListener(e -> {
+            this.riftHelperMainView.hideTop();
+            this.riftHelperMainView.hideJungle();
+            this.riftHelperMainView.hideMid();
+            this.riftHelperMainView.hideBot();
+            this.riftHelperMainView.showSupport();
+        });
     }
 
     private void loadPreferences() {
@@ -543,91 +583,19 @@ public class RiftHelperMainController {
         }
 
         if (benchChampions == null) {
-            this.riftHelperMainView.setButtonBench1Text(null);
-            this.riftHelperMainView.setButtonBench2Text(null);
-            this.riftHelperMainView.setButtonBench3Text(null);
-            this.riftHelperMainView.setButtonBench4Text(null);
-            this.riftHelperMainView.setButtonBench5Text(null);
-            this.riftHelperMainView.setButtonBench6Text(null);
-            this.riftHelperMainView.setButtonBench7Text(null);
-            this.riftHelperMainView.setButtonBench8Text(null);
-            this.riftHelperMainView.setButtonBench9Text(null);
-            this.riftHelperMainView.setButtonBench10Text(null);
-            this.riftHelperMainView.panelQuickSwitchBench2.setVisible(false);
             return;
         }
 
-        // Set Champion ID to Champion Name
-        if (benchChampions.get(0) == null) {
-            System.out.println("Bench Champion is null 1");
-        } else {
-            int champId = benchChampions.get(0).getChampionId();
-            String champName = DDragonParser.getChampionName(champId);
-            this.riftHelperMainView.setButtonBench1Text(champName);
-        }
-        if (benchChampions.get(1) == null) {
-            System.out.println("Bench Champion is null 2");
-        } else {
-            int champId = benchChampions.get(1).getChampionId();
-            String champName = DDragonParser.getChampionName(champId);
-            this.riftHelperMainView.setButtonBench2Text(champName);
-        }
-        if (benchChampions.get(2) == null) {
-            System.out.println("Bench Champion is null 3");
-        } else {
-            int champId = benchChampions.get(2).getChampionId();
-            String champName = DDragonParser.getChampionName(champId);
-            this.riftHelperMainView.setButtonBench3Text(champName);
-        }
-        if (benchChampions.get(3) == null) {
-            System.out.println("Bench Champion is null 4");
-        } else {
-            int champId = benchChampions.get(3).getChampionId();
-            String champName = DDragonParser.getChampionName(champId);
-            this.riftHelperMainView.setButtonBench4Text(champName);
-        }
-        if (benchChampions.get(4) == null) {
-            System.out.println("Bench Champion is null 5");
-        } else {
-            int champId = benchChampions.get(4).getChampionId();
-            String champName = DDragonParser.getChampionName(champId);
-            this.riftHelperMainView.setButtonBench5Text(champName);
-        }
-        if (benchChampions.get(5) == null) {
-            System.out.println("Bench Champion is null 6");
-        } else {
-            int champId = benchChampions.get(5).getChampionId();
-            String champName = DDragonParser.getChampionName(champId);
-            this.riftHelperMainView.setButtonBench6Text(champName);
-        }
-        if (benchChampions.get(6) == null) {
-            System.out.println("Bench Champion is null 7");
-        } else {
-            int champId = benchChampions.get(6).getChampionId();
-            String champName = DDragonParser.getChampionName(champId);
-            this.riftHelperMainView.setButtonBench7Text(champName);
-        }
-        if (benchChampions.get(7) == null) {
-            System.out.println("Bench Champion is null 8");
-        } else {
-            int champId = benchChampions.get(7).getChampionId();
-            String champName = DDragonParser.getChampionName(champId);
-            this.riftHelperMainView.setButtonBench8Text(champName);
-        }
-        if (benchChampions.get(8) == null) {
-            System.out.println("Bench Champion is null 9");
-        } else {
-            int champId = benchChampions.get(8).getChampionId();
-            String champName = DDragonParser.getChampionName(champId);
-            this.riftHelperMainView.setButtonBench9Text(champName);
-        }
-        if (benchChampions.get(9) == null) {
-            System.out.println("Bench Champion is null 10");
-        } else {
-            int champId = benchChampions.get(9).getChampionId();
-            String champName = DDragonParser.getChampionName(champId);
-            this.riftHelperMainView.setButtonBench10Text(champName);
-        }
+        this.riftHelperMainView.setButtonBench1Text(DDragonParser.getChampionName(benchChampions.get(0).getChampionId()));
+        this.riftHelperMainView.setButtonBench2Text(DDragonParser.getChampionName(benchChampions.get(2).getChampionId()));
+        this.riftHelperMainView.setButtonBench3Text(DDragonParser.getChampionName(benchChampions.get(3).getChampionId()));
+        this.riftHelperMainView.setButtonBench4Text(DDragonParser.getChampionName(benchChampions.get(4).getChampionId()));
+        this.riftHelperMainView.setButtonBench5Text(DDragonParser.getChampionName(benchChampions.get(5).getChampionId()));
+        this.riftHelperMainView.setButtonBench6Text(DDragonParser.getChampionName(benchChampions.get(6).getChampionId()));
+        this.riftHelperMainView.setButtonBench7Text(DDragonParser.getChampionName(benchChampions.get(7).getChampionId()));
+        this.riftHelperMainView.setButtonBench8Text(DDragonParser.getChampionName(benchChampions.get(8).getChampionId()));
+        this.riftHelperMainView.setButtonBench9Text(DDragonParser.getChampionName(benchChampions.get(9).getChampionId()));
+        this.riftHelperMainView.setButtonBench10Text(DDragonParser.getChampionName(benchChampions.get(10).getChampionId()));
     }
 
     public void autoSwap() {
@@ -701,21 +669,9 @@ public class RiftHelperMainController {
     }
 
     private void updateAutoSwapSlots() {
-        JLabel[] labels = {
-                riftHelperMainView.labelAutoSwapPriority1, riftHelperMainView.labelAutoSwapPriority2,
-                riftHelperMainView.labelAutoSwapPriority3, riftHelperMainView.labelAutoSwapPriority4,
-                riftHelperMainView.labelAutoSwapPriority5, riftHelperMainView.labelAutoSwapPriority6,
-                riftHelperMainView.labelAutoSwapPriority7, riftHelperMainView.labelAutoSwapPriority8,
-                riftHelperMainView.labelAutoSwapPriority9, riftHelperMainView.labelAutoSwapPriority10
-        };
+        JLabel[] labels = this.riftHelperMainView.getAutoSwapPriorityLabels();
 
-        JComboBox[] comboBoxes = {
-                riftHelperMainView.comboBoxAutoSwapPriority1, riftHelperMainView.comboBoxAutoSwapPriority2,
-                riftHelperMainView.comboBoxAutoSwapPriority3, riftHelperMainView.comboBoxAutoSwapPriority4,
-                riftHelperMainView.comboBoxAutoSwapPriority5, riftHelperMainView.comboBoxAutoSwapPriority6,
-                riftHelperMainView.comboBoxAutoSwapPriority7, riftHelperMainView.comboBoxAutoSwapPriority8,
-                riftHelperMainView.comboBoxAutoSwapPriority9, riftHelperMainView.comboBoxAutoSwapPriority10
-        };
+        JComboBox[] comboBoxes = this.riftHelperMainView.getAutoSwapPriorityComboBoxes();
 
         for (int i = 0; i < 10; i++) {
             if (i < autoSwapSlots) {
