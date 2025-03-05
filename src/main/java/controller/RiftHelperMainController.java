@@ -403,18 +403,26 @@ public class RiftHelperMainController {
                     "\nEssence After Disenchanting: " + totalEssenceAfterDisenchant, "Mass Champion Disenchant", JOptionPane.YES_NO_OPTION);
 
             if (result == JOptionPane.YES_OPTION) {
-                String endpoint = "/lol-loot/v1/recipes/CHAMPION_RENTAL_disenchant/craft?repeat=";
+                String input = JOptionPane.showInputDialog(riftHelperMainView, "<html><center><b>LAST WARNING</b></center><br><br>" +
+                        "Continuing will result in " + totalShards + " shards being disenchanted.<br><br><b>You have been warned.</b><br><br>" +
+                        "To continue, please enter:<br>" + LCUAuth.port + LCUAuth.token.substring(0, 6)+ "<br></html>", "Mass Champion Disenchant (Safe Mode)", JOptionPane.WARNING_MESSAGE);
 
-                for (ChampionShardsLoot cs : championShardsLoots) {
-                    if (cs.getDisenchantLootName().equals("CURRENCY_champion")) {
-                        if (cs.getItemStatus().equals("OWNED")) {
-                            int count = cs.getCount();
-                            String champion = cs.getLootId();
+                if (Objects.equals(input, LCUAuth.port + LCUAuth.token.substring(0, 6))) {
+                    String endpoint = "/lol-loot/v1/recipes/CHAMPION_RENTAL_disenchant/craft?repeat=";
 
-                            int responseCode = LCUPost.postToClientWithBody(endpoint + count, "[\"" + champion + "\"]");
-                            System.out.println(responseCode);
+                    for (ChampionShardsLoot cs : championShardsLoots) {
+                        if (cs.getDisenchantLootName().equals("CURRENCY_champion")) {
+                            if (cs.getItemStatus().equals("OWNED")) {
+                                int count = cs.getCount();
+                                String champion = cs.getLootId();
+
+                                int responseCode = LCUPost.postToClientWithBody(endpoint + count, "[\"" + champion + "\"]");
+                                System.out.println(responseCode);
+                            }
                         }
                     }
+                } else {
+                    JOptionPane.showMessageDialog(riftHelperMainView, "Incorrect", "Mass Champion Disenchant", JOptionPane.ERROR_MESSAGE);
                 }
             }
         });
@@ -454,16 +462,24 @@ public class RiftHelperMainController {
                     "\nEssence After Disenchanting: " + totalEssenceAfterDisenchant, "Mass Champion Disenchant", JOptionPane.YES_NO_OPTION);
 
             if (result == JOptionPane.YES_OPTION) {
-                String endpoint = "/lol-loot/v1/recipes/CHAMPION_RENTAL_disenchant/craft?repeat=";
+                String input = JOptionPane.showInputDialog(riftHelperMainView, "<html><center><b>LAST WARNING</b></center><br><br>" +
+                        "Continuing will result in " + totalShards + " shards being disenchanted.<br><br><b>You have been warned.</b><br><br>" +
+                        "To continue, please enter:<br>" + LCUAuth.port + LCUAuth.token.substring(0, 6)+ "<br></html>", "Mass Champion Disenchant (Hard Mode)", JOptionPane.WARNING_MESSAGE);
 
-                for (ChampionShardsLoot cs : championShardsLoots) {
-                    if (cs.getDisenchantLootName().equals("CURRENCY_champion")) {
-                        int count = cs.getCount();
-                        String champion = cs.getLootId();
+                if (Objects.equals(input, LCUAuth.port + LCUAuth.token.substring(0, 6))) {
+                    String endpoint = "/lol-loot/v1/recipes/CHAMPION_RENTAL_disenchant/craft?repeat=";
 
-                        int responseCode = LCUPost.postToClientWithBody(endpoint + count, "[\"" + champion + "\"]");
-                        System.out.println(responseCode);
+                    for (ChampionShardsLoot cs : championShardsLoots) {
+                        if (cs.getDisenchantLootName().equals("CURRENCY_champion")) {
+                            int count = cs.getCount();
+                            String champion = cs.getLootId();
+
+                            int responseCode = LCUPost.postToClientWithBody(endpoint + count, "[\"" + champion + "\"]");
+                            System.out.println(responseCode);
+                        }
                     }
+                } else {
+                    JOptionPane.showMessageDialog(riftHelperMainView, "Incorrect", "Mass Champion Disenchant", JOptionPane.ERROR_MESSAGE);
                 }
             }
         });
