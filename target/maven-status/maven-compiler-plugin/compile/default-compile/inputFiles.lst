@@ -1,6 +1,7 @@
 C:\Users\zanep\IdeaProjects\Rift-Helper\src\main\java\controller\RiftHelperMainController.java
 C:\Users\zanep\IdeaProjects\Rift-Helper\src\main\java\main\RiftHelperMain.java
 C:\Users\zanep\IdeaProjects\Rift-Helper\src\main\java\model\BenchChampion.java
+C:\Users\zanep\IdeaProjects\Rift-Helper\src\main\java\model\ChampionShardsLoot.java
 C:\Users\zanep\IdeaProjects\Rift-Helper\src\main\java\model\CurrentDirectory.java
 C:\Users\zanep\IdeaProjects\Rift-Helper\src\main\java\model\DDragonParser.java
 C:\Users\zanep\IdeaProjects\Rift-Helper\src\main\java\model\LCUAuth.java
@@ -10,6 +11,7 @@ C:\Users\zanep\IdeaProjects\Rift-Helper\src\main\java\model\LCUPost.java
 C:\Users\zanep\IdeaProjects\Rift-Helper\src\main\java\model\LCUPut.java
 C:\Users\zanep\IdeaProjects\Rift-Helper\src\main\java\model\PreferenceManager.java
 C:\Users\zanep\IdeaProjects\Rift-Helper\src\main\java\model\RerollsRemaining.java
+C:\Users\zanep\IdeaProjects\Rift-Helper\src\main\java\model\SkinShardsLoot.java
 C:\Users\zanep\IdeaProjects\Rift-Helper\src\main\java\model\SSLBypass.java
 C:\Users\zanep\IdeaProjects\Rift-Helper\src\main\java\view\FileChooserView.java
 C:\Users\zanep\IdeaProjects\Rift-Helper\src\main\java\view\RiftHelperMainView.java

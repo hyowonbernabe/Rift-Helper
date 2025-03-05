@@ -20,6 +20,7 @@ public class PreferenceManager {
     private static final String PREF_CENTER_GUI = "centerGUI";
     private static final String PREF_AUTO_SWAP_SLOTS = "autoSwapSlots";
     private static final String PREF_ALWAYS_ON_TOP = "alwaysOnTop";
+    private static final String PREF_SYSTEM_TRAY = "systemTray";
 
     private static Preferences prefs;
 
@@ -102,6 +103,14 @@ public class PreferenceManager {
 
     public static boolean getAlwaysOnTop() {
         return prefs.getBoolean(PREF_ALWAYS_ON_TOP, false);
+    }
+
+    public static void setSystemTray(boolean value) {
+        prefs.putBoolean(PREF_SYSTEM_TRAY, value);
+    }
+
+    public static boolean getSystemTray() {
+        return prefs.getBoolean(PREF_SYSTEM_TRAY, true);
     }
 
     public static void exportPreferences() {

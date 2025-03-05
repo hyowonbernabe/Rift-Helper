@@ -23,6 +23,7 @@ public class RiftHelperMainController {
     private volatile int priority;
     private volatile boolean alwaysOnTop;
     private volatile boolean centerGUI;
+    private volatile boolean systemTray;
     private volatile boolean autoReroll;
     private List<BenchChampion> benchChampions;
     private String[] priorityChampions;
@@ -43,6 +44,7 @@ public class RiftHelperMainController {
         this.autoSwapSlots = PreferenceManager.getAutoSwapSlots();
         this.alwaysOnTop = PreferenceManager.getAlwaysOnTop();
         this.centerGUI = PreferenceManager.getCenterGUI();
+        this.systemTray = PreferenceManager.getSystemTray();
 
         // Load Preferences
         loadPreferences();
@@ -465,6 +467,22 @@ public class RiftHelperMainController {
                 }
             }
         });
+
+        this.riftHelperMainView.addSystemTrayEnableListener(e -> {
+            systemTray = true;
+
+            this.riftHelperMainView.enableSystemTray();
+
+            PreferenceManager.setSystemTray(systemTray);
+        });
+
+        this.riftHelperMainView.addSystemTrayDisableListener(e -> {
+            systemTray = false;
+
+            this.riftHelperMainView.disableSystemTray();
+
+            PreferenceManager.setSystemTray(systemTray);
+        });
     }
 
     private void loadPreferences() {
@@ -485,6 +503,11 @@ public class RiftHelperMainController {
             this.riftHelperMainView.buttonCenterGUIDisable.setEnabled(false);
         }
         this.riftHelperMainView.setComboBoxAutoSwapPriority(priorityChampions);
+        if (systemTray) {
+            this.riftHelperMainView.enableSystemTray();
+        } else {
+            this.riftHelperMainView.disableSystemTray();
+        }
     }
 
     public void autoReroll(int rerollsRemaining) {

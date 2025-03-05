@@ -9,7 +9,7 @@ import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
-import java.awt.event.ActionListener;
+import java.awt.event.*;
 import java.io.InputStream;
 import java.util.List;
 
@@ -96,14 +96,35 @@ public class RiftHelperMainView extends JFrame {
     private JButton buttonDisenchantSkinsSafe;
     private JButton buttonDisenchantSkinsHard;
     private JLabel labelMassSkinDisenchant;
+    private JButton buttonSystemTrayEnable;
+    private JButton buttonSystemTrayDisable;
+    private JLabel labelSystemTray;
+    private JPanel panelSystemTray;
+    private SystemTray tray;
+    private TrayIcon trayIcon;
+    private boolean systemTrayEnabled = false;
+    private boolean said = false;
 
     public RiftHelperMainView() {
         setTitle("Rift Helper");
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         setContentPane(panelRiftHelper);
         panelRiftHelper.setBorder(new EmptyBorder(20, 20, 20, 20));
         setResizable(false);
         setWindowIcon();
+
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowIconified(WindowEvent e) {
+                if (systemTrayEnabled) minimizeToTray();
+            }
+
+            @Override
+            public void windowClosing(WindowEvent e) {
+                if (systemTrayEnabled) minimizeToTray();
+                else System.exit(0);
+            }
+        });
 
         // Hide Elements for ARURF
         buttonAutoAcceptDisable.setEnabled(false);
@@ -130,6 +151,78 @@ public class RiftHelperMainView extends JFrame {
         pack();
         setLocationRelativeTo(null);
         setVisible(true);
+    }
+
+    public void enableSystemTray() {
+        if (!SystemTray.isSupported()) {
+            JOptionPane.showMessageDialog(this, "System tray is not supported on this system.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        tray = SystemTray.getSystemTray();
+
+        try (InputStream is = getClass().getResourceAsStream("/Kindred.png")) {
+            if (is != null) {
+                Image image = ImageIO.read(is);
+                trayIcon = new TrayIcon(image, "Rift Helper");
+                trayIcon.setImageAutoSize(true);
+
+                PopupMenu menu = new PopupMenu();
+                MenuItem openItem = new MenuItem("Open");
+                MenuItem exitItem = new MenuItem("Exit");
+
+                openItem.addActionListener(e -> restoreFromTray());
+                exitItem.addActionListener(e -> System.exit(0));
+
+                menu.add(openItem);
+                menu.add(exitItem);
+                trayIcon.setPopupMenu(menu);
+
+                trayIcon.addMouseListener(new MouseAdapter() {
+                    @Override
+                    public void mouseClicked(MouseEvent e) {
+                        if (e.getClickCount() == 2) {
+                            restoreFromTray();
+                        }
+                    }
+                });
+
+                tray.add(trayIcon);
+                systemTrayEnabled = true;
+
+                buttonSystemTrayEnable.setEnabled(false);
+                buttonSystemTrayDisable.setEnabled(true);
+            } else {
+                System.err.println("Tray icon not found!");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void disableSystemTray() {
+        if (tray != null && trayIcon != null) {
+            tray.remove(trayIcon);
+        }
+        systemTrayEnabled = false;
+
+        buttonSystemTrayEnable.setEnabled(true);
+        buttonSystemTrayDisable.setEnabled(false);
+    }
+
+    private void minimizeToTray() {
+        if (systemTrayEnabled) {
+            if (!said) {
+                trayIcon.displayMessage("Rift Helper", "Minimized to system tray", TrayIcon.MessageType.INFO);
+                said = true;
+            }
+            setVisible(false);
+        }
+    }
+
+    private void restoreFromTray() {
+        setVisible(true);
+        setExtendedState(JFrame.NORMAL);
     }
 
     private void setWindowIcon() {
@@ -362,6 +455,14 @@ public class RiftHelperMainView extends JFrame {
 
     public void addAutoDisenchantChampionsHardListener(ActionListener listener) {
         buttonDisenchantChampionsHard.addActionListener(listener);
+    }
+
+    public void addSystemTrayEnableListener(ActionListener listener) {
+        buttonSystemTrayEnable.addActionListener(listener);
+    }
+
+    public void addSystemTrayDisableListener(ActionListener listener) {
+        buttonSystemTrayDisable.addActionListener(listener);
     }
 
     public void addExportListener(ActionListener listener) {
@@ -600,7 +701,7 @@ public class RiftHelperMainView extends JFrame {
         buttonDisenchantSkinsHard.setText("Hard Mode (Disenchant Everything)");
         panel3.add(buttonDisenchantSkinsHard, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         panelSettings = new JPanel();
-        panelSettings.setLayout(new GridLayoutManager(8, 1, new Insets(0, 0, 0, 0), -1, -1));
+        panelSettings.setLayout(new GridLayoutManager(10, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPaneRiftHelper.addTab("Settings", panelSettings);
         panelSave = new JPanel();
         panelSave.setLayout(new GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
@@ -612,7 +713,7 @@ public class RiftHelperMainView extends JFrame {
         buttonExport.setText("Export");
         panelSave.add(buttonExport, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer5 = new Spacer();
-        panelSettings.add(spacer5, new GridConstraints(7, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        panelSettings.add(spacer5, new GridConstraints(9, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         labelSaveLoad = new JLabel();
         labelSaveLoad.setText("Save/Load");
         panelSettings.add(labelSaveLoad, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
@@ -643,6 +744,18 @@ public class RiftHelperMainView extends JFrame {
         buttonReset = new JButton();
         buttonReset.setText("Reset");
         panelSettings.add(buttonReset, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        labelSystemTray = new JLabel();
+        labelSystemTray.setText("Hide in System Tray");
+        panelSettings.add(labelSystemTray, new GridConstraints(7, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panelSystemTray = new JPanel();
+        panelSystemTray.setLayout(new GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
+        panelSettings.add(panelSystemTray, new GridConstraints(8, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        buttonSystemTrayEnable = new JButton();
+        buttonSystemTrayEnable.setText("Enable");
+        panelSystemTray.add(buttonSystemTrayEnable, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        buttonSystemTrayDisable = new JButton();
+        buttonSystemTrayDisable.setText("Disable");
+        panelSystemTray.add(buttonSystemTrayDisable, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
     }
 
     /**
