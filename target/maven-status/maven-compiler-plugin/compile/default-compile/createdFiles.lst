@@ -3,7 +3,6 @@ main\RiftHelperMain.class
 model\BenchChampion.class
 model\SSLBypass$1.class
 view\RiftHelperMainView.class
-model\ChampionShardsLoot.class
 model\CurrentDirectory.class
 model\DDragonParser.class
 model\SSLBypass.class
@@ -11,12 +10,13 @@ model\BenchChampion$1.class
 model\LCUPatch.class
 model\LCUPost.class
 controller\RiftHelperMainController.class
+model\ShardLoot$1.class
 view\RiftHelperMainView$1.class
 model\SkinShardsLoot.class
 model\LCUGet.class
-model\ChampionShardsLoot$1.class
 view\FileChooserView.class
 model\LCUAuth.class
 model\RerollsRemaining.class
 model\LCUPut.class
+model\ShardLoot.class
 model\PreferenceManager.class

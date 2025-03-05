@@ -368,14 +368,14 @@ public class RiftHelperMainController {
 
         this.riftHelperMainView.addAutoDisenchantChampionsSafeListener(e -> {
             String eventData = LCUGet.getFromClient("/lol-loot/v1/player-loot");
-            List<ChampionShardsLoot> championShardsLoots = ChampionShardsLoot.parseFromJson(eventData);
+            List<ShardLoot> shardLoots = ShardLoot.parseFromJson(eventData);
 
             int totalChampions = 0;
             int totalShards = 0;
             int totalEssenceToDisenchant = 0;
             int totalEssenceBeforeDisenchant = 0;
 
-            for (ChampionShardsLoot csi : championShardsLoots) {
+            for (ShardLoot csi : shardLoots) {
                 if (csi.getDisenchantLootName().equals("CURRENCY_champion")) {
                     if (csi.getItemStatus().equals("OWNED")) {
                         totalChampions++;
@@ -410,7 +410,7 @@ public class RiftHelperMainController {
                 if (Objects.equals(input, LCUAuth.port + LCUAuth.token.substring(0, 6))) {
                     String endpoint = "/lol-loot/v1/recipes/CHAMPION_RENTAL_disenchant/craft?repeat=";
 
-                    for (ChampionShardsLoot cs : championShardsLoots) {
+                    for (ShardLoot cs : shardLoots) {
                         if (cs.getDisenchantLootName().equals("CURRENCY_champion")) {
                             if (cs.getItemStatus().equals("OWNED")) {
                                 int count = cs.getCount();
@@ -429,14 +429,14 @@ public class RiftHelperMainController {
 
         this.riftHelperMainView.addAutoDisenchantChampionsHardListener(e -> {
             String eventData = LCUGet.getFromClient("/lol-loot/v1/player-loot");
-            List<ChampionShardsLoot> championShardsLoots = ChampionShardsLoot.parseFromJson(eventData);
+            List<ShardLoot> shardLoots = ShardLoot.parseFromJson(eventData);
 
             int totalChampions = 0;
             int totalShards = 0;
             int totalEssenceToDisenchant = 0;
             int totalEssenceBeforeDisenchant = 0;
 
-            for (ChampionShardsLoot csi : championShardsLoots) {
+            for (ShardLoot csi : shardLoots) {
                 if (csi.getDisenchantLootName().equals("CURRENCY_champion")) {
                     totalChampions++;
                     totalShards += csi.getCount();
@@ -451,7 +451,7 @@ public class RiftHelperMainController {
             int totalEssenceAfterDisenchant = totalEssenceBeforeDisenchant + totalEssenceToDisenchant;
 
             if (totalShards == 0 && totalChampions == 0) {
-                JOptionPane.showMessageDialog(riftHelperMainView, "There are no champions that are already owned to disenchant!", "Mass Champion Disenchant", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(riftHelperMainView, "There are no champions to disenchant!", "Mass Champion Disenchant", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
@@ -469,7 +469,7 @@ public class RiftHelperMainController {
                 if (Objects.equals(input, LCUAuth.port + LCUAuth.token.substring(0, 6))) {
                     String endpoint = "/lol-loot/v1/recipes/CHAMPION_RENTAL_disenchant/craft?repeat=";
 
-                    for (ChampionShardsLoot cs : championShardsLoots) {
+                    for (ShardLoot cs : shardLoots) {
                         if (cs.getDisenchantLootName().equals("CURRENCY_champion")) {
                             int count = cs.getCount();
                             String champion = cs.getLootId();

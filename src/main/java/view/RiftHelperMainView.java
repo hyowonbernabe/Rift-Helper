@@ -457,6 +457,14 @@ public class RiftHelperMainView extends JFrame {
         buttonDisenchantChampionsHard.addActionListener(listener);
     }
 
+    public void addAutoDisenchantSkinsSafeListener(ActionListener listener) {
+        buttonDisenchantSkinsSafe.addActionListener(listener);
+    }
+
+    public void addAutoDisenchantSkinsHardListener(ActionListener listener) {
+        buttonDisenchantSkinsHard.addActionListener(listener);
+    }
+
     public void addSystemTrayEnableListener(ActionListener listener) {
         buttonSystemTrayEnable.addActionListener(listener);
     }

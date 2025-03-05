@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class ChampionShardsLoot {
+public class ShardLoot {
     @JsonProperty("disenchantLootName")
     private String disenchantLootName;
 
@@ -32,10 +32,10 @@ public class ChampionShardsLoot {
     @JsonProperty("disenchantValue")
     private int disenchantValue;
 
-    public ChampionShardsLoot() {
+    public ShardLoot() {
     }
 
-    public ChampionShardsLoot(String disenchantLootName, int count, boolean isNew, String itemStatus, String lootId, int storeItemId, int disenchantValue) {
+    public ShardLoot(String disenchantLootName, int count, boolean isNew, String itemStatus, String lootId, int storeItemId, int disenchantValue) {
         this.disenchantLootName = disenchantLootName;
         this.count = count;
         this.isNew = isNew;
@@ -102,8 +102,8 @@ public class ChampionShardsLoot {
     }
 
     @JsonIgnoreProperties
-    public static List<ChampionShardsLoot> parseFromJson(String eventData) {
-        List<ChampionShardsLoot> lootList = new ArrayList<>();
+    public static List<ShardLoot> parseFromJson(String eventData) {
+        List<ShardLoot> lootList = new ArrayList<>();
         ObjectMapper objectMapper = new ObjectMapper();
 
         try {
@@ -118,7 +118,7 @@ public class ChampionShardsLoot {
                 int storeItemId = parseInt(node.get("storeItemId"));
                 int disenchantValue = parseInt(node.get("disenchantValue"));
 
-                lootList.add(new ChampionShardsLoot(disenchantLootName, count, isNew, itemStatus, lootId, storeItemId, disenchantValue));
+                lootList.add(new ShardLoot(disenchantLootName, count, isNew, itemStatus, lootId, storeItemId, disenchantValue));
             }
         } catch (Exception e) {
             System.out.println("Error parsing Champion Shards Loot JSON: " + e.getMessage());
