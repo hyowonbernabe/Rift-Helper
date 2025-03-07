@@ -32,8 +32,7 @@ public class ShardLoot {
     @JsonProperty("disenchantValue")
     private int disenchantValue;
 
-    public ShardLoot() {
-    }
+    public ShardLoot() {}
 
     public ShardLoot(String disenchantLootName, int count, boolean isNew, String itemStatus, String lootId, int storeItemId, int disenchantValue) {
         this.disenchantLootName = disenchantLootName;
@@ -111,12 +110,12 @@ public class ShardLoot {
 
             for (JsonNode node : jsonNodes) {
                 String disenchantLootName = node.get("disenchantLootName").asText();
-                int count = parseInt(node.get("count"));
-                boolean isNew = parseBoolean(node.get("isNew"));
+                int count = Parse.parseInt(node.get("count"));
+                boolean isNew = Parse.parseBoolean(node.get("isNew"));
                 String itemStatus = node.get("itemStatus").asText();
                 String lootId = node.has("lootId") ? node.get("lootId").asText() : "";
-                int storeItemId = parseInt(node.get("storeItemId"));
-                int disenchantValue = parseInt(node.get("disenchantValue"));
+                int storeItemId = Parse.parseInt(node.get("storeItemId"));
+                int disenchantValue = Parse.parseInt(node.get("disenchantValue"));
 
                 lootList.add(new ShardLoot(disenchantLootName, count, isNew, itemStatus, lootId, storeItemId, disenchantValue));
             }
@@ -125,21 +124,6 @@ public class ShardLoot {
         }
 
         return lootList;
-    }
-
-    private static int parseInt(JsonNode node) {
-        if (node == null || node.isNull()) return 0;
-        try {
-            return node.isInt() ? node.asInt() : Integer.parseInt(node.asText().trim());
-        } catch (NumberFormatException e) {
-            return 0;
-        }
-    }
-
-    private static boolean parseBoolean(JsonNode node) {
-        if (node == null || node.isNull()) return false;
-        String text = node.asText().trim().toLowerCase();
-        return text.equals("true") || text.equals("1");
     }
 
     @Override

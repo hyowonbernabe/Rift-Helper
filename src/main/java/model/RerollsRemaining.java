@@ -29,13 +29,9 @@ public class RerollsRemaining {
     @JsonIgnoreProperties
     public static int parseFromJson(String eventData) {
         try {
-            // Create ObjectMapper instance
             ObjectMapper objectMapper = new ObjectMapper();
-
-            // Parse JSON string into a JsonNode
             JsonNode rootNode = objectMapper.readTree(eventData);
 
-            // Grab rerolls remaining
             return rootNode
                     .path("OnJsonApiEvent_lol-champ-select_v1_session")
                     .path("data")

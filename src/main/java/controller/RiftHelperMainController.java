@@ -25,6 +25,7 @@ public class RiftHelperMainController {
     private volatile boolean centerGUI;
     private volatile boolean systemTray;
     private volatile boolean autoReroll;
+    private volatile int autoLockLaneChoice;
     private List<BenchChampion> benchChampions;
     private String[] priorityChampions;
     private int rerollsRemaining;
@@ -33,21 +34,9 @@ public class RiftHelperMainController {
     public RiftHelperMainController(RiftHelperMainView riftHelperMainView) {
         this.riftHelperMainView = riftHelperMainView;
 
-        // Initialize Variables
-        this.autoAccept = false;
-        this.autoSwap = false;
-        this.priority = 1;
-        this.autoReroll = false;
+        startProgram();
 
-        // Store Preferences
-        this.priorityChampions = PreferenceManager.getAutoSwapPriority();
-        this.autoSwapSlots = PreferenceManager.getAutoSwapSlots();
-        this.alwaysOnTop = PreferenceManager.getAlwaysOnTop();
-        this.centerGUI = PreferenceManager.getCenterGUI();
-        this.systemTray = PreferenceManager.getSystemTray();
-
-        // Load Preferences
-        loadPreferences();
+        this.riftHelperMainView.setLocationRelativeTo(null);
 
         LCUSocketReader socketReader = new LCUSocketReader();
         socketReader.connect();
@@ -55,12 +44,27 @@ public class RiftHelperMainController {
         System.out.println("Connected to Client: " + socketReader.isConnected());
 
         socketReader.subscribe("OnJsonApiEvent_lol-champ-select_v1_session", eventData -> {
-            benchChampions = BenchChampion.parseFromJson(eventData);
-            rerollsRemaining = RerollsRemaining.parseFromJson(eventData);
+            List<Session> session = Session.parseFromJson(eventData);
+            if (!session.getFirst().isAllowRerolling()) {
+                String eventDataPickableChampions = LCUGet.getFromClient("/lol-champ-select/v1/bannable-champion-ids");
+                String eventDataBannableChampions = LCUGet.getFromClient("/lol-champ-select/v1/bannable-champion-ids");
 
-            autoReroll(rerollsRemaining);
-            autoSwap();
-            nameButtons();
+                List<PickableChampions> pickableChampions = PickableChampions.parseFromJson(eventDataPickableChampions);
+                List<BannableChampions> bannableChampions = BannableChampions.parseFromJson(eventDataBannableChampions);
+            } else {
+                benchChampions = BenchChampion.parseFromJson(eventData);
+                rerollsRemaining = RerollsRemaining.parseFromJson(eventData);
+
+                autoReroll(rerollsRemaining);
+                autoSwap();
+                nameButtons();
+            }
+        });
+
+        this.riftHelperMainView.addTestListener(e -> {
+            String bannableChampions = LCUGet.getFromClient("/lol-champ-select/v1/bannable-champion-ids");
+            List<BannableChampions> test = BannableChampions.parseFromJson(bannableChampions);
+            System.out.println(test);
         });
 
         this.riftHelperMainView.addBench1ActionListener(e -> {
@@ -288,7 +292,6 @@ public class RiftHelperMainController {
 
         this.riftHelperMainView.addAutoSwapSaveListener(e -> {
             saveAutoSwap();
-            System.out.println("Saved");
         });
 
         this.riftHelperMainView.addCenterGUIEnableListener(e -> {
@@ -501,44 +504,127 @@ public class RiftHelperMainController {
         });
 
         this.riftHelperMainView.addTopListener(e -> {
-            this.riftHelperMainView.showTop();
-            this.riftHelperMainView.hideJungle();
-            this.riftHelperMainView.hideMid();
-            this.riftHelperMainView.hideBot();
-            this.riftHelperMainView.hideSupport();
+            showTop();
+
+            PreferenceManager.setAutoLockLaneChoice(0);
         });
 
         this.riftHelperMainView.addJungleListener(e -> {
-            this.riftHelperMainView.hideTop();
-            this.riftHelperMainView.showJungle();
-            this.riftHelperMainView.hideMid();
-            this.riftHelperMainView.hideBot();
-            this.riftHelperMainView.hideSupport();
+            showJungle();
+
+            PreferenceManager.setAutoLockLaneChoice(1);
         });
 
         this.riftHelperMainView.addMidListener(e -> {
-            this.riftHelperMainView.hideTop();
-            this.riftHelperMainView.hideJungle();
-            this.riftHelperMainView.showMid();
-            this.riftHelperMainView.hideBot();
-            this.riftHelperMainView.hideSupport();
+            showMid();
+
+            PreferenceManager.setAutoLockLaneChoice(2);
         });
 
         this.riftHelperMainView.addBotListener(e -> {
-            this.riftHelperMainView.hideTop();
-            this.riftHelperMainView.hideJungle();
-            this.riftHelperMainView.hideMid();
-            this.riftHelperMainView.showBot();
-            this.riftHelperMainView.hideSupport();
+            showBot();
+
+            PreferenceManager.setAutoLockLaneChoice(3);
         });
 
         this.riftHelperMainView.addSupportListener(e -> {
-            this.riftHelperMainView.hideTop();
-            this.riftHelperMainView.hideJungle();
-            this.riftHelperMainView.hideMid();
-            this.riftHelperMainView.hideBot();
-            this.riftHelperMainView.showSupport();
+            showSupport();
+
+            PreferenceManager.setAutoLockLaneChoice(4);
         });
+
+        this.riftHelperMainView.addAutoLockSaveListener(e -> {
+            autoLockSave();
+        });
+    }
+
+    private void autoLockSave() {
+        String[] top = {
+                riftHelperMainView.getComboBoxTop1(), riftHelperMainView.getComboBoxTop2(), riftHelperMainView.getComboBoxTop3(),
+                riftHelperMainView.getComboBoxTop4(), riftHelperMainView.getComboBoxTop5()
+        };
+        String[] jungle = {
+                riftHelperMainView.getComboBoxJungle1(), riftHelperMainView.getComboBoxJungle2(), riftHelperMainView.getComboBoxJungle3(),
+                riftHelperMainView.getComboBoxJungle4(), riftHelperMainView.getComboBoxJungle5()
+        };
+        String[] mid = {
+                riftHelperMainView.getComboBoxMid1(), riftHelperMainView.getComboBoxMid2(), riftHelperMainView.getComboBoxMid3(),
+                riftHelperMainView.getComboBoxMid4(), riftHelperMainView.getComboBoxMid5()
+        };
+        String[] bot = {
+                riftHelperMainView.getComboBoxBot1(), riftHelperMainView.getComboBoxBot2(), riftHelperMainView.getComboBoxBot3(),
+                riftHelperMainView.getComboBoxBot4(), riftHelperMainView.getComboBoxBot5()
+        };
+        String[] support = {
+                riftHelperMainView.getComboBoxSupport1(), riftHelperMainView.getComboBoxSupport2(), riftHelperMainView.getComboBoxSupport3(),
+                riftHelperMainView.getComboBoxSupport4(), riftHelperMainView.getComboBoxSupport5()
+        };
+
+        PreferenceManager.setAutoLockTopPriority(top);
+        PreferenceManager.setAutoLockJunglePriority(jungle);
+        PreferenceManager.setAutoLockMidPriority(mid);
+        PreferenceManager.setAutoLockBotPriority(bot);
+        PreferenceManager.setAutoLockSupportPriority(support);
+
+        JOptionPane.showMessageDialog(riftHelperMainView, "Successfully saved!", "Save Success", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private void startProgram() {
+        // Initialize Variables
+        this.autoAccept = false;
+        this.autoSwap = false;
+        this.priority = 1;
+        this.autoReroll = false;
+
+        // Store Preferences
+        this.priorityChampions = PreferenceManager.getAutoSwapPriority();
+        this.autoSwapSlots = PreferenceManager.getAutoSwapSlots();
+        this.alwaysOnTop = PreferenceManager.getAlwaysOnTop();
+        this.centerGUI = PreferenceManager.getCenterGUI();
+        this.systemTray = PreferenceManager.getSystemTray();
+        this.autoLockLaneChoice = PreferenceManager.getAutoLockLaneChoice();
+
+        loadPreferences();
+    }
+
+    private void showTop() {
+        this.riftHelperMainView.showTop();
+        this.riftHelperMainView.hideJungle();
+        this.riftHelperMainView.hideMid();
+        this.riftHelperMainView.hideBot();
+        this.riftHelperMainView.hideSupport();
+    }
+
+    private void showJungle() {
+        this.riftHelperMainView.hideTop();
+        this.riftHelperMainView.showJungle();
+        this.riftHelperMainView.hideMid();
+        this.riftHelperMainView.hideBot();
+        this.riftHelperMainView.hideSupport();
+    }
+
+    private void showMid() {
+        this.riftHelperMainView.hideTop();
+        this.riftHelperMainView.hideJungle();
+        this.riftHelperMainView.showMid();
+        this.riftHelperMainView.hideBot();
+        this.riftHelperMainView.hideSupport();
+    }
+
+    private void showBot() {
+        this.riftHelperMainView.hideTop();
+        this.riftHelperMainView.hideJungle();
+        this.riftHelperMainView.hideMid();
+        this.riftHelperMainView.showBot();
+        this.riftHelperMainView.hideSupport();
+    }
+
+    private void showSupport() {
+        this.riftHelperMainView.hideTop();
+        this.riftHelperMainView.hideJungle();
+        this.riftHelperMainView.hideMid();
+        this.riftHelperMainView.hideBot();
+        this.riftHelperMainView.showSupport();
     }
 
     private void loadPreferences() {
@@ -564,6 +650,19 @@ public class RiftHelperMainController {
         } else {
             this.riftHelperMainView.disableSystemTray();
         }
+        if (autoLockLaneChoice == 0) {
+            showTop();
+        } else if (autoLockLaneChoice == 1) {
+            showJungle();
+        } else if (autoLockLaneChoice == 2) {
+            showMid();
+        } else if (autoLockLaneChoice == 3) {
+            showBot();
+        } else if (autoLockLaneChoice == 4) {
+            showSupport();
+        }
+
+        reInitialize();
     }
 
     public void autoReroll(int rerollsRemaining) {
@@ -663,9 +762,9 @@ public class RiftHelperMainController {
                 riftHelperMainView.getComboBoxAutoSwapPriority9(), riftHelperMainView.getComboBoxAutoSwapPriority10()
         };
 
-        JOptionPane.showMessageDialog(riftHelperMainView, "Successfully saved!", "Save Success", JOptionPane.INFORMATION_MESSAGE);
-
         PreferenceManager.setAutoSwapPriority(comboBoxes);
+
+        JOptionPane.showMessageDialog(riftHelperMainView, "Successfully saved!", "Save Success", JOptionPane.INFORMATION_MESSAGE);
     }
 
     private void updateAutoSwapSlots() {
@@ -688,20 +787,7 @@ public class RiftHelperMainController {
     }
 
     public void reset() {
-        // Initialize Variables
-        this.autoAccept = false;
-        this.autoSwap = false;
-        this.priority = 1;
-        this.autoReroll = false;
-
-        // Store Preferences
-        this.priorityChampions = PreferenceManager.getAutoSwapPriority();
-        this.autoSwapSlots = PreferenceManager.getAutoSwapSlots();
-        this.alwaysOnTop = PreferenceManager.getAlwaysOnTop();
-        this.centerGUI = PreferenceManager.getCenterGUI();
-
-        // Load Preferences
-        loadPreferences();
+        startProgram();
 
         reInitialize();
     }

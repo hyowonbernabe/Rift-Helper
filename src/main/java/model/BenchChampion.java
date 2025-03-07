@@ -48,19 +48,13 @@ public class BenchChampion {
     @JsonIgnoreProperties
     public static List<BenchChampion> parseFromJson(String eventData) {
         try {
-            // Create ObjectMapper instance
             ObjectMapper objectMapper = new ObjectMapper();
-
-            // Parse JSON string into a JsonNode
             JsonNode rootNode = objectMapper.readTree(eventData);
-
-            // Navigate to benchChampions inside "data"
             JsonNode benchChampionsNode = rootNode
                     .path("OnJsonApiEvent_lol-champ-select_v1_session")
                     .path("data")
                     .path("benchChampions");
 
-            // Convert JSON array to List<BenchChampion>
             return objectMapper.readValue(benchChampionsNode.toString(), new TypeReference<List<BenchChampion>>() {});
 
         } catch (Exception e) {

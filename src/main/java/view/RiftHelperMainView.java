@@ -153,6 +153,9 @@ public class RiftHelperMainView extends JFrame {
     private JLabel labelSupport3;
     private JLabel labelSupport4;
     private JLabel labelSupport5;
+    private JButton buttonTest;
+    private JPanel panelAutoLockButtons;
+    private JButton buttonAutoLockSave;
     private SystemTray tray;
     private TrayIcon trayIcon;
     private boolean systemTrayEnabled = false;
@@ -320,6 +323,132 @@ public class RiftHelperMainView extends JFrame {
         };
     }
 
+    public String getComboBoxTop1() {
+        Object selectedItem = comboBoxTop1.getSelectedItem();
+        return (selectedItem != null) ? selectedItem.toString() : null;
+    }
+
+    public String getComboBoxTop2() {
+        Object selectedItem = comboBoxTop2.getSelectedItem();
+        return (selectedItem != null) ? selectedItem.toString() : null;
+    }
+
+    public String getComboBoxTop3() {
+        Object selectedItem = comboBoxTop3.getSelectedItem();
+        return (selectedItem != null) ? selectedItem.toString() : null;
+    }
+
+    public String getComboBoxTop4() {
+        Object selectedItem = comboBoxTop4.getSelectedItem();
+        return (selectedItem != null) ? selectedItem.toString() : null;
+    }
+
+    public String getComboBoxTop5() {
+        Object selectedItem = comboBoxTop5.getSelectedItem();
+        return (selectedItem != null) ? selectedItem.toString() : null;
+    }
+
+    public String getComboBoxJungle1() {
+        Object selectedItem = comboBoxJungle1.getSelectedItem();
+        return (selectedItem != null) ? selectedItem.toString() : null;
+    }
+
+    public String getComboBoxJungle2() {
+        Object selectedItem = comboBoxJungle2.getSelectedItem();
+        return (selectedItem != null) ? selectedItem.toString() : null;
+    }
+
+    public String getComboBoxJungle3() {
+        Object selectedItem = comboBoxJungle3.getSelectedItem();
+        return (selectedItem != null) ? selectedItem.toString() : null;
+    }
+
+    public String getComboBoxJungle4() {
+        Object selectedItem = comboBoxJungle4.getSelectedItem();
+        return (selectedItem != null) ? selectedItem.toString() : null;
+    }
+
+    public String getComboBoxJungle5() {
+        Object selectedItem = comboBoxJungle5.getSelectedItem();
+        return (selectedItem != null) ? selectedItem.toString() : null;
+    }
+
+    public String getComboBoxMid1() {
+        Object selectedItem = comboBoxMid1.getSelectedItem();
+        return (selectedItem != null) ? selectedItem.toString() : null;
+    }
+
+    public String getComboBoxMid2() {
+        Object selectedItem = comboBoxMid2.getSelectedItem();
+        return (selectedItem != null) ? selectedItem.toString() : null;
+    }
+
+    public String getComboBoxMid3() {
+        Object selectedItem = comboBoxMid3.getSelectedItem();
+        return (selectedItem != null) ? selectedItem.toString() : null;
+    }
+
+    public String getComboBoxMid4() {
+        Object selectedItem = comboBoxMid4.getSelectedItem();
+        return (selectedItem != null) ? selectedItem.toString() : null;
+    }
+
+    public String getComboBoxMid5() {
+        Object selectedItem = comboBoxMid5.getSelectedItem();
+        return (selectedItem != null) ? selectedItem.toString() : null;
+    }
+
+    public String getComboBoxBot1() {
+        Object selectedItem = comboBoxBot1.getSelectedItem();
+        return (selectedItem != null) ? selectedItem.toString() : null;
+    }
+
+    public String getComboBoxBot2() {
+        Object selectedItem = comboBoxBot2.getSelectedItem();
+        return (selectedItem != null) ? selectedItem.toString() : null;
+    }
+
+    public String getComboBoxBot3() {
+        Object selectedItem = comboBoxBot3.getSelectedItem();
+        return (selectedItem != null) ? selectedItem.toString() : null;
+    }
+
+    public String getComboBoxBot4() {
+        Object selectedItem = comboBoxBot4.getSelectedItem();
+        return (selectedItem != null) ? selectedItem.toString() : null;
+    }
+
+    public String getComboBoxBot5() {
+        Object selectedItem = comboBoxBot5.getSelectedItem();
+        return (selectedItem != null) ? selectedItem.toString() : null;
+    }
+
+    public String getComboBoxSupport1() {
+        Object selectedItem = comboBoxSupport1.getSelectedItem();
+        return (selectedItem != null) ? selectedItem.toString() : null;
+    }
+
+    public String getComboBoxSupport2() {
+        Object selectedItem = comboBoxSupport2.getSelectedItem();
+        return (selectedItem != null) ? selectedItem.toString() : null;
+    }
+
+    public String getComboBoxSupport3() {
+        Object selectedItem = comboBoxSupport3.getSelectedItem();
+        return (selectedItem != null) ? selectedItem.toString() : null;
+    }
+
+    public String getComboBoxSupport4() {
+        Object selectedItem = comboBoxSupport4.getSelectedItem();
+        return (selectedItem != null) ? selectedItem.toString() : null;
+    }
+
+    public String getComboBoxSupport5() {
+        Object selectedItem = comboBoxSupport5.getSelectedItem();
+        return (selectedItem != null) ? selectedItem.toString() : null;
+    }
+
+
     public String getComboBoxAutoSwapPriority1() {
         Object selectedItem = comboBoxAutoSwapPriority1.getSelectedItem();
         return (selectedItem != null) ? selectedItem.toString() : null;
@@ -372,7 +501,7 @@ public class RiftHelperMainView extends JFrame {
 
     private void populateComboBox(JComboBox<String> comboBox, List<String> items) {
         comboBox.removeAllItems();
-        comboBox.addItem(" ");
+        comboBox.addItem("");
         for (String item : items) {
             comboBox.addItem(item);
         }
@@ -402,6 +531,8 @@ public class RiftHelperMainView extends JFrame {
         for (JLabel label : labels) {
             label.setVisible(true);
         }
+
+        buttonTop.setEnabled(false);
     }
 
     public void hideTop() {
@@ -414,6 +545,8 @@ public class RiftHelperMainView extends JFrame {
         for (JLabel label : labels) {
             label.setVisible(false);
         }
+
+        buttonTop.setEnabled(true);
     }
 
     public JLabel[] getJungleLabels() {
@@ -438,6 +571,8 @@ public class RiftHelperMainView extends JFrame {
         for (JLabel label : labels) {
             label.setVisible(true);
         }
+
+        buttonJungle.setEnabled(false);
     }
 
     public void hideJungle() {
@@ -450,6 +585,8 @@ public class RiftHelperMainView extends JFrame {
         for (JLabel label : labels) {
             label.setVisible(false);
         }
+
+        buttonJungle.setEnabled(true);
     }
 
     public JLabel[] getMidLabels() {
@@ -474,6 +611,8 @@ public class RiftHelperMainView extends JFrame {
         for (JLabel label : labels) {
             label.setVisible(true);
         }
+
+        buttonMid.setEnabled(false);
     }
 
     public void hideMid() {
@@ -486,6 +625,8 @@ public class RiftHelperMainView extends JFrame {
         for (JLabel label : labels) {
             label.setVisible(false);
         }
+
+        buttonMid.setEnabled(true);
     }
 
     public JLabel[] getBotLabels() {
@@ -510,6 +651,8 @@ public class RiftHelperMainView extends JFrame {
         for (JLabel label : labels) {
             label.setVisible(true);
         }
+
+        buttonBot.setEnabled(false);
     }
 
     public void hideBot() {
@@ -522,6 +665,8 @@ public class RiftHelperMainView extends JFrame {
         for (JLabel label : labels) {
             label.setVisible(false);
         }
+
+        buttonBot.setEnabled(true);
     }
 
     public JLabel[] getSupportLabels() {
@@ -546,6 +691,8 @@ public class RiftHelperMainView extends JFrame {
         for (JLabel label : labels) {
             label.setVisible(true);
         }
+
+        buttonSupport.setEnabled(false);
     }
 
     public void hideSupport() {
@@ -558,6 +705,8 @@ public class RiftHelperMainView extends JFrame {
         for (JLabel label : labels) {
             label.setVisible(false);
         }
+
+        buttonSupport.setEnabled(true);
     }
 
     public void setButtonBench1Text(String text) {
@@ -736,6 +885,10 @@ public class RiftHelperMainView extends JFrame {
         buttonSupport.addActionListener(listener);
     }
 
+    public void addAutoLockSaveListener(ActionListener listener) {
+        buttonAutoLockSave.addActionListener(listener);
+    }
+
     public void addSystemTrayEnableListener(ActionListener listener) {
         buttonSystemTrayEnable.addActionListener(listener);
     }
@@ -754,6 +907,10 @@ public class RiftHelperMainView extends JFrame {
 
     public void addResetListener(ActionListener listener) {
         buttonReset.addActionListener(listener);
+    }
+
+    public void addTestListener(ActionListener listener) {
+        buttonTest.addActionListener(listener);
     }
 
     /**
@@ -824,7 +981,7 @@ public class RiftHelperMainView extends JFrame {
         buttonMid.setText("Mid");
         panel2.add(buttonMid, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JPanel panel3 = new JPanel();
-        panel3.setLayout(new GridLayoutManager(25, 2, new Insets(0, 0, 0, 0), -1, -1));
+        panel3.setLayout(new GridLayoutManager(26, 2, new Insets(0, 0, 0, 0), -1, -1));
         panelRift.add(panel3, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         labelTop1 = new JLabel();
         labelTop1.setText("1");
@@ -951,6 +1108,12 @@ public class RiftHelperMainView extends JFrame {
         labelSupport5 = new JLabel();
         labelSupport5.setText("5");
         panel3.add(labelSupport5, new GridConstraints(24, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panelAutoLockButtons = new JPanel();
+        panelAutoLockButtons.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        panel3.add(panelAutoLockButtons, new GridConstraints(25, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        buttonAutoLockSave = new JButton();
+        buttonAutoLockSave.setText("Save");
+        panelAutoLockButtons.add(buttonAutoLockSave, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         panelARAM = new JPanel();
         panelARAM.setLayout(new GridLayoutManager(8, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPaneRiftHelper.addTab("ARAM", panelARAM);
@@ -1111,7 +1274,7 @@ public class RiftHelperMainView extends JFrame {
         buttonDisenchantSkinsHard.setText("Hard Mode (Disenchant Everything)");
         panel5.add(buttonDisenchantSkinsHard, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         panelSettings = new JPanel();
-        panelSettings.setLayout(new GridLayoutManager(10, 1, new Insets(0, 0, 0, 0), -1, -1));
+        panelSettings.setLayout(new GridLayoutManager(11, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPaneRiftHelper.addTab("Settings", panelSettings);
         panelSave = new JPanel();
         panelSave.setLayout(new GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
@@ -1123,7 +1286,7 @@ public class RiftHelperMainView extends JFrame {
         buttonExport.setText("Export");
         panelSave.add(buttonExport, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer5 = new Spacer();
-        panelSettings.add(spacer5, new GridConstraints(9, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        panelSettings.add(spacer5, new GridConstraints(10, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         labelSaveLoad = new JLabel();
         labelSaveLoad.setText("Save/Load");
         panelSettings.add(labelSaveLoad, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
@@ -1166,6 +1329,12 @@ public class RiftHelperMainView extends JFrame {
         buttonSystemTrayDisable = new JButton();
         buttonSystemTrayDisable.setText("Disable");
         panelSystemTray.add(buttonSystemTrayDisable, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JPanel panel6 = new JPanel();
+        panel6.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        panelSettings.add(panel6, new GridConstraints(9, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        buttonTest = new JButton();
+        buttonTest.setText("Button");
+        panel6.add(buttonTest, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
     }
 
     /**
