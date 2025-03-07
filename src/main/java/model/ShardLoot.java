@@ -121,7 +121,7 @@ public class ShardLoot {
                 lootList.add(new ShardLoot(disenchantLootName, count, isNew, itemStatus, lootId, storeItemId, disenchantValue));
             }
         } catch (Exception e) {
-            System.out.println("Error parsing Champion Shards Loot JSON: " + e.getMessage());
+            System.out.println("Error parsing Shards Loot JSON: " + e.getMessage());
         }
 
         return lootList;
@@ -144,7 +144,7 @@ public class ShardLoot {
 
     @Override
     public String toString() {
-        return "ChampionShardsLoot{" +
+        return "{" +
                 "disenchantLootName=" + disenchantLootName +
                 ", count=" + count +
                 ", isNew=" + isNew +
