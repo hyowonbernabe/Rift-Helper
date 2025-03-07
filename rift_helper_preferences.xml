@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE preferences SYSTEM "http://java.sun.com/dtd/preferences.dtd">
+<preferences EXTERNAL_XML_VERSION="1.0">
+  <root type="user">
+    <map/>
+    <node name="model">
+      <map>
+        <entry key="autoLockMidPriority1" value="Ashe"/>
+        <entry key="autoSwapPriority1" value="Aatrox"/>
+        <entry key="autoLockLaneChoice" value="0"/>
+        <entry key="autoLockTopPriority1" value="Aatrox"/>
+        <entry key="autoLockTopPriority2" value="Ahri"/>
+        <entry key="autoLockTopPriority3" value="Akali"/>
+        <entry key="autoLockTopPriority4" value="Akshan"/>
+        <entry key="autoLockTopPriority5" value="Alistar"/>
+        <entry key="autoLockJunglePriority1" value="Ambessa"/>
+        <entry key="autoLockJunglePriority2" value="Amumu"/>
+        <entry key="autoLockJunglePriority3" value="Anivia"/>
+        <entry key="autoLockJunglePriority4" value="Annie"/>
+        <entry key="autoLockJunglePriority5" value="Aphelios"/>
+        <entry key="autoLockMidPriority2" value="Aurelion Sol"/>
+        <entry key="autoLockMidPriority3" value="Aurora"/>
+        <entry key="autoLockMidPriority4" value="Azir"/>
+        <entry key="autoLockMidPriority5" value="Bard"/>
+        <entry key="autoLockBotPriority1" value="Bel'Veth"/>
+        <entry key="autoLockBotPriority2" value="Blitzcrank"/>
+        <entry key="autoLockBotPriority3" value="Brand"/>
+        <entry key="autoLockBotPriority4" value="Braum"/>
+        <entry key="autoLockBotPriority5" value="Briar"/>
+        <entry key="autoLockSupportPriority1" value="Caitlyn"/>
+        <entry key="autoLockSupportPriority2" value="Camille"/>
+        <entry key="autoLockSupportPriority3" value="Cassiopeia"/>
+        <entry key="autoLockSupportPriority4" value="Cho'Gath"/>
+        <entry key="autoLockSupportPriority5" value="Corki"/>
+      </map>
+    </node>
+  </root>
+</preferences>

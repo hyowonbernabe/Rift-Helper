@@ -1,36 +1,48 @@
 package model;
 
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPatch;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.conn.ssl.TrustAllStrategy;
+import org.apache.http.ssl.SSLContextBuilder;
+
+import java.util.Base64;
 
 public class LCUPatch {
-    public static int patchToClient(String endpoint, String jsonBody) {
+    public static int patchToClientWithBody(String endpoint, String jsonBody) {
         try {
-            // Construct the request URL
-            String urlString = "https://127.0.0.1:" + LCUAuth.port + endpoint;
-            URL url = new URL(urlString);
+            SSLContextBuilder sslContextBuilder = new SSLContextBuilder();
+            sslContextBuilder.loadTrustMaterial(null, TrustAllStrategy.INSTANCE);
 
-            // Open an HTTP connection
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestMethod("PATCH");
-            connection.setDoOutput(true); // Enables sending request body
+            SSLConnectionSocketFactory sslSocketFactory = new SSLConnectionSocketFactory(
+                    sslContextBuilder.build(), NoopHostnameVerifier.INSTANCE);
 
-            // Set authentication headers
-            String auth = "riot:" + LCUAuth.token;
-            String encodedAuth = java.util.Base64.getEncoder().encodeToString(auth.getBytes());
-            connection.setRequestProperty("Authorization", "Basic " + encodedAuth);
-            connection.setRequestProperty("Content-Type", "application/json");
+            try (CloseableHttpClient httpClient = HttpClients.custom()
+                    .setSSLSocketFactory(sslSocketFactory)
+                    .build()) {
 
-            // Send the request body
-            try (OutputStream os = connection.getOutputStream()) {
-                byte[] input = jsonBody.getBytes("utf-8");
-                os.write(input, 0, input.length);
+                String urlString = "https://127.0.0.1:" + LCUAuth.port + endpoint;
+                HttpPatch httpPatch = new HttpPatch(urlString);
+
+                String auth = "riot:" + LCUAuth.token;
+                String encodedAuth = Base64.getEncoder().encodeToString(auth.getBytes());
+                httpPatch.setHeader("Authorization", "Basic " + encodedAuth);
+                httpPatch.setHeader("Content-Type", "application/json");
+
+                httpPatch.setEntity(new StringEntity(jsonBody, ContentType.APPLICATION_JSON));
+
+                try (CloseableHttpResponse response = httpClient.execute(httpPatch)) {
+                    int responseCode = response.getStatusLine().getStatusCode();
+                    return responseCode;
+                }
             }
-
-            return connection.getResponseCode();
         } catch (Exception e) {
-            System.out.println("Error sending PATCH request to " + endpoint);
+            System.out.println("Error sending PATCH request with body to " + endpoint + ": " + e.getMessage());
             return -1;
         }
     }

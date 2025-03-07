@@ -65,6 +65,14 @@
             <version>7.0.3</version>
         </dependency>
 
+        <!-- Apache HTTP Client -->
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <version>4.5.14</version>
+        </dependency>
+
+
     </dependencies>
 
     <build>

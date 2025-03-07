@@ -28,8 +28,14 @@ public class RiftHelperMainController {
     private volatile int autoLockLaneChoice;
     private List<BenchChampion> benchChampions;
     private String[] priorityChampions;
+    private String[] topChampions;
+    private String[] jungleChampions;
+    private String[] midChampions;
+    private String[] botChampions;
+    private String[] supportChampions;
     private int rerollsRemaining;
-    private final ExecutorService executorService = Executors.newFixedThreadPool(1);
+    private int userCellId;
+    private final ExecutorService autoSwapExecutorService = Executors.newFixedThreadPool(1);
 
     public RiftHelperMainController(RiftHelperMainView riftHelperMainView) {
         this.riftHelperMainView = riftHelperMainView;
@@ -44,13 +50,10 @@ public class RiftHelperMainController {
         System.out.println("Connected to Client: " + socketReader.isConnected());
 
         socketReader.subscribe("OnJsonApiEvent_lol-champ-select_v1_session", eventData -> {
-            List<Session> session = Session.parseFromJson(eventData);
-            if (!session.getFirst().isAllowRerolling()) {
-                String eventDataPickableChampions = LCUGet.getFromClient("/lol-champ-select/v1/bannable-champion-ids");
-                String eventDataBannableChampions = LCUGet.getFromClient("/lol-champ-select/v1/bannable-champion-ids");
-
-                List<PickableChampions> pickableChampions = PickableChampions.parseFromJson(eventDataPickableChampions);
-                List<BannableChampions> bannableChampions = BannableChampions.parseFromJson(eventDataBannableChampions);
+            Session session = Session.parseFromJson(eventData);
+            if (!session.isAllowRerolling()) {
+                userCellId = UserSelection.parseFromJsonLocalCellId(eventData);
+                autoLock(userCellId, eventData);
             } else {
                 benchChampions = BenchChampion.parseFromJson(eventData);
                 rerollsRemaining = RerollsRemaining.parseFromJson(eventData);
@@ -62,9 +65,28 @@ public class RiftHelperMainController {
         });
 
         this.riftHelperMainView.addTestListener(e -> {
-            String bannableChampions = LCUGet.getFromClient("/lol-champ-select/v1/bannable-champion-ids");
-            List<BannableChampions> test = BannableChampions.parseFromJson(bannableChampions);
-            System.out.println(test);
+            List<TeamSelection> teamSelections = TeamSelection.parseFromJson(LCUGet.getFromClient("/lol-champ-select/v1/session"));
+
+            System.out.println(teamSelections);
+            int actionId = 0;
+
+            for (TeamSelection teamSelection : teamSelections) {
+                if (teamSelection.getActorCellId() == userCellId) {
+                    actionId = teamSelection.getId();
+                    break;
+                }
+            }
+
+            String endpoint = "/lol-champ-select/v1/session/actions/" + actionId;
+            String jsonBody = "{"
+                    + "\"id\": " + actionId + ","
+                    + "\"actorCellId\": " + userCellId + ","
+                    + "\"championId\": " + 1 + ","
+                    + "\"completed\": true,"
+                    + "\"type\": \"pick\""
+                    + "}";
+
+            LCUPatch.patchToClientWithBody(endpoint, jsonBody);
         });
 
         this.riftHelperMainView.addBench1ActionListener(e -> {
@@ -538,6 +560,171 @@ public class RiftHelperMainController {
         });
     }
 
+    private void autoLock(int userCellId, String eventData) {
+        int[] pickableChampions = Champions.parseChampionIdsFromJson(LCUGet.getFromClient("/lol-champ-select/v1/bannable-champion-ids"));
+        List<TeamSelection> teamSelections = TeamSelection.parseFromJson(eventData);
+        UserSelection userSelections = UserSelection.parseFromJson(LCUGet.getFromClient("/lol-champ-select/v1/session/my-selection"));
+
+        System.out.println(eventData);
+
+        int actionId = 0;
+        boolean isInProgress = false;
+        int championId = 0;
+        System.out.println(userSelections.getAssignedPosition());
+        if (userSelections.getAssignedPosition() == 3) {
+            System.out.println("I should be bot");
+        }
+
+        for (TeamSelection teamSelection : teamSelections) {
+            if (teamSelection.getActorCellId() == userCellId) {
+                actionId = teamSelection.getId();
+                isInProgress = teamSelection.isInProgress();
+            }
+        }
+
+        String endpoint = "/lol-champ-select/v1/session/actions/" + actionId;
+        String jsonBody = "{"
+                + "\"id\": " + actionId + ","
+                + "\"actorCellId\": " + userCellId + ","
+                + "\"championId\": " + championId + ","
+                + "\"completed\": true,"
+                + "\"type\": \"pick\""
+                + "}";
+
+        System.out.println("ActionId: " + actionId);
+        System.out.println("ChampionId: " + championId);
+        System.out.println("isInProgress: " + isInProgress);
+
+        if (isInProgress) {
+            if (userSelections.getAssignedPosition() == 0) {
+                System.out.println("I am Top");
+                int topPriority1 = DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxTop1());
+                int topPriority2 = DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxTop2());
+                int topPriority3 = DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxTop3());
+                int topPriority4 = DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxTop4());
+                int topPriority5 = DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxTop5());
+
+                for (int i = 0; i < pickableChampions.length; i++) {
+                    if (pickableChampions[i] == topPriority1) {
+                        championId = topPriority1;
+                        LCUPatch.patchToClientWithBody(endpoint, jsonBody);
+                    } else if (pickableChampions[i] == topPriority2) {
+                        championId = topPriority2;
+                        LCUPatch.patchToClientWithBody(endpoint, jsonBody);
+                    } else if (pickableChampions[i] == topPriority3) {
+                        championId = topPriority3;
+                        LCUPatch.patchToClientWithBody(endpoint, jsonBody);
+                    } else if (pickableChampions[i] == topPriority4) {
+                        championId = topPriority4;
+                        LCUPatch.patchToClientWithBody(endpoint, jsonBody);
+                    } else if (pickableChampions[i] == topPriority5) {
+                        championId = topPriority5;
+                    }
+                }
+            } else if (userSelections.getAssignedPosition() == 1) {
+                System.out.println("I am Jungle");
+                int junglePriority1 = DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxJungle1());
+                int junglePriority2 = DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxJungle2());
+                int junglePriority3 = DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxJungle3());
+                int junglePriority4 = DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxJungle4());
+                int junglePriority5 = DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxJungle5());
+
+                for (int i = 0; i < pickableChampions.length; i++) {
+                    if (pickableChampions[i] == junglePriority1) {
+                        championId = junglePriority1;
+                        LCUPatch.patchToClientWithBody(endpoint, jsonBody);
+                    } else if (pickableChampions[i] == junglePriority2) {
+                        championId = junglePriority2;
+                        LCUPatch.patchToClientWithBody(endpoint, jsonBody);
+                    } else if (pickableChampions[i] == junglePriority3) {
+                        championId = junglePriority3;
+                        LCUPatch.patchToClientWithBody(endpoint, jsonBody);
+                    } else if (pickableChampions[i] == junglePriority4) {
+                        championId = junglePriority4;
+                        LCUPatch.patchToClientWithBody(endpoint, jsonBody);
+                    } else if (pickableChampions[i] == junglePriority5) {
+                        championId = junglePriority5;
+                    }
+                }
+            } else if (userSelections.getAssignedPosition() == 2) {
+                System.out.println("I am Mid");
+                int midPriority1 = DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxMid1());
+                int midPriority2 = DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxMid2());
+                int midPriority3 = DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxMid3());
+                int midPriority4 = DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxMid4());
+                int midPriority5 = DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxMid5());
+
+                for (int i = 0; i < pickableChampions.length; i++) {
+                    if (pickableChampions[i] == midPriority1) {
+                        championId = midPriority1;
+                        LCUPatch.patchToClientWithBody(endpoint, jsonBody);
+                    } else if (pickableChampions[i] == midPriority2) {
+                        championId = midPriority2;
+                        LCUPatch.patchToClientWithBody(endpoint, jsonBody);
+                    } else if (pickableChampions[i] == midPriority3) {
+                        championId = midPriority3;
+                        LCUPatch.patchToClientWithBody(endpoint, jsonBody);
+                    } else if (pickableChampions[i] == midPriority4) {
+                        championId = midPriority4;
+                        LCUPatch.patchToClientWithBody(endpoint, jsonBody);
+                    } else if (pickableChampions[i] == midPriority5) {
+                        championId = midPriority5;
+                    }
+                }
+            } else if (userSelections.getAssignedPosition() == 3) {
+                System.out.println("I am Bot");
+                int botPriority1 = DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxBot1());
+                int botPriority2 = DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxBot2());
+                int botPriority3 = DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxBot3());
+                int botPriority4 = DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxBot4());
+                int botPriority5 = DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxBot5());
+
+                for (int i = 0; i < pickableChampions.length; i++) {
+                    if (pickableChampions[i] == botPriority1) {
+                        championId = botPriority1;
+                        LCUPatch.patchToClientWithBody(endpoint, jsonBody);
+                    } else if (pickableChampions[i] == botPriority2) {
+                        championId = botPriority2;
+                        LCUPatch.patchToClientWithBody(endpoint, jsonBody);
+                    } else if (pickableChampions[i] == botPriority3) {
+                        championId = botPriority3;
+                        LCUPatch.patchToClientWithBody(endpoint, jsonBody);
+                    } else if (pickableChampions[i] == botPriority4) {
+                        championId = botPriority4;
+                        LCUPatch.patchToClientWithBody(endpoint, jsonBody);
+                    } else if (pickableChampions[i] == botPriority5) {
+                        championId = botPriority5;
+                    }
+                }
+            } else if (userSelections.getAssignedPosition() == 4) {
+                System.out.println("I am Support");
+                int supportPriority1 = DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxSupport1());
+                int supportPriority2 = DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxSupport2());
+                int supportPriority3 = DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxSupport3());
+                int supportPriority4 = DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxSupport4());
+                int supportPriority5 = DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxSupport5());
+
+                for (int i = 0; i < pickableChampions.length; i++) {
+                    if (pickableChampions[i] == supportPriority1) {
+                        championId = supportPriority1;
+                        LCUPatch.patchToClientWithBody(endpoint, jsonBody);
+                    } else if (pickableChampions[i] == supportPriority2) {
+                        championId = supportPriority2;
+                        LCUPatch.patchToClientWithBody(endpoint, jsonBody);
+                    } else if (pickableChampions[i] == supportPriority3) {
+                        championId = supportPriority3;
+                        LCUPatch.patchToClientWithBody(endpoint, jsonBody);
+                    } else if (pickableChampions[i] == supportPriority4) {
+                        championId = supportPriority4;
+                        LCUPatch.patchToClientWithBody(endpoint, jsonBody);
+                    } else if (pickableChampions[i] == supportPriority5) {
+                        championId = supportPriority5;
+                    }
+                }
+            }
+        }
+    }
+
     private void autoLockSave() {
         String[] top = {
                 riftHelperMainView.getComboBoxTop1(), riftHelperMainView.getComboBoxTop2(), riftHelperMainView.getComboBoxTop3(),
@@ -578,6 +765,11 @@ public class RiftHelperMainController {
 
         // Store Preferences
         this.priorityChampions = PreferenceManager.getAutoSwapPriority();
+        this.topChampions = PreferenceManager.getAutoSwapTopPriority();
+        this.jungleChampions = PreferenceManager.getAutoSwapJunglePriority();
+        this.midChampions = PreferenceManager.getAutoLockMidPriority();
+        this.botChampions = PreferenceManager.getAutoLockBotPriority();
+        this.supportChampions = PreferenceManager.getAutoLockSupportPriority();
         this.autoSwapSlots = PreferenceManager.getAutoSwapSlots();
         this.alwaysOnTop = PreferenceManager.getAlwaysOnTop();
         this.centerGUI = PreferenceManager.getCenterGUI();
@@ -645,6 +837,11 @@ public class RiftHelperMainController {
             this.riftHelperMainView.buttonCenterGUIDisable.setEnabled(false);
         }
         this.riftHelperMainView.setComboBoxAutoSwapPriority(priorityChampions);
+        this.riftHelperMainView.setComboBoxTopPriority(topChampions);
+        this.riftHelperMainView.setComboBoxJunglePriority(jungleChampions);
+        this.riftHelperMainView.setComboBoxMidPriority(midChampions);
+        this.riftHelperMainView.setComboBoxBotPriority(botChampions);
+        this.riftHelperMainView.setComboBoxSupportPriority(supportChampions);
         if (systemTray) {
             this.riftHelperMainView.enableSystemTray();
         } else {
@@ -698,7 +895,7 @@ public class RiftHelperMainController {
     }
 
     public void autoSwap() {
-        executorService.submit(() -> {
+        autoSwapExecutorService.submit(() -> {
             while (autoSwap) {
 
                 if (benchChampions == null) {

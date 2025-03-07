@@ -2,12 +2,7 @@ package model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Session {
@@ -36,7 +31,6 @@ public class Session {
         this.hasSimultaneousPicks = hasSimultaneousPicks;
         this.isCustomGame = isCustomGame;
     }
-
 
     public boolean isAllowRerolling() {
         return allowRerolling;
@@ -79,27 +73,14 @@ public class Session {
     }
 
     @JsonIgnoreProperties
-    public static List<Session> parseFromJson(String eventData) {
-        List<Session> session = new ArrayList<>();
+    public static Session parseFromJson(String eventData) {
         ObjectMapper objectMapper = new ObjectMapper();
-
         try {
-            List<JsonNode> jsonNodes = objectMapper.readValue(eventData, new TypeReference<List<JsonNode>>() {});
-
-            for (JsonNode node : jsonNodes) {
-                boolean allowRerolling = Parse.parseBoolean(node.get("allowRerolling"));
-                boolean benchEnabled = Parse.parseBoolean(node.get("benchEnabled"));
-                boolean hasSimultaneousBans = Parse.parseBoolean(node.get("hasSimultaneousBans"));
-                boolean hasSimultaneousPicks = Parse.parseBoolean(node.get("hasSimultaneousPicks"));
-                boolean isCustomGame = Parse.parseBoolean(node.get("isCustomGame"));
-
-                session.add(new Session(allowRerolling, benchEnabled, hasSimultaneousBans, hasSimultaneousPicks, isCustomGame));
-            }
+            return objectMapper.readValue(eventData, Session.class);
         } catch (Exception e) {
-            System.out.println("Error parsing Shards Loot JSON: " + e.getMessage());
+            e.printStackTrace();
+            return null;
         }
-
-        return session;
     }
 
     @Override
