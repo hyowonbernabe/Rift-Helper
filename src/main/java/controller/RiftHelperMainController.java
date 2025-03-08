@@ -66,14 +66,12 @@ public class RiftHelperMainController {
                 autoLock(userCellId, eventData);
             }
 
-            if (session.isAllowRerolling()) {
-                benchChampions = BenchChampion.parseFromJson(eventData);
-                rerollsRemaining = RerollsRemaining.parseFromJson(eventData);
+            benchChampions = BenchChampion.parseFromJson(eventData);
+            rerollsRemaining = RerollsRemaining.parseFromJson(eventData);
 
-                autoReroll(rerollsRemaining);
-                autoSwap();
-                nameButtons();
-            }
+            autoReroll(rerollsRemaining);
+            autoSwap();
+            nameButtons();
         });
 
         this.riftHelperMainView.addTestListener(e -> {
@@ -81,7 +79,7 @@ public class RiftHelperMainController {
         });
 
         this.riftHelperMainView.addBench1ActionListener(e -> {
-            if (benchChampions.get(0) == null || benchChampions.isEmpty()) {
+            if (benchChampions.get(0) == null || benchChampions.size() < 1) {
                 System.out.println("Cannot swap. Bench Champion is null");
                 return;
             }
