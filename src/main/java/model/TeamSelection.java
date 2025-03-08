@@ -112,7 +112,7 @@ public class TeamSelection {
     }
 
     @JsonIgnoreProperties
-    public static List<TeamSelection> parseFromJson(String eventData) {
+    public static List<List<TeamSelection>> parseFromJson(String eventData) {
         try {
             ObjectMapper objectMapper = new ObjectMapper();
             JsonNode rootNode = objectMapper.readTree(eventData);
@@ -121,16 +121,14 @@ public class TeamSelection {
                     .path("data")
                     .path("actions");
 
-            if (actionsNode.isArray() && actionsNode.size() > 0 && actionsNode.get(0).isArray()) {
-                actionsNode = actionsNode.get(0);
+            if (actionsNode.isArray()) {
+                return objectMapper.readValue(actionsNode.toString(), new TypeReference<List<List<TeamSelection>>>() {});
             }
-
-            return objectMapper.readValue(actionsNode.toString(), new TypeReference<List<TeamSelection>>() {});
 
         } catch (Exception e) {
             e.printStackTrace();
-            return null;
         }
+        return null;
     }
 
     @Override

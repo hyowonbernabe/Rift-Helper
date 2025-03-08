@@ -50,7 +50,7 @@ public class UserSelection {
                 return 0;
             case "jungle":
                 return 1;
-            case "mid":
+            case "middle":
                 return 2;
             case "bottom":
                 return 3;

@@ -7,7 +7,7 @@
       <map>
         <entry key="autoLockMidPriority1" value="Ashe"/>
         <entry key="autoSwapPriority1" value="Aatrox"/>
-        <entry key="autoLockLaneChoice" value="0"/>
+        <entry key="autoLockLaneChoice" value="3"/>
         <entry key="autoLockTopPriority1" value="Aatrox"/>
         <entry key="autoLockTopPriority2" value="Ahri"/>
         <entry key="autoLockTopPriority3" value="Akali"/>
@@ -22,11 +22,11 @@
         <entry key="autoLockMidPriority3" value="Aurora"/>
         <entry key="autoLockMidPriority4" value="Azir"/>
         <entry key="autoLockMidPriority5" value="Bard"/>
-        <entry key="autoLockBotPriority1" value="Bel'Veth"/>
-        <entry key="autoLockBotPriority2" value="Blitzcrank"/>
-        <entry key="autoLockBotPriority3" value="Brand"/>
-        <entry key="autoLockBotPriority4" value="Braum"/>
-        <entry key="autoLockBotPriority5" value="Briar"/>
+        <entry key="autoLockBotPriority1" value="Caitlyn"/>
+        <entry key="autoLockBotPriority2" value="Jinx"/>
+        <entry key="autoLockBotPriority3" value="Kai'Sa"/>
+        <entry key="autoLockBotPriority4" value="Kalista"/>
+        <entry key="autoLockBotPriority5" value="Ezreal"/>
         <entry key="autoLockSupportPriority1" value="Caitlyn"/>
         <entry key="autoLockSupportPriority2" value="Camille"/>
         <entry key="autoLockSupportPriority3" value="Cassiopeia"/>
