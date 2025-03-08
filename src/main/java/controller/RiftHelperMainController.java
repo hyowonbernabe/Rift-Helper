@@ -10,9 +10,13 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.prefs.Preferences;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 public class RiftHelperMainController {
     private RiftHelperMainView riftHelperMainView;
@@ -543,27 +547,35 @@ public class RiftHelperMainController {
 
     private void autoLock(int userCellId, String eventData) {
         int[] pickableChampions = Champions.parseChampionIdsFromJson(LCUGet.getFromClient("/lol-champ-select/v1/pickable-champion-ids"));
-        List<List<TeamSelection>> teamSelections = TeamSelection.parseFromJson(eventData);
         UserSelection userSelections = UserSelection.parseFromJson(LCUGet.getFromClient("/lol-champ-select/v1/session/my-selection"));
+        List<List<TeamSelection>> teamSelections = TeamSelection.parseFromJson(eventData);
+        List<TeamSelection> combinedSelections = teamSelections
+                .stream()
+                .flatMap(List::stream)
+                .toList();
+        Set<Integer> unavailableChampions = combinedSelections
+                .stream()
+                .map(TeamSelection::getChampionId)
+                .filter(championId -> championId > 0)
+                .collect(Collectors.toSet());
+        List<Integer> availableChampions = IntStream
+                .of(pickableChampions)
+                .filter(championId -> !unavailableChampions.contains(championId))
+                .boxed().collect(Collectors.toList());
 
         int actionId = 0;
         boolean isInProgress = false;
-        int championId = 0;
 
-        if (teamSelections != null && teamSelections.size() > 1) {
-            List<TeamSelection> pickSelections = teamSelections.get(1);
-
-            for (TeamSelection pickSelection : pickSelections) {
-                System.out.println(pickSelection.getType());
-                if (pickSelection.getActorCellId() == userCellId && pickSelection.getType().equals("pick")) {
-                    actionId = pickSelection.getId();
-                    isInProgress = pickSelection.isInProgress();
-                }
+        for (TeamSelection pickSelection : combinedSelections) {
+            if (pickSelection.getActorCellId() == userCellId && pickSelection.getType().equals("pick")) {
+                actionId = pickSelection.getId();
+                isInProgress = pickSelection.isInProgress();
             }
         }
 
+        System.out.println("Is it my turn?: " + isInProgress);
         String endpoint = "/lol-champ-select/v1/session/actions/" + actionId;
-        if (!isInProgress) {
+        if (isInProgress) {
             if (userSelections.getAssignedPosition() == 0) {
                 int[] topPriority = {
                         DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxTop1()),
@@ -644,6 +656,23 @@ public class RiftHelperMainController {
                 for (int priority : supportPriorities) {
                     for (int i = 0; i < pickableChampions.length; i++) {
                         if (priority == pickableChampions[i]) {
+                            LCUPatch.patchToClientWithBody(endpoint, jsonBodyAutoLock(actionId, priority));
+                            return;
+                        }
+                    }
+                }
+            } else {
+                int[] supportPriorities = {
+                        DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxSupport1()),
+                        DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxSupport2()),
+                        DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxSupport3()),
+                        DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxSupport4()),
+                        DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxSupport5()),
+                };
+
+                for (int priority : supportPriorities) {
+                    for (int available : availableChampions) {
+                        if (priority == available) {
                             LCUPatch.patchToClientWithBody(endpoint, jsonBodyAutoLock(actionId, priority));
                             return;
                         }
