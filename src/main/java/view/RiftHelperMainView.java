@@ -931,6 +931,14 @@ public class RiftHelperMainView extends JFrame {
         buttonAutoLockSave.addActionListener(listener);
     }
 
+    public void addAutoLockEnableListener(ActionListener listener) {
+        buttonAutoLockEnable.addActionListener(listener);
+    }
+
+    public void addAutoLockDisableListener(ActionListener listener) {
+        buttonAutoLockDisable.addActionListener(listener);
+    }
+
     public void addSystemTrayEnableListener(ActionListener listener) {
         buttonSystemTrayEnable.addActionListener(listener);
     }

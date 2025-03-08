@@ -30,6 +30,7 @@ public class RiftHelperMainController {
     private volatile boolean systemTray;
     private volatile boolean autoReroll;
     private volatile int autoLockLaneChoice;
+    private volatile boolean autoLockRank;
     private List<BenchChampion> benchChampions;
     private String[] priorityChampions;
     private String[] topChampions;
@@ -546,135 +547,119 @@ public class RiftHelperMainController {
     }
 
     private void autoLock(int userCellId, String eventData) {
-        int[] pickableChampions = Champions.parseChampionIdsFromJson(LCUGet.getFromClient("/lol-champ-select/v1/pickable-champion-ids"));
-        UserSelection userSelections = UserSelection.parseFromJson(LCUGet.getFromClient("/lol-champ-select/v1/session/my-selection"));
-        List<List<TeamSelection>> teamSelections = TeamSelection.parseFromJson(eventData);
-        List<TeamSelection> combinedSelections = teamSelections
-                .stream()
-                .flatMap(List::stream)
-                .toList();
-        Set<Integer> unavailableChampions = combinedSelections
-                .stream()
-                .map(TeamSelection::getChampionId)
-                .filter(championId -> championId > 0)
-                .collect(Collectors.toSet());
-        List<Integer> availableChampions = IntStream
-                .of(pickableChampions)
-                .filter(championId -> !unavailableChampions.contains(championId))
-                .boxed().collect(Collectors.toList());
+        if (autoLockRank) {
+            int[] pickableChampions = Champions.parseChampionIdsFromJson(LCUGet.getFromClient("/lol-champ-select/v1/pickable-champion-ids"));
+            UserSelection userSelections = UserSelection.parseFromJson(LCUGet.getFromClient("/lol-champ-select/v1/session/my-selection"));
+            List<List<TeamSelection>> teamSelections = TeamSelection.parseFromJson(eventData);
+            List<TeamSelection> combinedSelections = teamSelections
+                    .stream()
+                    .flatMap(List::stream)
+                    .toList();
+            Set<Integer> unavailableChampions = combinedSelections
+                    .stream()
+                    .map(TeamSelection::getChampionId)
+                    .filter(championId -> championId > 0)
+                    .collect(Collectors.toSet());
+            List<Integer> availableChampions = IntStream
+                    .of(pickableChampions)
+                    .filter(championId -> !unavailableChampions.contains(championId))
+                    .boxed().collect(Collectors.toList());
 
-        int actionId = 0;
-        boolean isInProgress = false;
+            int actionId = 0;
+            boolean isInProgress = false;
 
-        for (TeamSelection pickSelection : combinedSelections) {
-            if (pickSelection.getActorCellId() == userCellId && pickSelection.getType().equals("pick")) {
-                actionId = pickSelection.getId();
-                isInProgress = pickSelection.isInProgress();
+            for (TeamSelection pickSelection : combinedSelections) {
+                if (pickSelection.getActorCellId() == userCellId && pickSelection.getType().equals("pick")) {
+                    actionId = pickSelection.getId();
+                    isInProgress = pickSelection.isInProgress();
+                }
             }
-        }
 
-        System.out.println("Is it my turn?: " + isInProgress);
-        String endpoint = "/lol-champ-select/v1/session/actions/" + actionId;
-        if (isInProgress) {
-            if (userSelections.getAssignedPosition() == 0) {
-                int[] topPriority = {
-                        DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxTop1()),
-                        DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxTop2()),
-                        DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxTop3()),
-                        DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxTop4()),
-                        DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxTop5())
-                };
+            String endpoint = "/lol-champ-select/v1/session/actions/" + actionId;
+            if (isInProgress) {
+                if (userSelections.getAssignedPosition() == 0) {
+                    int[] topPriority = {
+                            DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxTop1()),
+                            DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxTop2()),
+                            DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxTop3()),
+                            DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxTop4()),
+                            DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxTop5())
+                    };
 
-                for (int priority : topPriority) {
-                    for (int pickableChampion : pickableChampions) {
-                        if (priority == pickableChampion) {
-                            LCUPatch.patchToClientWithBody(endpoint, jsonBodyAutoLock(actionId, priority));
-                            return;
+                    for (int priority : topPriority) {
+                        for (int available : availableChampions) {
+                            if (priority == available) {
+                                LCUPatch.patchToClientWithBody(endpoint, jsonBodyAutoLock(actionId, priority));
+                                return;
+                            }
                         }
                     }
-                }
-            } else if (userSelections.getAssignedPosition() == 1) {
-                int[] junglePriority = {
-                        DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxJungle1()),
-                        DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxJungle2()),
-                        DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxJungle3()),
-                        DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxJungle4()),
-                        DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxJungle5())
-                };
+                } else if (userSelections.getAssignedPosition() == 1) {
+                    int[] junglePriority = {
+                            DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxJungle1()),
+                            DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxJungle2()),
+                            DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxJungle3()),
+                            DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxJungle4()),
+                            DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxJungle5())
+                    };
 
-                for (int priority : junglePriority) {
-                    for (int pickableChampion : pickableChampions) {
-                        if (priority == pickableChampion) {
-                            LCUPatch.patchToClientWithBody(endpoint, jsonBodyAutoLock(actionId, priority));
-                            return;
+                    for (int priority : junglePriority) {
+                        for (int available : availableChampions) {
+                            if (priority == available) {
+                                LCUPatch.patchToClientWithBody(endpoint, jsonBodyAutoLock(actionId, priority));
+                                return;
+                            }
                         }
                     }
-                }
-            } else if (userSelections.getAssignedPosition() == 2) {
-                int[] midPriority = {
-                        DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxMid1()),
-                        DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxMid2()),
-                        DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxMid3()),
-                        DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxMid4()),
-                        DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxMid5())
-                };
+                } else if (userSelections.getAssignedPosition() == 2) {
+                    int[] midPriority = {
+                            DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxMid1()),
+                            DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxMid2()),
+                            DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxMid3()),
+                            DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxMid4()),
+                            DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxMid5())
+                    };
 
-                for (int priority : midPriority) {
-                    for (int pickableChampion : pickableChampions) {
-                        if (priority == pickableChampion) {
-                            LCUPatch.patchToClientWithBody(endpoint, jsonBodyAutoLock(actionId, priority));
-                            return;
+                    for (int priority : midPriority) {
+                        for (int available : availableChampions) {
+                            if (priority == available) {
+                                LCUPatch.patchToClientWithBody(endpoint, jsonBodyAutoLock(actionId, priority));
+                                return;
+                            }
                         }
                     }
-                }
-            } else if (userSelections.getAssignedPosition() == 3) {
-                int[] botPriority = {
-                        DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxBot1()),
-                        DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxBot2()),
-                        DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxBot3()),
-                        DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxBot4()),
-                        DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxBot5())
-                };
+                } else if (userSelections.getAssignedPosition() == 3) {
+                    int[] botPriority = {
+                            DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxBot1()),
+                            DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxBot2()),
+                            DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxBot3()),
+                            DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxBot4()),
+                            DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxBot5())
+                    };
 
-                for (int priority : botPriority) {
-                    for (int pickableChampion : pickableChampions) {
-                        if (priority == pickableChampion) {
-                            LCUPatch.patchToClientWithBody(endpoint, jsonBodyAutoLock(actionId, priority));
-                            return;
+                    for (int priority : botPriority) {
+                        for (int available : availableChampions) {
+                            if (priority == available) {
+                                LCUPatch.patchToClientWithBody(endpoint, jsonBodyAutoLock(actionId, priority));
+                                return;
+                            }
                         }
                     }
-                }
-            } else if (userSelections.getAssignedPosition() == 4) {
-                int[] supportPriorities = {
-                        DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxSupport1()),
-                        DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxSupport2()),
-                        DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxSupport3()),
-                        DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxSupport4()),
-                        DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxSupport5()),
-                };
+                } else if (userSelections.getAssignedPosition() == 4) {
+                    int[] supportPriorities = {
+                            DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxSupport1()),
+                            DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxSupport2()),
+                            DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxSupport3()),
+                            DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxSupport4()),
+                            DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxSupport5()),
+                    };
 
-                for (int priority : supportPriorities) {
-                    for (int i = 0; i < pickableChampions.length; i++) {
-                        if (priority == pickableChampions[i]) {
-                            LCUPatch.patchToClientWithBody(endpoint, jsonBodyAutoLock(actionId, priority));
-                            return;
-                        }
-                    }
-                }
-            } else {
-                int[] supportPriorities = {
-                        DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxSupport1()),
-                        DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxSupport2()),
-                        DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxSupport3()),
-                        DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxSupport4()),
-                        DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxSupport5()),
-                };
-
-                for (int priority : supportPriorities) {
-                    for (int available : availableChampions) {
-                        if (priority == available) {
-                            LCUPatch.patchToClientWithBody(endpoint, jsonBodyAutoLock(actionId, priority));
-                            return;
+                    for (int priority : supportPriorities) {
+                        for (int available : availableChampions) {
+                            if (priority == available) {
+                                LCUPatch.patchToClientWithBody(endpoint, jsonBodyAutoLock(actionId, priority));
+                                return;
+                            }
                         }
                     }
                 }
