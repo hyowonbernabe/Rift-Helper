@@ -8,6 +8,7 @@ model\Session.class
 model\CurrentDirectory.class
 model\DDragonParser.class
 model\SSLBypass.class
+model\UpdateChecker.class
 model\BenchChampion$1.class
 model\TeamSelection.class
 model\Champions.class
@@ -15,6 +16,7 @@ model\UserSelection.class
 model\LCUPatch.class
 model\LCUPost.class
 controller\RiftHelperMainController.class
+model\UpdateChecker$VersionInfo.class
 model\ShardLoot$1.class
 view\RiftHelperMainView$1.class
 model\Parse.class
