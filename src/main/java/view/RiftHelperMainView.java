@@ -207,6 +207,10 @@ public class RiftHelperMainView extends JFrame {
     public JButton buttonAutoBraveryArenaEnable;
     public JButton buttonAutoBraveryArenaDisable;
     private JLabel labelAutoBraveryArena;
+    public JButton buttonAutoCheckUpdateEnable;
+    public JButton buttonAutoCheckUpdateDisable;
+    private JPanel panelTest;
+    private JLabel labelAutoCheckUpdate;
     private SystemTray tray;
     private TrayIcon trayIcon;
     private boolean systemTrayEnabled = false;
@@ -265,7 +269,7 @@ public class RiftHelperMainView extends JFrame {
 
         pack();
         setLocationRelativeTo(null);
-        setVisible(true);
+        setVisible(false);
     }
 
     public void enableSystemTray() {
@@ -1150,6 +1154,14 @@ public class RiftHelperMainView extends JFrame {
         buttonSystemTrayDisable.addActionListener(listener);
     }
 
+    public void addAutoCheckUpdateEnableListener(ActionListener listener) {
+        buttonAutoCheckUpdateEnable.addActionListener(listener);
+    }
+
+    public void addAutoCheckUpdateDisableListener(ActionListener listener) {
+        buttonAutoCheckUpdateDisable.addActionListener(listener);
+    }
+
     public void addExportListener(ActionListener listener) {
         buttonExport.addActionListener(listener);
     }
@@ -1679,7 +1691,7 @@ public class RiftHelperMainView extends JFrame {
         buttonDisenchantSkinsHard.setText("Hard Mode (Disenchant Everything)");
         panel9.add(buttonDisenchantSkinsHard, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         panelSettings = new JPanel();
-        panelSettings.setLayout(new GridLayoutManager(11, 1, new Insets(0, 0, 0, 0), -1, -1));
+        panelSettings.setLayout(new GridLayoutManager(13, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPaneRiftHelper.addTab("Settings", panelSettings);
         panelSave = new JPanel();
         panelSave.setLayout(new GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
@@ -1691,7 +1703,7 @@ public class RiftHelperMainView extends JFrame {
         buttonExport.setText("Export");
         panelSave.add(buttonExport, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer6 = new Spacer();
-        panelSettings.add(spacer6, new GridConstraints(10, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        panelSettings.add(spacer6, new GridConstraints(12, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         labelSaveLoad = new JLabel();
         labelSaveLoad.setText("Save/Load");
         panelSettings.add(labelSaveLoad, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
@@ -1734,12 +1746,24 @@ public class RiftHelperMainView extends JFrame {
         buttonSystemTrayDisable = new JButton();
         buttonSystemTrayDisable.setText("Disable");
         panelSystemTray.add(buttonSystemTrayDisable, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        final JPanel panel10 = new JPanel();
-        panel10.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        panelSettings.add(panel10, new GridConstraints(9, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        panelTest = new JPanel();
+        panelTest.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        panelSettings.add(panelTest, new GridConstraints(11, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         buttonTest = new JButton();
         buttonTest.setText("Developer Button");
-        panel10.add(buttonTest, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panelTest.add(buttonTest, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        labelAutoCheckUpdate = new JLabel();
+        labelAutoCheckUpdate.setText("Check for New Releases");
+        panelSettings.add(labelAutoCheckUpdate, new GridConstraints(9, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JPanel panel10 = new JPanel();
+        panel10.setLayout(new GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
+        panelSettings.add(panel10, new GridConstraints(10, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        buttonAutoCheckUpdateEnable = new JButton();
+        buttonAutoCheckUpdateEnable.setText("Enable");
+        panel10.add(buttonAutoCheckUpdateEnable, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        buttonAutoCheckUpdateDisable = new JButton();
+        buttonAutoCheckUpdateDisable.setText("Disable");
+        panel10.add(buttonAutoCheckUpdateDisable, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
     }
 
     /**

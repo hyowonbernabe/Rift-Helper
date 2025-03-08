@@ -62,6 +62,7 @@ public class PreferenceManager {
     private static final String PREF_ALWAYS_ON_TOP = "alwaysOnTop";
     private static final String PREF_SYSTEM_TRAY = "systemTray";
     private static final String PREF_AUTO_LOCK_LANE_CHOICE = "autoLockLaneChoice";
+    private static final String PREF_AUTO_CHECK_UPDATE = "autoCheckUpdate";
 
     private static Preferences prefs;
 
@@ -394,6 +395,14 @@ public class PreferenceManager {
 
     public static boolean getSystemTray() {
         return prefs.getBoolean(PREF_SYSTEM_TRAY, true);
+    }
+
+    public static void setAutoCheckUpdate(boolean value) {
+        prefs.putBoolean(PREF_AUTO_CHECK_UPDATE, value);
+    }
+
+    public static boolean getAutoCheckUpdate() {
+        return prefs.getBoolean(PREF_AUTO_CHECK_UPDATE, true);
     }
 
     public static void exportPreferences() {

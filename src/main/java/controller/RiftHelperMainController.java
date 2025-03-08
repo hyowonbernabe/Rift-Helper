@@ -27,6 +27,7 @@ public class RiftHelperMainController {
     private volatile boolean alwaysOnTop;
     private volatile boolean centerGUI;
     private volatile boolean systemTray;
+    private volatile boolean autoCheckUpdate;
     private volatile boolean autoReroll;
     private volatile int autoLockLaneChoice;
     private volatile boolean autoLockRank;
@@ -52,8 +53,6 @@ public class RiftHelperMainController {
         this.riftHelperMainView = riftHelperMainView;
 
         startProgram();
-
-        this.riftHelperMainView.setLocationRelativeTo(null);
 
         LCUSocketReader socketReader = new LCUSocketReader();
         socketReader.connect();
@@ -704,6 +703,28 @@ public class RiftHelperMainController {
                 riftHelperMainView.buttonAutoBraveryArenaDisable.setEnabled(false);
             });
         });
+
+        this.riftHelperMainView.addAutoCheckUpdateEnableListener(e -> {
+            autoCheckUpdate = true;
+
+            SwingUtilities.invokeLater(() -> {
+                riftHelperMainView.buttonAutoCheckUpdateEnable.setEnabled(false);
+                riftHelperMainView.buttonAutoCheckUpdateDisable.setEnabled(true);
+            });
+
+            PreferenceManager.setAutoCheckUpdate(autoCheckUpdate);
+        });
+
+        this.riftHelperMainView.addAutoCheckUpdateDisableListener(e -> {
+            autoCheckUpdate = false;
+
+            SwingUtilities.invokeLater(() -> {
+                riftHelperMainView.buttonAutoCheckUpdateEnable.setEnabled(true);
+                riftHelperMainView.buttonAutoCheckUpdateDisable.setEnabled(false);
+            });
+
+            PreferenceManager.setAutoCheckUpdate(autoCheckUpdate);
+        });
     }
 
     private void autoLock(int userCellId, String eventData) {
@@ -963,6 +984,7 @@ public class RiftHelperMainController {
         this.alwaysOnTop = PreferenceManager.getAlwaysOnTop();
         this.centerGUI = PreferenceManager.getCenterGUI();
         this.systemTray = PreferenceManager.getSystemTray();
+        this.autoCheckUpdate = PreferenceManager.getAutoCheckUpdate();
         this.autoLockLaneChoice = PreferenceManager.getAutoLockLaneChoice();
 
         loadPreferences();
@@ -1052,6 +1074,19 @@ public class RiftHelperMainController {
         }
 
         reInitialize();
+        this.riftHelperMainView.setLocationRelativeTo(null);
+        this.riftHelperMainView.setVisible(true);
+
+        if (this.autoCheckUpdate) {
+            this.riftHelperMainView.buttonAutoCheckUpdateEnable.setEnabled(false);
+            this.riftHelperMainView.buttonAutoCheckUpdateDisable.setEnabled(true);
+
+            System.out.println("Update Checked");
+            UpdateChecker.checkForUpdate();
+        } else {
+            this.riftHelperMainView.buttonAutoCheckUpdateEnable.setEnabled(true);
+            this.riftHelperMainView.buttonAutoCheckUpdateDisable.setEnabled(false);
+        }
     }
 
     public void autoReroll(int rerollsRemaining) {
