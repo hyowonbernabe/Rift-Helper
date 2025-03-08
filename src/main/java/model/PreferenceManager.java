@@ -32,6 +32,11 @@ public class PreferenceManager {
     private static final String PREF_AUTO_LOCK_SUPPORT_PRIORITY_3 = "autoLockSupportPriority3";
     private static final String PREF_AUTO_LOCK_SUPPORT_PRIORITY_4 = "autoLockSupportPriority4";
     private static final String PREF_AUTO_LOCK_SUPPORT_PRIORITY_5 = "autoLockSupportPriority5";
+    private static final String PREF_AUTO_BAN_PRIORITY_1 = "autoBannerPriority1";
+    private static final String PREF_AUTO_BAN_PRIORITY_2 = "autoBannerPriority2";
+    private static final String PREF_AUTO_BAN_PRIORITY_3 = "autoBannerPriority3";
+    private static final String PREF_AUTO_BAN_PRIORITY_4 = "autoBannerPriority4";
+    private static final String PREF_AUTO_BAN_PRIORITY_5 = "autoBannerPriority5";
     private static final String PREF_AUTO_SWAP_PRIORITY_1 = "autoSwapPriority1";
     private static final String PREF_AUTO_SWAP_PRIORITY_2 = "autoSwapPriority2";
     private static final String PREF_AUTO_SWAP_PRIORITY_3 = "autoSwapPriority3";
@@ -201,6 +206,34 @@ public class PreferenceManager {
                 prefs.get(PREF_AUTO_LOCK_JUNGLE_PRIORITY_3, null),
                 prefs.get(PREF_AUTO_LOCK_JUNGLE_PRIORITY_4, null),
                 prefs.get(PREF_AUTO_LOCK_JUNGLE_PRIORITY_5, null),
+        };
+    }
+
+    public static void setAutoBanPriority(String[] priority) {
+        if (priority[0] != null && !priority[0].isEmpty()) {
+            prefs.put(PREF_AUTO_BAN_PRIORITY_1, priority[0]);
+        }
+        if (priority[1] != null && !priority[1].isEmpty()) {
+            prefs.put(PREF_AUTO_BAN_PRIORITY_2, priority[1]);
+        }
+        if (priority[2] != null && !priority[2].isEmpty()) {
+            prefs.put(PREF_AUTO_BAN_PRIORITY_3, priority[2]);
+        }
+        if (priority[3] != null && !priority[3].isEmpty()) {
+            prefs.put(PREF_AUTO_BAN_PRIORITY_4, priority[3]);
+        }
+        if (priority[4] != null && !priority[4].isEmpty()) {
+            prefs.put(PREF_AUTO_BAN_PRIORITY_5, priority[4]);
+        }
+    }
+
+    public static String[] getAutoBanPriority() {
+        return new String[]{
+                prefs.get(PREF_AUTO_BAN_PRIORITY_1, null),
+                prefs.get(PREF_AUTO_BAN_PRIORITY_2, null),
+                prefs.get(PREF_AUTO_BAN_PRIORITY_3, null),
+                prefs.get(PREF_AUTO_BAN_PRIORITY_4, null),
+                prefs.get(PREF_AUTO_BAN_PRIORITY_5, null),
         };
     }
 

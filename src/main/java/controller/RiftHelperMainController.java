@@ -13,10 +13,10 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.prefs.Preferences;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 public class RiftHelperMainController {
     private RiftHelperMainView riftHelperMainView;
@@ -31,6 +31,7 @@ public class RiftHelperMainController {
     private volatile boolean autoReroll;
     private volatile int autoLockLaneChoice;
     private volatile boolean autoLockRank;
+    private volatile boolean autoBan;
     private List<BenchChampion> benchChampions;
     private String[] priorityChampions;
     private String[] topChampions;
@@ -38,6 +39,7 @@ public class RiftHelperMainController {
     private String[] midChampions;
     private String[] botChampions;
     private String[] supportChampions;
+    private String[] banChampions;
     private int rerollsRemaining;
     private int userCellId;
     private final ExecutorService autoSwapExecutorService = Executors.newFixedThreadPool(1);
@@ -544,39 +546,120 @@ public class RiftHelperMainController {
         this.riftHelperMainView.addAutoLockSaveListener(e -> {
             autoLockSave();
         });
+
+        this.riftHelperMainView.addAutoLockEnableListener(e -> {
+            autoLockRank = true;
+            System.out.println("Auto Lock Turned On: " + autoLockRank);
+
+            SwingUtilities.invokeLater(() -> {
+                riftHelperMainView.buttonAutoLockEnable.setEnabled(false);
+                riftHelperMainView.buttonAutoLockDisable.setEnabled(true);
+            });
+        });
+
+        this.riftHelperMainView.addAutoLockDisableListener(e -> {
+            autoLockRank = false;
+            System.out.println("Auto Lock Turned Off: " + autoLockRank);
+
+            SwingUtilities.invokeLater(() -> {
+                riftHelperMainView.buttonAutoLockEnable.setEnabled(true);
+                riftHelperMainView.buttonAutoLockDisable.setEnabled(false);
+            });
+        });
+
+        this.riftHelperMainView.addAutoBanEnableListener(e -> {
+            autoBan = true;
+            System.out.println("Auto Ban Turned On: " + autoBan);
+
+            SwingUtilities.invokeLater(() -> {
+                riftHelperMainView.buttonAutoBanEnable.setEnabled(false);
+                riftHelperMainView.buttonAutoBanDisable.setEnabled(true);
+            });
+        });
+
+        this.riftHelperMainView.addAutoBanDisableListener(e -> {
+            autoBan = false;
+            System.out.println("Auto Ban Turned Off: " + autoBan);
+
+            SwingUtilities.invokeLater(() -> {
+                riftHelperMainView.buttonAutoBanEnable.setEnabled(true);
+                riftHelperMainView.buttonAutoBanDisable.setEnabled(false);
+            });
+        });
+
+        this.riftHelperMainView.addAutoBanSaveListener(e -> {
+            String[] ban = {
+                    riftHelperMainView.getComboBoxAutoBan1(), riftHelperMainView.getComboBoxAutoBan2(),
+                    riftHelperMainView.getComboBoxAutoBan3(), riftHelperMainView.getComboBoxAutoBan4(),
+                    riftHelperMainView.getComboBoxAutoBan5()
+            };
+
+            PreferenceManager.setAutoBanPriority(ban);
+
+            JOptionPane.showMessageDialog(riftHelperMainView, "Successfully saved!", "Save Success", JOptionPane.INFORMATION_MESSAGE);
+        });
     }
 
     private void autoLock(int userCellId, String eventData) {
-        if (autoLockRank) {
-            int[] pickableChampions = Champions.parseChampionIdsFromJson(LCUGet.getFromClient("/lol-champ-select/v1/pickable-champion-ids"));
-            UserSelection userSelections = UserSelection.parseFromJson(LCUGet.getFromClient("/lol-champ-select/v1/session/my-selection"));
-            List<List<TeamSelection>> teamSelections = TeamSelection.parseFromJson(eventData);
-            List<TeamSelection> combinedSelections = teamSelections
-                    .stream()
-                    .flatMap(List::stream)
-                    .toList();
-            Set<Integer> unavailableChampions = combinedSelections
-                    .stream()
-                    .map(TeamSelection::getChampionId)
-                    .filter(championId -> championId > 0)
-                    .collect(Collectors.toSet());
-            List<Integer> availableChampions = IntStream
-                    .of(pickableChampions)
-                    .filter(championId -> !unavailableChampions.contains(championId))
-                    .boxed().collect(Collectors.toList());
+        int[] pickableChampions = Champions.parseChampionIdsFromJson(LCUGet.getFromClient("/lol-champ-select/v1/pickable-champion-ids"));
+        UserSelection userSelections = UserSelection.parseFromJson(LCUGet.getFromClient("/lol-champ-select/v1/session/my-selection"));
+        List<List<TeamSelection>> teamSelections = TeamSelection.parseFromJson(eventData);
+        List<TeamSelection> combinedSelections = teamSelections
+                .stream()
+                .flatMap(List::stream)
+                .toList();
+        Set<Integer> unavailableChampions = combinedSelections
+                .stream()
+                .map(TeamSelection::getChampionId)
+                .filter(championId -> championId > 0)
+                .collect(Collectors.toSet());
+        List<Integer> availableChampions = IntStream
+                .of(pickableChampions)
+                .filter(championId -> !unavailableChampions.contains(championId))
+                .boxed().toList();
 
-            int actionId = 0;
-            boolean isInProgress = false;
+        int actionIdPicking = 0;
+        int actionIdBanning = 0;
+        boolean isInProgressPicking = false;
+        boolean isInProgressBanning = false;
 
-            for (TeamSelection pickSelection : combinedSelections) {
-                if (pickSelection.getActorCellId() == userCellId && pickSelection.getType().equals("pick")) {
-                    actionId = pickSelection.getId();
-                    isInProgress = pickSelection.isInProgress();
+        for (TeamSelection pickSelection : combinedSelections) {
+            if (pickSelection.getActorCellId() == userCellId && pickSelection.getType().equals("pick")) {
+                actionIdPicking = pickSelection.getId();
+                isInProgressPicking = pickSelection.isInProgress();
+            }
+            if (pickSelection.getActorCellId() == userCellId && pickSelection.getType().equals("ban")) {
+                actionIdBanning = pickSelection.getId();
+                isInProgressBanning = pickSelection.isInProgress();
+            }
+        }
+
+        String endpointPicking = "/lol-champ-select/v1/session/actions/" + actionIdPicking;
+        String endpointBanning = "/lol-champ-select/v1/session/actions/" + actionIdBanning;
+
+        if (autoBan) {
+            if (userSelections.getAssignedPosition() == 0 || userSelections.getAssignedPosition() == 1
+            || userSelections.getAssignedPosition() == 2 || userSelections.getAssignedPosition() == 3
+            || userSelections.getAssignedPosition() == 4) {
+                if (isInProgressBanning) {
+                    int[] banPriority = {
+                            DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxAutoBan1()),
+                            DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxAutoBan2()),
+                            DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxAutoBan3()),
+                            DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxAutoBan4()),
+                            DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxAutoBan5())
+                    };
+
+                    for (int priority : banPriority) {
+                        LCUPatch.patchToClientWithBody(endpointBanning, jsonBodyAutoLock(actionIdBanning, priority));
+                        return;
+                    }
                 }
             }
+        }
 
-            String endpoint = "/lol-champ-select/v1/session/actions/" + actionId;
-            if (isInProgress) {
+        if (autoLockRank) {
+            if (isInProgressPicking) {
                 if (userSelections.getAssignedPosition() == 0) {
                     int[] topPriority = {
                             DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxTop1()),
@@ -589,7 +672,7 @@ public class RiftHelperMainController {
                     for (int priority : topPriority) {
                         for (int available : availableChampions) {
                             if (priority == available) {
-                                LCUPatch.patchToClientWithBody(endpoint, jsonBodyAutoLock(actionId, priority));
+                                LCUPatch.patchToClientWithBody(endpointPicking, jsonBodyAutoLock(actionIdPicking, priority));
                                 return;
                             }
                         }
@@ -606,7 +689,7 @@ public class RiftHelperMainController {
                     for (int priority : junglePriority) {
                         for (int available : availableChampions) {
                             if (priority == available) {
-                                LCUPatch.patchToClientWithBody(endpoint, jsonBodyAutoLock(actionId, priority));
+                                LCUPatch.patchToClientWithBody(endpointPicking, jsonBodyAutoLock(actionIdPicking, priority));
                                 return;
                             }
                         }
@@ -623,7 +706,7 @@ public class RiftHelperMainController {
                     for (int priority : midPriority) {
                         for (int available : availableChampions) {
                             if (priority == available) {
-                                LCUPatch.patchToClientWithBody(endpoint, jsonBodyAutoLock(actionId, priority));
+                                LCUPatch.patchToClientWithBody(endpointPicking, jsonBodyAutoLock(actionIdPicking, priority));
                                 return;
                             }
                         }
@@ -640,7 +723,7 @@ public class RiftHelperMainController {
                     for (int priority : botPriority) {
                         for (int available : availableChampions) {
                             if (priority == available) {
-                                LCUPatch.patchToClientWithBody(endpoint, jsonBodyAutoLock(actionId, priority));
+                                LCUPatch.patchToClientWithBody(endpointPicking, jsonBodyAutoLock(actionIdPicking, priority));
                                 return;
                             }
                         }
@@ -657,11 +740,13 @@ public class RiftHelperMainController {
                     for (int priority : supportPriorities) {
                         for (int available : availableChampions) {
                             if (priority == available) {
-                                LCUPatch.patchToClientWithBody(endpoint, jsonBodyAutoLock(actionId, priority));
+                                LCUPatch.patchToClientWithBody(endpointPicking, jsonBodyAutoLock(actionIdPicking, priority));
                                 return;
                             }
                         }
                     }
+                } else {
+                    LCUPatch.patchToClientWithBody(endpointPicking, jsonBodyAutoLock(actionIdPicking, -3));
                 }
             }
         }
@@ -672,8 +757,9 @@ public class RiftHelperMainController {
                 + "\"id\": " + actionId + ","
                 + "\"actorCellId\": " + userCellId + ","
                 + "\"championId\": " + championId + ","
-                + "\"completed\": true,"
-                + "\"type\": \"pick\""
+                + "\"type\": \"pick\"" + ","
+                + "\"completed\": true" + ","
+                + "\"isAllyAction\": true"
                 + "}";
     }
 
@@ -722,6 +808,7 @@ public class RiftHelperMainController {
         this.midChampions = PreferenceManager.getAutoLockMidPriority();
         this.botChampions = PreferenceManager.getAutoLockBotPriority();
         this.supportChampions = PreferenceManager.getAutoLockSupportPriority();
+        this.banChampions = PreferenceManager.getAutoBanPriority();
         this.autoSwapSlots = PreferenceManager.getAutoSwapSlots();
         this.alwaysOnTop = PreferenceManager.getAlwaysOnTop();
         this.centerGUI = PreferenceManager.getCenterGUI();
@@ -794,6 +881,7 @@ public class RiftHelperMainController {
         this.riftHelperMainView.setComboBoxMidPriority(midChampions);
         this.riftHelperMainView.setComboBoxBotPriority(botChampions);
         this.riftHelperMainView.setComboBoxSupportPriority(supportChampions);
+        this.riftHelperMainView.setComboBoxAutoBanPriority(banChampions);
         if (systemTray) {
             this.riftHelperMainView.enableSystemTray();
         } else {

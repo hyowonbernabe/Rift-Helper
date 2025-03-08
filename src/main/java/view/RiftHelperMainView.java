@@ -156,8 +156,22 @@ public class RiftHelperMainView extends JFrame {
     private JButton buttonTest;
     private JPanel panelAutoLockButtons;
     private JButton buttonAutoLockSave;
-    private JButton buttonAutoLockEnable;
-    private JButton buttonAutoLockDisable;
+    public JButton buttonAutoLockEnable;
+    public JButton buttonAutoLockDisable;
+    private JComboBox comboBoxAutoBan1;
+    private JComboBox comboBoxAutoBan2;
+    private JComboBox comboBoxAutoBan3;
+    private JComboBox comboBoxAutoBan4;
+    private JComboBox comboBoxAutoBan5;
+    private JLabel labelAutoBan1;
+    private JLabel labelAutoBan2;
+    private JLabel labelAutoBan3;
+    private JLabel labelAutoBan4;
+    private JLabel labelAutoBan5;
+    private JLabel labelAutoBan;
+    private JButton buttonAutoBanSave;
+    public JButton buttonAutoBanEnable;
+    public JButton buttonAutoBanDisable;
     private SystemTray tray;
     private TrayIcon trayIcon;
     private boolean systemTrayEnabled = false;
@@ -192,6 +206,7 @@ public class RiftHelperMainView extends JFrame {
 
         // Populate Auto Lock and Auto Swap
         for (JComboBox jComboBox : Arrays.asList(
+                comboBoxAutoBan1, comboBoxAutoBan2, comboBoxAutoBan3, comboBoxAutoBan4, comboBoxAutoBan5,
                 comboBoxTop1, comboBoxTop2, comboBoxTop3, comboBoxTop4, comboBoxTop5,
                 comboBoxJungle1, comboBoxJungle2, comboBoxJungle3, comboBoxJungle4, comboBoxJungle5,
                 comboBoxMid1, comboBoxMid2, comboBoxMid3, comboBoxMid4, comboBoxMid5,
@@ -365,6 +380,14 @@ public class RiftHelperMainView extends JFrame {
         comboBoxSupport5.setSelectedItem(priorityChampions[4]);
     }
 
+    public void setComboBoxAutoBanPriority(String[] priorityChampions) {
+        comboBoxAutoBan1.setSelectedItem(priorityChampions[0]);
+        comboBoxAutoBan2.setSelectedItem(priorityChampions[1]);
+        comboBoxAutoBan3.setSelectedItem(priorityChampions[2]);
+        comboBoxAutoBan4.setSelectedItem(priorityChampions[3]);
+        comboBoxAutoBan5.setSelectedItem(priorityChampions[4]);
+    }
+
     public String getComboBoxTop1() {
         Object selectedItem = comboBoxTop1.getSelectedItem();
         return (selectedItem != null) ? selectedItem.toString() : null;
@@ -490,6 +513,30 @@ public class RiftHelperMainView extends JFrame {
         return (selectedItem != null) ? selectedItem.toString() : null;
     }
 
+    public String getComboBoxAutoBan1() {
+        Object selectedItem = comboBoxAutoBan1.getSelectedItem();
+        return (selectedItem != null) ? selectedItem.toString() : null;
+    }
+
+    public String getComboBoxAutoBan2() {
+        Object selectedItem = comboBoxAutoBan2.getSelectedItem();
+        return (selectedItem != null) ? selectedItem.toString() : null;
+    }
+
+    public String getComboBoxAutoBan3() {
+        Object selectedItem = comboBoxAutoBan3.getSelectedItem();
+        return (selectedItem != null) ? selectedItem.toString() : null;
+    }
+
+    public String getComboBoxAutoBan4() {
+        Object selectedItem = comboBoxAutoBan4.getSelectedItem();
+        return (selectedItem != null) ? selectedItem.toString() : null;
+    }
+
+    public String getComboBoxAutoBan5() {
+        Object selectedItem = comboBoxAutoBan5.getSelectedItem();
+        return (selectedItem != null) ? selectedItem.toString() : null;
+    }
 
     public String getComboBoxAutoSwapPriority1() {
         Object selectedItem = comboBoxAutoSwapPriority1.getSelectedItem();
@@ -939,6 +986,18 @@ public class RiftHelperMainView extends JFrame {
         buttonAutoLockDisable.addActionListener(listener);
     }
 
+    public void addAutoBanSaveListener(ActionListener listener) {
+        buttonAutoBanSave.addActionListener(listener);
+    }
+
+    public void addAutoBanEnableListener(ActionListener listener) {
+        buttonAutoBanEnable.addActionListener(listener);
+    }
+
+    public void addAutoBanDisableListener(ActionListener listener) {
+        buttonAutoBanDisable.addActionListener(listener);
+    }
+
     public void addSystemTrayEnableListener(ActionListener listener) {
         buttonSystemTrayEnable.addActionListener(listener);
     }
@@ -1005,10 +1064,10 @@ public class RiftHelperMainView extends JFrame {
         buttonAutoDeclineDisable.setText("Disable");
         panel1.add(buttonAutoDeclineDisable, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         panelRift = new JPanel();
-        panelRift.setLayout(new GridLayoutManager(4, 1, new Insets(0, 0, 0, 0), -1, -1));
+        panelRift.setLayout(new GridLayoutManager(6, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPaneRiftHelper.addTab("Summoner's Rift", panelRift);
         final Spacer spacer2 = new Spacer();
-        panelRift.add(spacer2, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        panelRift.add(spacer2, new GridConstraints(5, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         labelAutoLock = new JLabel();
         labelAutoLock.setText("Auto Lock");
         panelRift.add(labelAutoLock, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
@@ -1170,6 +1229,49 @@ public class RiftHelperMainView extends JFrame {
         buttonAutoLockSave = new JButton();
         buttonAutoLockSave.setText("Save");
         panel3.add(buttonAutoLockSave, new GridConstraints(26, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        labelAutoBan = new JLabel();
+        labelAutoBan.setText("Auto Ban");
+        panelRift.add(labelAutoBan, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JPanel panel4 = new JPanel();
+        panel4.setLayout(new GridLayoutManager(7, 2, new Insets(0, 0, 0, 0), -1, -1));
+        panelRift.add(panel4, new GridConstraints(4, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        labelAutoBan1 = new JLabel();
+        labelAutoBan1.setText("1");
+        panel4.add(labelAutoBan1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        comboBoxAutoBan1 = new JComboBox();
+        panel4.add(comboBoxAutoBan1, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        comboBoxAutoBan2 = new JComboBox();
+        panel4.add(comboBoxAutoBan2, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        comboBoxAutoBan3 = new JComboBox();
+        panel4.add(comboBoxAutoBan3, new GridConstraints(2, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        comboBoxAutoBan4 = new JComboBox();
+        panel4.add(comboBoxAutoBan4, new GridConstraints(3, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        comboBoxAutoBan5 = new JComboBox();
+        panel4.add(comboBoxAutoBan5, new GridConstraints(4, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        labelAutoBan2 = new JLabel();
+        labelAutoBan2.setText("2");
+        panel4.add(labelAutoBan2, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        labelAutoBan3 = new JLabel();
+        labelAutoBan3.setText("3");
+        panel4.add(labelAutoBan3, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        labelAutoBan4 = new JLabel();
+        labelAutoBan4.setText("4");
+        panel4.add(labelAutoBan4, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        labelAutoBan5 = new JLabel();
+        labelAutoBan5.setText("5");
+        panel4.add(labelAutoBan5, new GridConstraints(4, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JPanel panel5 = new JPanel();
+        panel5.setLayout(new GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
+        panel4.add(panel5, new GridConstraints(5, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        buttonAutoBanEnable = new JButton();
+        buttonAutoBanEnable.setText("Enable");
+        panel5.add(buttonAutoBanEnable, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        buttonAutoBanDisable = new JButton();
+        buttonAutoBanDisable.setText("Disable");
+        panel5.add(buttonAutoBanDisable, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        buttonAutoBanSave = new JButton();
+        buttonAutoBanSave.setText("Save");
+        panel4.add(buttonAutoBanSave, new GridConstraints(6, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         panelARAM = new JPanel();
         panelARAM.setLayout(new GridLayoutManager(8, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPaneRiftHelper.addTab("ARAM", panelARAM);
@@ -1291,15 +1393,15 @@ public class RiftHelperMainView extends JFrame {
         labelQuickSwitch = new JLabel();
         labelQuickSwitch.setText("Quick Switch");
         panelARAM.add(labelQuickSwitch, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        final JPanel panel4 = new JPanel();
-        panel4.setLayout(new GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
-        panelARAM.add(panel4, new GridConstraints(6, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        final JPanel panel6 = new JPanel();
+        panel6.setLayout(new GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
+        panelARAM.add(panel6, new GridConstraints(6, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         buttonAutoRerollEnable = new JButton();
         buttonAutoRerollEnable.setText("Enable");
-        panel4.add(buttonAutoRerollEnable, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panel6.add(buttonAutoRerollEnable, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         buttonAutoRerollDisable = new JButton();
         buttonAutoRerollDisable.setText("Disable");
-        panel4.add(buttonAutoRerollDisable, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panel6.add(buttonAutoRerollDisable, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         panelLoot = new JPanel();
         panelLoot.setLayout(new GridLayoutManager(3, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPaneRiftHelper.addTab("Loot", panelLoot);
@@ -1320,15 +1422,15 @@ public class RiftHelperMainView extends JFrame {
         labelMassSkinDisenchant = new JLabel();
         labelMassSkinDisenchant.setText("Mass Skin Disenchant");
         panelAutoDisenchantButtons.add(labelMassSkinDisenchant, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        final JPanel panel5 = new JPanel();
-        panel5.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
-        panelAutoDisenchantButtons.add(panel5, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        final JPanel panel7 = new JPanel();
+        panel7.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
+        panelAutoDisenchantButtons.add(panel7, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         buttonDisenchantSkinsSafe = new JButton();
         buttonDisenchantSkinsSafe.setText("Safe Mode (Disenchant Already Owned Skins)");
-        panel5.add(buttonDisenchantSkinsSafe, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panel7.add(buttonDisenchantSkinsSafe, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         buttonDisenchantSkinsHard = new JButton();
         buttonDisenchantSkinsHard.setText("Hard Mode (Disenchant Everything)");
-        panel5.add(buttonDisenchantSkinsHard, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panel7.add(buttonDisenchantSkinsHard, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         panelSettings = new JPanel();
         panelSettings.setLayout(new GridLayoutManager(11, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPaneRiftHelper.addTab("Settings", panelSettings);
@@ -1385,12 +1487,12 @@ public class RiftHelperMainView extends JFrame {
         buttonSystemTrayDisable = new JButton();
         buttonSystemTrayDisable.setText("Disable");
         panelSystemTray.add(buttonSystemTrayDisable, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        final JPanel panel6 = new JPanel();
-        panel6.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        panelSettings.add(panel6, new GridConstraints(9, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        final JPanel panel8 = new JPanel();
+        panel8.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        panelSettings.add(panel8, new GridConstraints(9, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         buttonTest = new JButton();
         buttonTest.setText("Button");
-        panel6.add(buttonTest, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panel8.add(buttonTest, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
     }
 
     /**
