@@ -13,7 +13,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.prefs.Preferences;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -32,6 +31,9 @@ public class RiftHelperMainController {
     private volatile int autoLockLaneChoice;
     private volatile boolean autoLockRank;
     private volatile boolean autoBan;
+    private volatile boolean autoLockArena;
+    private volatile boolean autoBanArena;
+    private volatile boolean autoBravery;
     private List<BenchChampion> benchChampions;
     private String[] priorityChampions;
     private String[] topChampions;
@@ -40,6 +42,8 @@ public class RiftHelperMainController {
     private String[] botChampions;
     private String[] supportChampions;
     private String[] banChampions;
+    private String[] arenaChampions;
+    private String[] banArenaChampions;
     private int rerollsRemaining;
     private int userCellId;
     private final ExecutorService autoSwapExecutorService = Executors.newFixedThreadPool(1);
@@ -57,20 +61,20 @@ public class RiftHelperMainController {
         System.out.println("Connected to Client: " + socketReader.isConnected());
 
         socketReader.subscribe("OnJsonApiEvent_lol-champ-select_v1_session", eventData -> {
-            userCellId = UserSelection.parseFromJsonLocalCellId(eventData);
-            autoLock(userCellId, eventData);
-//            Session session = Session.parseFromJson(eventData);
-//            if (!session.isAllowRerolling()) {
-//                userCellId = UserSelection.parseFromJsonLocalCellId(eventData);
-//                autoLock(userCellId, eventData);
-//            } else {
-//                benchChampions = BenchChampion.parseFromJson(eventData);
-//                rerollsRemaining = RerollsRemaining.parseFromJson(eventData);
-//
-//                autoReroll(rerollsRemaining);
-//                autoSwap();
-//                nameButtons();
-//            }
+            Session session = Session.parseFromJson(eventData);
+            if (!session.isAllowRerolling()) {
+                userCellId = UserSelection.parseFromJsonLocalCellId(eventData);
+                autoLock(userCellId, eventData);
+            }
+
+            if (session.isAllowRerolling()) {
+                benchChampions = BenchChampion.parseFromJson(eventData);
+                rerollsRemaining = RerollsRemaining.parseFromJson(eventData);
+
+                autoReroll(rerollsRemaining);
+                autoSwap();
+                nameButtons();
+            }
         });
 
         this.riftHelperMainView.addTestListener(e -> {
@@ -497,6 +501,14 @@ public class RiftHelperMainController {
             }
         });
 
+        this.riftHelperMainView.addAutoDisenchantSkinsSafeListener(e -> {
+            JOptionPane.showMessageDialog(riftHelperMainView, "Not yet implemented", "Error", JOptionPane.ERROR_MESSAGE);
+        });
+
+        this.riftHelperMainView.addAutoDisenchantSkinsHardListener(e -> {
+            JOptionPane.showMessageDialog(riftHelperMainView, "Not yet implemented", "Error", JOptionPane.ERROR_MESSAGE);
+        });
+
         this.riftHelperMainView.addSystemTrayEnableListener(e -> {
             systemTray = true;
 
@@ -597,6 +609,100 @@ public class RiftHelperMainController {
             PreferenceManager.setAutoBanPriority(ban);
 
             JOptionPane.showMessageDialog(riftHelperMainView, "Successfully saved!", "Save Success", JOptionPane.INFORMATION_MESSAGE);
+        });
+
+        this.riftHelperMainView.addAutoLockArenaEnableListener(e -> {
+            if (autoBravery) {
+                JOptionPane.showMessageDialog(riftHelperMainView, "Auto Bravery is enabled.", "Cannot Auto Lock (Arena)", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            autoLockArena = true;
+            System.out.println("Auto Lock (Arena) Turned On: " + autoLockArena);
+
+            SwingUtilities.invokeLater(() -> {
+                riftHelperMainView.buttonAutoLockArenaEnable.setEnabled(false);
+                riftHelperMainView.buttonAutoLockArenaDisable.setEnabled(true);
+            });
+        });
+
+        this.riftHelperMainView.addAutoLockArenaDisableListener(e -> {
+            autoLockArena = false;
+            System.out.println("Auto Lock (Arena) Turned Off: " + autoLockArena);
+
+            SwingUtilities.invokeLater(() -> {
+                riftHelperMainView.buttonAutoLockArenaEnable.setEnabled(true);
+                riftHelperMainView.buttonAutoLockArenaDisable.setEnabled(false);
+            });
+        });
+
+        this.riftHelperMainView.addAutoLockArenaSaveListener(e -> {
+            String[] champions = {
+                    riftHelperMainView.getComboBoxAutoLockArenaPriority1(), riftHelperMainView.getComboBoxAutoLockArenaPriority2(),
+                    riftHelperMainView.getComboBoxAutoLockArenaPriority3(), riftHelperMainView.getComboBoxAutoLockArenaPriority4(),
+                    riftHelperMainView.getComboBoxAutoLockArenaPriority5()
+            };
+
+            PreferenceManager.setAutoLockArenaPriority(champions);
+
+            JOptionPane.showMessageDialog(riftHelperMainView, "Successfully saved!", "Save Success", JOptionPane.INFORMATION_MESSAGE);
+        });
+
+        this.riftHelperMainView.addAutoBanArenaEnableListener(e -> {
+            autoBanArena = true;
+            System.out.println("Auto Ban (Arena) Turned On: " + autoBanArena);
+
+            SwingUtilities.invokeLater(() -> {
+                riftHelperMainView.buttonAutoBanArenaEnable.setEnabled(false);
+                riftHelperMainView.buttonAutoBanArenaDisable.setEnabled(true);
+            });
+        });
+
+        this.riftHelperMainView.addAutoBanArenaDisableListener(e -> {
+            autoBanArena = false;
+            System.out.println("Auto Ban (Arena) Turned Off: " + autoBanArena);
+
+            SwingUtilities.invokeLater(() -> {
+                riftHelperMainView.buttonAutoBanArenaEnable.setEnabled(true);
+                riftHelperMainView.buttonAutoBanArenaDisable.setEnabled(false);
+            });
+        });
+
+        this.riftHelperMainView.addAutoBanArenaSaveListener(e -> {
+            String[] ban = {
+                    riftHelperMainView.getComboBoxAutoBanArenaPriority1(), riftHelperMainView.getComboBoxAutoBanArenaPriority2(),
+                    riftHelperMainView.getComboBoxAutoBanArenaPriority3(), riftHelperMainView.getComboBoxAutoBanArenaPriority4(),
+                    riftHelperMainView.getComboBoxAutoBanArenaPriority5()
+            };
+
+            PreferenceManager.setAutoBanArenaPriority(ban);
+
+            JOptionPane.showMessageDialog(riftHelperMainView, "Successfully saved!", "Save Success", JOptionPane.INFORMATION_MESSAGE);
+        });
+
+        this.riftHelperMainView.addAutoBraveryArenaEnableListener(e -> {
+            if (autoLockArena) {
+                JOptionPane.showMessageDialog(riftHelperMainView, "Auto Lock (Arena) is enabled.", "Cannot Auto Bravery", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            autoBravery = true;
+            System.out.println("Auto Bravery (Arena) Turned On: " + autoBravery);
+
+            SwingUtilities.invokeLater(() -> {
+                riftHelperMainView.buttonAutoBraveryArenaEnable.setEnabled(false);
+                riftHelperMainView.buttonAutoBraveryArenaDisable.setEnabled(true);
+            });
+        });
+
+        this.riftHelperMainView.addAutoBraveryArenaDisableListener(e -> {
+            autoBravery = false;
+            System.out.println("Auto Bravery (Arena) Turned Off: " + autoBravery);
+
+            SwingUtilities.invokeLater(() -> {
+                riftHelperMainView.buttonAutoBraveryArenaEnable.setEnabled(true);
+                riftHelperMainView.buttonAutoBraveryArenaDisable.setEnabled(false);
+            });
         });
     }
 
@@ -745,8 +851,50 @@ public class RiftHelperMainController {
                             }
                         }
                     }
-                } else {
-                    LCUPatch.patchToClientWithBody(endpointPicking, jsonBodyAutoLock(actionIdPicking, -3));
+                }
+            }
+        }
+
+        if (autoBravery) {
+            if (isInProgressPicking) {
+                LCUPatch.patchToClientWithBody(endpointPicking, jsonBodyAutoLock(actionIdPicking, -3));
+            }
+        }
+
+        if (autoLockArena) {
+            if (isInProgressPicking) {
+                int[] championPriorities = {
+                        DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxAutoLockArenaPriority1()),
+                        DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxAutoLockArenaPriority2()),
+                        DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxAutoLockArenaPriority3()),
+                        DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxAutoLockArenaPriority4()),
+                        DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxAutoLockArenaPriority5())
+                };
+
+                for (int priority : championPriorities) {
+                    for (int available : availableChampions) {
+                        if (priority == available) {
+                            LCUPatch.patchToClientWithBody(endpointPicking, jsonBodyAutoLock(actionIdPicking, priority));
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (autoBanArena) {
+            if (isInProgressBanning) {
+                int[] banPriority = {
+                        DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxAutoBanArenaPriority1()),
+                        DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxAutoBanArenaPriority2()),
+                        DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxAutoBanArenaPriority3()),
+                        DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxAutoBanArenaPriority4()),
+                        DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxAutoBanArenaPriority5())
+                };
+
+                for (int priority : banPriority) {
+                    LCUPatch.patchToClientWithBody(endpointBanning, jsonBodyAutoLock(actionIdBanning, priority));
+                    return;
                 }
             }
         }
@@ -809,6 +957,8 @@ public class RiftHelperMainController {
         this.botChampions = PreferenceManager.getAutoLockBotPriority();
         this.supportChampions = PreferenceManager.getAutoLockSupportPriority();
         this.banChampions = PreferenceManager.getAutoBanPriority();
+        this.arenaChampions = PreferenceManager.getAutoLockArenaPriority();
+        this.banArenaChampions = PreferenceManager.getAutoBanArenaPriority();
         this.autoSwapSlots = PreferenceManager.getAutoSwapSlots();
         this.alwaysOnTop = PreferenceManager.getAlwaysOnTop();
         this.centerGUI = PreferenceManager.getCenterGUI();
@@ -882,6 +1032,8 @@ public class RiftHelperMainController {
         this.riftHelperMainView.setComboBoxBotPriority(botChampions);
         this.riftHelperMainView.setComboBoxSupportPriority(supportChampions);
         this.riftHelperMainView.setComboBoxAutoBanPriority(banChampions);
+        this.riftHelperMainView.setComboBoxAutoLockArenaPriority(arenaChampions);
+        this.riftHelperMainView.setComboBoxAutoBanArenaPriority(banArenaChampions);
         if (systemTray) {
             this.riftHelperMainView.enableSystemTray();
         } else {
@@ -918,7 +1070,17 @@ public class RiftHelperMainController {
             reInitialize();
         }
 
-        if (benchChampions == null) {
+        if (benchChampions == null || benchChampions.size() < 0) {
+            this.riftHelperMainView.setButtonBench1Text(null);
+            this.riftHelperMainView.setButtonBench2Text(null);
+            this.riftHelperMainView.setButtonBench3Text(null);
+            this.riftHelperMainView.setButtonBench4Text(null);
+            this.riftHelperMainView.setButtonBench5Text(null);
+            this.riftHelperMainView.setButtonBench6Text(null);
+            this.riftHelperMainView.setButtonBench7Text(null);
+            this.riftHelperMainView.setButtonBench8Text(null);
+            this.riftHelperMainView.setButtonBench9Text(null);
+            this.riftHelperMainView.setButtonBench10Text(null);
             return;
         }
 

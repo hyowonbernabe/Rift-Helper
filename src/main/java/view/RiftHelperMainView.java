@@ -178,15 +178,15 @@ public class RiftHelperMainView extends JFrame {
     private JComboBox comboBoxAutoLockArena4;
     private JComboBox comboBoxAutoLockArena5;
     private JButton buttonAutoLockArenaSave;
-    private JButton buttonAutoLockArenaEnable;
-    private JButton buttonAutoLockArenaDisable;
+    public JButton buttonAutoLockArenaEnable;
+    public JButton buttonAutoLockArenaDisable;
     private JComboBox comboBoxAutoBanArena1;
     private JComboBox comboBoxAutoBanArena2;
     private JComboBox comboBoxAutoBanArena3;
     private JComboBox comboBoxAutoBanArena4;
     private JComboBox comboBoxAutoBanArena5;
-    private JButton buttonAutoBanArenaEnable;
-    private JButton buttonAutoBanArenaDisable;
+    public JButton buttonAutoBanArenaEnable;
+    public JButton buttonAutoBanArenaDisable;
     private JButton buttonAutoBanArenaSave;
     private JLabel labelAutoLockArena;
     private JLabel labelAutoLockArena1;
@@ -204,8 +204,8 @@ public class RiftHelperMainView extends JFrame {
     private JLabel labelAutoBanArena4;
     private JLabel labelAutoBanArena5;
     private JPanel panelAutoBanArenaButtons;
-    private JButton buttonAutoBraveryArenaEnable;
-    private JButton buttonAutoBraveryArenaDisable;
+    public JButton buttonAutoBraveryArenaEnable;
+    public JButton buttonAutoBraveryArenaDisable;
     private JLabel labelAutoBraveryArena;
     private SystemTray tray;
     private TrayIcon trayIcon;
@@ -234,13 +234,24 @@ public class RiftHelperMainView extends JFrame {
             }
         });
 
-        // Hide Elements for Quick Switch
+        // Hide Elements
         panelQuickSwitchBench2.setVisible(false);
+        buttonAutoAcceptDisable.setEnabled(false);
+        buttonAutoDeclineDisable.setEnabled(false);
+        buttonAutoLockDisable.setEnabled(false);
+        buttonAutoBanDisable.setEnabled(false);
+        buttonAutoSwapDisable.setEnabled(false);
+        buttonAutoRerollDisable.setEnabled(false);
+        buttonAutoBraveryArenaDisable.setEnabled(false);
+        buttonAutoLockArenaDisable.setEnabled(false);
+        buttonAutoBanArenaDisable.setEnabled(false);
 
         List<String> championNames = DDragonParser.fetchChampionNames();
 
-        // Populate Auto Lock and Auto Swap
+        // Populate Combo Boxes
         for (JComboBox jComboBox : Arrays.asList(
+                comboBoxAutoLockArena1, comboBoxAutoLockArena2, comboBoxAutoLockArena3, comboBoxAutoLockArena4, comboBoxAutoLockArena5,
+                comboBoxAutoBanArena1, comboBoxAutoBanArena2, comboBoxAutoBanArena3, comboBoxAutoBanArena4, comboBoxAutoBanArena5,
                 comboBoxAutoBan1, comboBoxAutoBan2, comboBoxAutoBan3, comboBoxAutoBan4, comboBoxAutoBan5,
                 comboBoxTop1, comboBoxTop2, comboBoxTop3, comboBoxTop4, comboBoxTop5,
                 comboBoxJungle1, comboBoxJungle2, comboBoxJungle3, comboBoxJungle4, comboBoxJungle5,
@@ -373,6 +384,72 @@ public class RiftHelperMainView extends JFrame {
                 comboBoxAutoSwapPriority7, comboBoxAutoSwapPriority8,
                 comboBoxAutoSwapPriority9, comboBoxAutoSwapPriority10
         };
+    }
+    
+    public void setComboBoxAutoLockArenaPriority(String[] priorityChampions) {
+        comboBoxAutoLockArena1.setSelectedItem(priorityChampions[0]);
+        comboBoxAutoLockArena2.setSelectedItem(priorityChampions[1]);
+        comboBoxAutoLockArena3.setSelectedItem(priorityChampions[2]);
+        comboBoxAutoLockArena4.setSelectedItem(priorityChampions[3]);
+        comboBoxAutoLockArena5.setSelectedItem(priorityChampions[4]);
+    }
+
+    public String getComboBoxAutoLockArenaPriority1() {
+        Object selectedItem = comboBoxAutoLockArena1.getSelectedItem();
+        return (selectedItem != null) ? selectedItem.toString() : null;
+    }
+
+    public String getComboBoxAutoLockArenaPriority2() {
+        Object selectedItem = comboBoxAutoLockArena2.getSelectedItem();
+        return (selectedItem != null) ? selectedItem.toString() : null;
+    }
+
+    public String getComboBoxAutoLockArenaPriority3() {
+        Object selectedItem = comboBoxAutoLockArena3.getSelectedItem();
+        return (selectedItem != null) ? selectedItem.toString() : null;
+    }
+
+    public String getComboBoxAutoLockArenaPriority4() {
+        Object selectedItem = comboBoxAutoLockArena4.getSelectedItem();
+        return (selectedItem != null) ? selectedItem.toString() : null;
+    }
+
+    public String getComboBoxAutoLockArenaPriority5() {
+        Object selectedItem = comboBoxAutoLockArena5.getSelectedItem();
+        return (selectedItem != null) ? selectedItem.toString() : null;
+    }
+    
+    public void setComboBoxAutoBanArenaPriority(String[] priorityChampions) {
+        comboBoxAutoBanArena1.setSelectedItem(priorityChampions[0]);
+        comboBoxAutoBanArena2.setSelectedItem(priorityChampions[1]);
+        comboBoxAutoBanArena3.setSelectedItem(priorityChampions[2]);
+        comboBoxAutoBanArena4.setSelectedItem(priorityChampions[3]);
+        comboBoxAutoBanArena5.setSelectedItem(priorityChampions[4]);
+    }
+
+    public String getComboBoxAutoBanArenaPriority1() {
+        Object selectedItem = comboBoxAutoBanArena1.getSelectedItem();
+        return (selectedItem != null) ? selectedItem.toString() : null;
+    }
+
+    public String getComboBoxAutoBanArenaPriority2() {
+        Object selectedItem = comboBoxAutoBanArena2.getSelectedItem();
+        return (selectedItem != null) ? selectedItem.toString() : null;
+    }
+
+    public String getComboBoxAutoBanArenaPriority3() {
+        Object selectedItem = comboBoxAutoBanArena3.getSelectedItem();
+        return (selectedItem != null) ? selectedItem.toString() : null;
+    }
+
+    public String getComboBoxAutoBanArenaPriority4() {
+        Object selectedItem = comboBoxAutoBanArena4.getSelectedItem();
+        return (selectedItem != null) ? selectedItem.toString() : null;
+    }
+
+    public String getComboBoxAutoBanArenaPriority5() {
+        Object selectedItem = comboBoxAutoBanArena5.getSelectedItem();
+        return (selectedItem != null) ? selectedItem.toString() : null;
     }
 
     public void setComboBoxTopPriority(String[] priorityChampions) {
@@ -1033,6 +1110,38 @@ public class RiftHelperMainView extends JFrame {
         buttonAutoBanDisable.addActionListener(listener);
     }
 
+    public void addAutoLockArenaEnableListener(ActionListener listener) {
+        buttonAutoLockArenaEnable.addActionListener(listener);
+    }
+
+    public void addAutoLockArenaDisableListener(ActionListener listener) {
+        buttonAutoLockArenaDisable.addActionListener(listener);
+    }
+
+    public void addAutoLockArenaSaveListener(ActionListener listener) {
+        buttonAutoLockArenaSave.addActionListener(listener);
+    }
+
+    public void addAutoBanArenaEnableListener(ActionListener listener) {
+        buttonAutoBanArenaEnable.addActionListener(listener);
+    }
+
+    public void addAutoBanArenaDisableListener(ActionListener listener) {
+        buttonAutoBanArenaDisable.addActionListener(listener);
+    }
+
+    public void addAutoBanArenaSaveListener(ActionListener listener) {
+        buttonAutoBanArenaSave.addActionListener(listener);
+    }
+
+    public void addAutoBraveryArenaEnableListener(ActionListener listener) {
+        buttonAutoBraveryArenaEnable.addActionListener(listener);
+    }
+
+    public void addAutoBraveryArenaDisableListener(ActionListener listener) {
+        buttonAutoBraveryArenaDisable.addActionListener(listener);
+    }
+
     public void addSystemTrayEnableListener(ActionListener listener) {
         buttonSystemTrayEnable.addActionListener(listener);
     }
@@ -1629,7 +1738,7 @@ public class RiftHelperMainView extends JFrame {
         panel10.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         panelSettings.add(panel10, new GridConstraints(9, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         buttonTest = new JButton();
-        buttonTest.setText("Button");
+        buttonTest.setText("Developer Button");
         panel10.add(buttonTest, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
     }
 
