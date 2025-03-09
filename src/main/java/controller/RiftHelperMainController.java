@@ -70,6 +70,7 @@ public class RiftHelperMainController {
 
             userCellId = session.getLocalPlayerCellId();
             rerollsRemaining = session.getRerollsRemaining();
+            benchChampions = session.getBenchChampions();
 
             System.out.println(session);
             if (!session.isAllowRerolling()) {
