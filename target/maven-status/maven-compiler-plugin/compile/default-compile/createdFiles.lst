@@ -3,6 +3,8 @@ main\RiftHelperMain.class
 model\BenchChampion.class
 model\SSLBypass$1.class
 view\RiftHelperMainView.class
+model\ReadyCheck.class
+model\Matchmaking.class
 model\TeamSelection$1.class
 model\Session.class
 model\CurrentDirectory.class

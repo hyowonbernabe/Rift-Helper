@@ -8,6 +8,7 @@ import view.RiftHelperMainView;
 import javax.swing.*;
 import java.io.File;
 import java.io.FileInputStream;
+import java.math.MathContext;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -61,6 +62,9 @@ public class RiftHelperMainController {
 
         socketReader.subscribe("OnJsonApiEvent_lol-champ-select_v1_session", eventData -> {
             Session session = Session.parseFromJson(eventData);
+            System.out.println(eventData);
+            System.out.println(session);
+            System.out.println(session.isAllowRerolling());
             if (!session.isAllowRerolling()) {
                 userCellId = UserSelection.parseFromJsonLocalCellId(eventData);
                 autoLock(userCellId, eventData);
@@ -79,8 +83,7 @@ public class RiftHelperMainController {
         });
 
         this.riftHelperMainView.addBench1ActionListener(e -> {
-            if (benchChampions.get(0) == null || benchChampions.size() < 1) {
-                System.out.println("Cannot swap. Bench Champion is null");
+            if (benchChampions == null || benchChampions.size() < 1) {
                 return;
             }
 
@@ -88,8 +91,7 @@ public class RiftHelperMainController {
         });
 
         this.riftHelperMainView.addBench2ActionListener(e -> {
-            if (benchChampions.get(1) == null || benchChampions.size() < 2) {
-                System.out.println("Cannot swap. Bench Champion is null");
+            if (benchChampions == null || benchChampions.size() < 2) {
                 return;
             }
 
@@ -97,8 +99,7 @@ public class RiftHelperMainController {
         });
 
         this.riftHelperMainView.addBench3ActionListener(e -> {
-            if (benchChampions.get(2) == null || benchChampions.size() < 3) {
-                System.out.println("Cannot swap. Bench Champion is null");
+            if (benchChampions == null || benchChampions.size() < 3) {
                 return;
             }
 
@@ -106,8 +107,7 @@ public class RiftHelperMainController {
         });
 
         this.riftHelperMainView.addBench4ActionListener(e -> {
-            if (benchChampions.get(3) == null || benchChampions.size() < 4) {
-                System.out.println("Cannot swap. Bench Champion is null");
+            if (benchChampions == null || benchChampions.size() < 4) {
                 return;
             }
 
@@ -115,8 +115,7 @@ public class RiftHelperMainController {
         });
 
         this.riftHelperMainView.addBench5ActionListener(e -> {
-            if (benchChampions.get(4) == null || benchChampions.size() < 5) {
-                System.out.println("Cannot swap. Bench Champion is null");
+            if (benchChampions == null || benchChampions.size() < 5) {
                 return;
             }
 
@@ -124,8 +123,7 @@ public class RiftHelperMainController {
         });
 
         this.riftHelperMainView.addBench6ActionListener(e -> {
-            if (benchChampions.get(5) == null || benchChampions.size() < 6) {
-                System.out.println("Cannot swap. Bench Champion is null");
+            if (benchChampions == null || benchChampions.size() < 6) {
                 return;
             }
 
@@ -133,8 +131,7 @@ public class RiftHelperMainController {
         });
 
         this.riftHelperMainView.addBench7ActionListener(e -> {
-            if (benchChampions.get(6) == null || benchChampions.size() < 7) {
-                System.out.println("Cannot swap. Bench Champion is null");
+            if (benchChampions == null || benchChampions.size() < 7) {
                 return;
             }
 
@@ -142,8 +139,7 @@ public class RiftHelperMainController {
         });
 
         this.riftHelperMainView.addBench8ActionListener(e -> {
-            if (benchChampions.get(7) == null || benchChampions.size() < 8) {
-                System.out.println("Cannot swap. Bench Champion is null");
+            if (benchChampions == null || benchChampions.size() < 8) {
                 return;
             }
 
@@ -151,8 +147,7 @@ public class RiftHelperMainController {
         });
 
         this.riftHelperMainView.addBench9ActionListener(e -> {
-            if (benchChampions.get(8) == null || benchChampions.size() < 9) {
-                System.out.println("Cannot swap. Bench Champion is null");
+            if (benchChampions == null || benchChampions.size() < 9) {
                 return;
             }
 
@@ -160,8 +155,7 @@ public class RiftHelperMainController {
         });
 
         this.riftHelperMainView.addBench10ActionListener(e -> {
-            if (benchChampions.get(9) == null || benchChampions.size() < 10) {
-                System.out.println("Cannot swap. Bench Champion is null");
+            if (benchChampions == null || benchChampions.size() < 10) {
                 return;
             }
 
@@ -180,21 +174,14 @@ public class RiftHelperMainController {
             riftHelperMainView.buttonAutoAcceptEnable.setEnabled(false);
             riftHelperMainView.buttonAutoAcceptDisable.setEnabled(true);
 
-            new Thread(() -> {
-                try {
-                    while (autoAccept) {
-                        int responseCodeAccept = LCUPost.postToClient("/lol-matchmaking/v1/ready-check/accept");
+            socketReader.subscribe("OnJsonApiEvent_lol-matchmaking_v1_search", eventData -> {
+                Matchmaking matchmaking = Matchmaking.parseFromJson(eventData);
+                ReadyCheck readyCheck = matchmaking.getReadyCheck();
 
-                        if (responseCodeAccept == 500) {
-                            Thread.sleep(3000);
-                        } else {
-                            Thread.sleep(3000);
-                        }
-                    }
-                } catch (Exception ex) {
-                    ex.printStackTrace();
+                if (matchmaking.getSearchState().equals("Found") && readyCheck.getPlayerResponse().equals("None")) {
+                    LCUPost.postToClient("/lol-matchmaking/v1/ready-check/accept");
                 }
-            }).start();
+            });
         });
 
         this.riftHelperMainView.addAutoAcceptDisableListener(e -> {
@@ -205,6 +192,8 @@ public class RiftHelperMainController {
                 riftHelperMainView.buttonAutoAcceptEnable.setEnabled(true);
                 riftHelperMainView.buttonAutoAcceptDisable.setEnabled(false);
             });
+
+            socketReader.unsubscribe("OnJsonApiEvent_lol-matchmaking_v1_search");
         });
 
         this.riftHelperMainView.addAutoDeclineEnableListener(e -> {
@@ -219,6 +208,15 @@ public class RiftHelperMainController {
                 riftHelperMainView.buttonAutoDeclineEnable.setEnabled(false);
                 riftHelperMainView.buttonAutoDeclineDisable.setEnabled(true);
             });
+
+            socketReader.subscribe("OnJsonApiEvent_lol-matchmaking_v1_search", eventData -> {
+                Matchmaking matchmaking = Matchmaking.parseFromJson(eventData);
+                ReadyCheck readyCheck = matchmaking.getReadyCheck();
+
+                if (matchmaking.getSearchState().equals("Found") && readyCheck.getPlayerResponse().equals("None")) {
+                    LCUPost.postToClient("/lol-matchmaking/v1/ready-check/decline");
+                }
+            });
         });
 
         this.riftHelperMainView.addAutoDeclineDisableListener(e -> {
@@ -228,6 +226,8 @@ public class RiftHelperMainController {
                 riftHelperMainView.buttonAutoDeclineEnable.setEnabled(true);
                 riftHelperMainView.buttonAutoDeclineDisable.setEnabled(false);
             });
+
+            socketReader.unsubscribe("OnJsonApiEvent_lol-matchmaking_v1_search");
         });
 
         this.riftHelperMainView.addAutoSwapEnableListener(e -> {
@@ -776,7 +776,7 @@ public class RiftHelperMainController {
                     };
 
                     for (int priority : banPriority) {
-                        LCUPatch.patchToClientWithBody(endpointBanning, jsonBodyAutoLock(actionIdBanning, priority));
+                        LCUPatch.patchToClientWithBody(endpointBanning, jsonBodyAutoChoose(actionIdBanning, priority));
                         return;
                     }
                 }
@@ -797,7 +797,7 @@ public class RiftHelperMainController {
                     for (int priority : topPriority) {
                         for (int available : availableChampions) {
                             if (priority == available) {
-                                LCUPatch.patchToClientWithBody(endpointPicking, jsonBodyAutoLock(actionIdPicking, priority));
+                                LCUPatch.patchToClientWithBody(endpointPicking, jsonBodyAutoChoose(actionIdPicking, priority));
                                 return;
                             }
                         }
@@ -814,7 +814,7 @@ public class RiftHelperMainController {
                     for (int priority : junglePriority) {
                         for (int available : availableChampions) {
                             if (priority == available) {
-                                LCUPatch.patchToClientWithBody(endpointPicking, jsonBodyAutoLock(actionIdPicking, priority));
+                                LCUPatch.patchToClientWithBody(endpointPicking, jsonBodyAutoChoose(actionIdPicking, priority));
                                 return;
                             }
                         }
@@ -831,7 +831,7 @@ public class RiftHelperMainController {
                     for (int priority : midPriority) {
                         for (int available : availableChampions) {
                             if (priority == available) {
-                                LCUPatch.patchToClientWithBody(endpointPicking, jsonBodyAutoLock(actionIdPicking, priority));
+                                LCUPatch.patchToClientWithBody(endpointPicking, jsonBodyAutoChoose(actionIdPicking, priority));
                                 return;
                             }
                         }
@@ -848,7 +848,7 @@ public class RiftHelperMainController {
                     for (int priority : botPriority) {
                         for (int available : availableChampions) {
                             if (priority == available) {
-                                LCUPatch.patchToClientWithBody(endpointPicking, jsonBodyAutoLock(actionIdPicking, priority));
+                                LCUPatch.patchToClientWithBody(endpointPicking, jsonBodyAutoChoose(actionIdPicking, priority));
                                 return;
                             }
                         }
@@ -865,7 +865,7 @@ public class RiftHelperMainController {
                     for (int priority : supportPriorities) {
                         for (int available : availableChampions) {
                             if (priority == available) {
-                                LCUPatch.patchToClientWithBody(endpointPicking, jsonBodyAutoLock(actionIdPicking, priority));
+                                LCUPatch.patchToClientWithBody(endpointPicking, jsonBodyAutoChoose(actionIdPicking, priority));
                                 return;
                             }
                         }
@@ -876,7 +876,7 @@ public class RiftHelperMainController {
 
         if (autoBravery) {
             if (isInProgressPicking) {
-                LCUPatch.patchToClientWithBody(endpointPicking, jsonBodyAutoLock(actionIdPicking, -3));
+                LCUPatch.patchToClientWithBody(endpointPicking, jsonBodyAutoChoose(actionIdPicking, -3));
             }
         }
 
@@ -893,7 +893,7 @@ public class RiftHelperMainController {
                 for (int priority : championPriorities) {
                     for (int available : availableChampions) {
                         if (priority == available) {
-                            LCUPatch.patchToClientWithBody(endpointPicking, jsonBodyAutoLock(actionIdPicking, priority));
+                            LCUPatch.patchToClientWithBody(endpointPicking, jsonBodyAutoChoose(actionIdPicking, priority));
                             return;
                         }
                     }
@@ -912,14 +912,18 @@ public class RiftHelperMainController {
                 };
 
                 for (int priority : banPriority) {
-                    LCUPatch.patchToClientWithBody(endpointBanning, jsonBodyAutoLock(actionIdBanning, priority));
-                    return;
+                    for (int available : availableChampions) {
+                        if (priority == available) {
+                            LCUPatch.patchToClientWithBody(endpointBanning, jsonBodyAutoChoose(actionIdBanning, priority));
+                            return;
+                        }
+                    }
                 }
             }
         }
     }
 
-    private String jsonBodyAutoLock(int actionId, int championId) {
+    private String jsonBodyAutoChoose(int actionId, int championId) {
         return "{"
                 + "\"id\": " + actionId + ","
                 + "\"actorCellId\": " + userCellId + ","

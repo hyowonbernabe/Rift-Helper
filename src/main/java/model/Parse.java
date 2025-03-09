@@ -2,9 +2,6 @@ package model;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-import javax.swing.*;
-import java.util.Arrays;
-
 public class Parse {
     public static int parseInt(JsonNode node) {
         if (node == null || node.isNull()) return 0;

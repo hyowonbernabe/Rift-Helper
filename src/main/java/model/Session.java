@@ -2,6 +2,7 @@ package model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -76,7 +77,12 @@ public class Session {
     public static Session parseFromJson(String eventData) {
         ObjectMapper objectMapper = new ObjectMapper();
         try {
-            return objectMapper.readValue(eventData, Session.class);
+            JsonNode rootNode = objectMapper.readTree(eventData);
+            JsonNode dataNode = rootNode
+                    .path("OnJsonApiEvent_lol-champ-select_v1_session")
+                    .path("data");
+
+            return objectMapper.treeToValue(dataNode, Session.class);
         } catch (Exception e) {
             e.printStackTrace();
             return null;

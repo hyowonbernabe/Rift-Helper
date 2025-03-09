@@ -3,7 +3,6 @@ package model;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 
 public class PreferenceManager {
