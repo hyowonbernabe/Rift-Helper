@@ -7,7 +7,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 
 public class UpdateChecker {
-    private static final String CURRENT_VERSION = "1.2.1";
+    private static final String CURRENT_VERSION = "1.3.0";
     private static final String VERSION_URL = "https://raw.githubusercontent.com/hyowonbernabe/Rift-Helper/main/version.json\n";
 
     public static void checkForUpdate() {

@@ -28,6 +28,18 @@ public class Matchmaking {
     @JsonProperty("timeInQueue")
     private double timeInQueue;
 
+    public Matchmaking() {}
+
+    public Matchmaking(long estimatedQueueTime, boolean isCurrentlyInQueue, String lobbyId, int queueId, ReadyCheck readyCheck, String searchState, double isTimeInQueue) {
+        this.estimatedQueueTime = estimatedQueueTime;
+        this.isCurrentlyInQueue = isCurrentlyInQueue;
+        this.lobbyId = lobbyId;
+        this.queueId = queueId;
+        this.readyCheck = readyCheck;
+        this.searchState = searchState;
+        this.timeInQueue = isTimeInQueue;
+    }
+
     public long getEstimatedQueueTime() {
         return estimatedQueueTime;
     }
@@ -82,18 +94,6 @@ public class Matchmaking {
 
     public void setTimeInQueue(double timeInQueue) {
         this.timeInQueue = timeInQueue;
-    }
-
-    public Matchmaking() {}
-
-    public Matchmaking(long estimatedQueueTime, boolean isCurrentlyInQueue, String lobbyId, int queueId, ReadyCheck readyCheck, String searchState, double isTimeInQueue) {
-        this.estimatedQueueTime = estimatedQueueTime;
-        this.isCurrentlyInQueue = isCurrentlyInQueue;
-        this.lobbyId = lobbyId;
-        this.queueId = queueId;
-        this.readyCheck = readyCheck;
-        this.searchState = searchState;
-        this.timeInQueue = isTimeInQueue;
     }
 
     @JsonIgnoreProperties
