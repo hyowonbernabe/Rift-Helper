@@ -31,7 +31,8 @@ jobs:
           ./rcedit.exe "${{ env.MSI_PATH }}" --set-icon "src/main/resource/Kindred.ico"
 
       - name: Upload Modified MSI
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Modified-MSI
           path: "${{ env.MSI_PATH }}"
+          retention-days: 7
