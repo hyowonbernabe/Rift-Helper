@@ -1,0 +1,37 @@
+name: Update MSI Icon
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  update-icon:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Find the Latest MSI File
+        id: find-msi
+        run: |
+          $msiFile = Get-ChildItem -Path . -Filter "Rift Helper-*.msi" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+          if ($msiFile -eq $null) { Write-Host "No MSI file found!"; exit 1 }
+          echo "MSI_PATH=$($msiFile.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append
+          echo "Found MSI file: $($msiFile.FullName)"
+
+      - name: Download rcedit
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/electron/rcedit/releases/latest/download/rcedit-x64.exe" -OutFile "rcedit.exe"
+
+      - name: Modify MSI Icon
+        run: |
+          ./rcedit.exe "${{ env.MSI_PATH }}" --set-icon "src/main/resource/Kindred.ico"
+
+      - name: Upload Modified MSI
+        uses: actions/upload-artifact@v3
+        with:
+          name: Modified-MSI
+          path: "${{ env.MSI_PATH }}"
