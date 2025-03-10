@@ -1,41 +1,16 @@
 package model;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
-
-@JsonIgnoreProperties(ignoreUnknown = true)
 public class Team {
-    @JsonProperty("assignedPosition")
     private String assignedPosition;
-
-    @JsonProperty("cellId")
     private int cellId;
-
-    @JsonProperty("championId")
     private int championId;
-
-    @JsonProperty("championPickIntent")
     private int championPickIntent;
-
-    @JsonProperty("nameVisibilityType")
     private String nameVisibilityType;
-
-    @JsonProperty("selectedSkinId")
     private int selectedSkinId;
-
-    @JsonProperty("spell1Id")
     private int spell1Id;
-
-    @JsonProperty("spell2Id")
     private int spell2Id;
-
-    @JsonProperty("summonerId")
     private long summonerId;
-
-    @JsonProperty("team")
     private int team;
-
-    @JsonProperty("wardSkinId")
     private int wardSkinId;
 
     public Team() {}

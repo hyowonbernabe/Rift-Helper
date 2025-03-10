@@ -1,14 +1,12 @@
 package model;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
-import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class DDragonParser {
     private static final String DDRAGON_URL = "https://ddragon.leagueoflegends.com/cdn/15.4.1/data/en_US/champion.json";
@@ -20,21 +18,22 @@ public class DDragonParser {
     }
 
     private static void loadChampionData() {
-        try {
-            ObjectMapper objectMapper = new ObjectMapper();
-            JsonNode root = objectMapper.readTree(new URL(DDRAGON_URL));
-            JsonNode data = root.get("data");
+        try (InputStreamReader reader = new InputStreamReader(new URL(DDRAGON_URL).openStream())) {
+            Gson gson = new Gson();
+            JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
+            JsonObject data = root.getAsJsonObject("data");
 
             if (data != null) {
-                for (JsonNode champNode : data) {
-                    int key = champNode.get("key").asInt();
-                    String name = champNode.get("name").asText();
+                for (String key : data.keySet()) {
+                    JsonObject champNode = data.getAsJsonObject(key);
+                    int champId = champNode.get("key").getAsInt();
+                    String champName = champNode.get("name").getAsString();
 
-                    CHAMPION_MAP.put(key, name);
-                    NAME_TO_ID_MAP.put(name, key);
+                    CHAMPION_MAP.put(champId, champName);
+                    NAME_TO_ID_MAP.put(champName, champId);
                 }
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -42,17 +41,17 @@ public class DDragonParser {
     public static List<String> fetchChampionNames() {
         List<String> championNames = new ArrayList<>();
 
-        try {
-            ObjectMapper objectMapper = new ObjectMapper();
-            JsonNode root = objectMapper.readTree(new URL(DDRAGON_URL));
-            JsonNode data = root.get("data");
+        try (InputStreamReader reader = new InputStreamReader(new URL(DDRAGON_URL).openStream())) {
+            Gson gson = new Gson();
+            JsonObject root = JsonParser.parseReader(reader).getAsJsonObject();
+            JsonObject data = root.getAsJsonObject("data");
 
             if (data != null) {
-                for (JsonNode champ : data) {
-                    championNames.add(champ.get("name").asText());
+                for (String key : data.keySet()) {
+                    championNames.add(data.getAsJsonObject(key).get("name").getAsString());
                 }
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
 

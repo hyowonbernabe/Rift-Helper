@@ -1,31 +1,17 @@
 package model;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
-@JsonIgnoreProperties(ignoreUnknown = true)
 public class Matchmaking {
-    @JsonProperty("estimatedQueueTime")
     private long estimatedQueueTime;
-
-    @JsonProperty("isCurrentlyInQueue")
     private boolean isCurrentlyInQueue;
-
-    @JsonProperty("lobbyId")
     private String lobbyId;
-
-    @JsonProperty("queueId")
     private int queueId;
-
-    @JsonProperty("readyCheck")
     private ReadyCheck readyCheck;
-
-    @JsonProperty("searchState")
     private String searchState;
-
-    @JsonProperty("timeInQueue")
     private double timeInQueue;
 
     public Matchmaking() {}
@@ -96,16 +82,11 @@ public class Matchmaking {
         this.timeInQueue = timeInQueue;
     }
 
-    @JsonIgnoreProperties
     public static Matchmaking parseFromJson(String eventData) {
-        ObjectMapper objectMapper = new ObjectMapper();
         try {
-            JsonNode rootNode = objectMapper.readTree(eventData);
-            JsonNode dataNode = rootNode
-                    .path("OnJsonApiEvent_lol-matchmaking_v1_search")
-                    .path("data");
-
-            return objectMapper.treeToValue(dataNode, Matchmaking.class);
+            JsonObject rootObject = JsonParser.parseString(eventData).getAsJsonObject();
+            JsonElement dataElement = rootObject.getAsJsonObject("OnJsonApiEvent_lol-matchmaking_v1_search").get("data");
+            return new Gson().fromJson(dataElement, Matchmaking.class);
         } catch (Exception e) {
             e.printStackTrace();
             return null;

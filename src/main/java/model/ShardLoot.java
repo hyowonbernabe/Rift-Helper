@@ -1,35 +1,20 @@
 package model;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
 
 import java.util.ArrayList;
 import java.util.List;
 
-@JsonIgnoreProperties(ignoreUnknown = true)
 public class ShardLoot {
-    @JsonProperty("disenchantLootName")
     private String disenchantLootName;
-
-    @JsonProperty("count")
     private int count;
-
-    @JsonProperty("isNew")
     private boolean isNew;
-
-    @JsonProperty("itemStatus")
     private String itemStatus;
-
-    @JsonProperty("lootId")
     private String lootId;
-
-    @JsonProperty("storeItemId")
     private int storeItemId;
-
-    @JsonProperty("disenchantValue")
     private int disenchantValue;
 
     public ShardLoot() {}
@@ -100,24 +85,15 @@ public class ShardLoot {
         this.disenchantValue = disenchantValue;
     }
 
-    @JsonIgnoreProperties
     public static List<ShardLoot> parseFromJson(String eventData) {
         List<ShardLoot> lootList = new ArrayList<>();
-        ObjectMapper objectMapper = new ObjectMapper();
+        Gson gson = new Gson();
 
         try {
-            List<JsonNode> jsonNodes = objectMapper.readValue(eventData, new TypeReference<List<JsonNode>>() {});
-
-            for (JsonNode node : jsonNodes) {
-                String disenchantLootName = node.get("disenchantLootName").asText();
-                int count = Parse.parseInt(node.get("count"));
-                boolean isNew = Parse.parseBoolean(node.get("isNew"));
-                String itemStatus = node.get("itemStatus").asText();
-                String lootId = node.has("lootId") ? node.get("lootId").asText() : "";
-                int storeItemId = Parse.parseInt(node.get("storeItemId"));
-                int disenchantValue = Parse.parseInt(node.get("disenchantValue"));
-
-                lootList.add(new ShardLoot(disenchantLootName, count, isNew, itemStatus, lootId, storeItemId, disenchantValue));
+            JsonArray jsonArray = JsonParser.parseString(eventData).getAsJsonArray();
+            for (JsonElement element : jsonArray) {
+                ShardLoot loot = gson.fromJson(element, ShardLoot.class);
+                lootList.add(loot);
             }
         } catch (Exception e) {
             System.out.println("Error parsing Shards Loot JSON: " + e.getMessage());

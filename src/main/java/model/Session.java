@@ -1,84 +1,36 @@
 package model;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 import java.util.List;
 
-@JsonIgnoreProperties(ignoreUnknown = true)
 public class Session {
-    @JsonProperty("actions")
     private List<List<Actions>> actions;
-
-    @JsonProperty("allowBattleBoost")
     private boolean allowBattleBoost;
-
-    @JsonProperty("allowDuplicatePicks")
     private boolean allowDuplicatePicks;
-
-    @JsonProperty("allowLockedEvents")
     private boolean allowLockedEvents;
-
-    @JsonProperty("allowRerolling")
     private boolean allowRerolling;
-
-    @JsonProperty("allowSkinSelection")
     private boolean allowSkinSelection;
-
-    @JsonProperty("bans")
     private Bans bans;
-
-    @JsonProperty("benchChampions")
     private int[] benchChampions;
-
-    @JsonProperty("benchEnabled")
     private boolean benchEnabled;
-
-    @JsonProperty("boostableSkinCount")
     private int boostableSkinCount;
-
-    @JsonProperty("counter")
     private int counter;
-
-    @JsonProperty("gameId")
     private int gameId;
-
-    @JsonProperty("hasSimultaneousBans")
     private boolean hasSimultaneousBans;
-
-    @JsonProperty("hasSimultaneousPicks")
     private boolean hasSimultaneousPicks;
-
-    @JsonProperty("isCustomGame")
     private boolean isCustomGame;
-
-    @JsonProperty("localPlayerCellId")
     private int localPlayerCellId;
-
-    @JsonProperty("lockedEventIndex")
     private int lockedEventIndex;
-
-    @JsonProperty("myTeam")
     private List<MyTeam> myTeam;
-
-    @JsonProperty("pickOrderSwaps")
     private List<PickOrderSwaps> pickOrderSwaps;
-
-    @JsonProperty("recoveryCounter")
     private int recoveryCounter;
-
-    @JsonProperty("rerollsRemaining")
     private int rerollsRemaining;
-
-    @JsonProperty("skipChampionSelect")
     private boolean skipChampionSelect;
-
-    @JsonProperty("theirTeam")
     private List<TheirTeam> theirTeam;
-
-    @JsonProperty("timer")
     private Timer timer;
 
     public Session() {}
@@ -306,16 +258,11 @@ public class Session {
         this.timer = timer;
     }
 
-    @JsonIgnoreProperties
     public static Session parseFromJson(String eventData) {
-        ObjectMapper objectMapper = new ObjectMapper();
         try {
-            JsonNode rootNode = objectMapper.readTree(eventData);
-            JsonNode dataNode = rootNode
-                    .path("OnJsonApiEvent_lol-champ-select_v1_session")
-                    .path("data");
-
-            return objectMapper.treeToValue(dataNode, Session.class);
+            JsonObject rootObject = JsonParser.parseString(eventData).getAsJsonObject();
+            JsonElement dataElement = rootObject.getAsJsonObject("OnJsonApiEvent_lol-champ-select_v1_session").get("data");
+            return new Gson().fromJson(dataElement, Session.class);
         } catch (Exception e) {
             e.printStackTrace();
             return null;

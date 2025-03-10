@@ -2,7 +2,6 @@ C:\Users\zanep\IdeaProjects\Rift-Helper\src\main\java\controller\RiftHelperMainC
 C:\Users\zanep\IdeaProjects\Rift-Helper\src\main\java\main\RiftHelperMain.java
 C:\Users\zanep\IdeaProjects\Rift-Helper\src\main\java\model\Actions.java
 C:\Users\zanep\IdeaProjects\Rift-Helper\src\main\java\model\Bans.java
-C:\Users\zanep\IdeaProjects\Rift-Helper\src\main\java\model\Champions.java
 C:\Users\zanep\IdeaProjects\Rift-Helper\src\main\java\model\CurrentDirectory.java
 C:\Users\zanep\IdeaProjects\Rift-Helper\src\main\java\model\DDragonParser.java
 C:\Users\zanep\IdeaProjects\Rift-Helper\src\main\java\model\LCUAuth.java
@@ -12,19 +11,15 @@ C:\Users\zanep\IdeaProjects\Rift-Helper\src\main\java\model\LCUPost.java
 C:\Users\zanep\IdeaProjects\Rift-Helper\src\main\java\model\LCUPut.java
 C:\Users\zanep\IdeaProjects\Rift-Helper\src\main\java\model\Matchmaking.java
 C:\Users\zanep\IdeaProjects\Rift-Helper\src\main\java\model\MyTeam.java
-C:\Users\zanep\IdeaProjects\Rift-Helper\src\main\java\model\Parse.java
 C:\Users\zanep\IdeaProjects\Rift-Helper\src\main\java\model\PickOrderSwaps.java
 C:\Users\zanep\IdeaProjects\Rift-Helper\src\main\java\model\PreferenceManager.java
 C:\Users\zanep\IdeaProjects\Rift-Helper\src\main\java\model\ReadyCheck.java
-C:\Users\zanep\IdeaProjects\Rift-Helper\src\main\java\model\RerollsRemaining.java
 C:\Users\zanep\IdeaProjects\Rift-Helper\src\main\java\model\Session.java
 C:\Users\zanep\IdeaProjects\Rift-Helper\src\main\java\model\ShardLoot.java
 C:\Users\zanep\IdeaProjects\Rift-Helper\src\main\java\model\SSLBypass.java
-C:\Users\zanep\IdeaProjects\Rift-Helper\src\main\java\model\Summoner.java
 C:\Users\zanep\IdeaProjects\Rift-Helper\src\main\java\model\Team.java
 C:\Users\zanep\IdeaProjects\Rift-Helper\src\main\java\model\TheirTeam.java
 C:\Users\zanep\IdeaProjects\Rift-Helper\src\main\java\model\Timer.java
 C:\Users\zanep\IdeaProjects\Rift-Helper\src\main\java\model\UpdateChecker.java
-C:\Users\zanep\IdeaProjects\Rift-Helper\src\main\java\model\UserSelection.java
 C:\Users\zanep\IdeaProjects\Rift-Helper\src\main\java\view\FileChooserView.java
 C:\Users\zanep\IdeaProjects\Rift-Helper\src\main\java\view\RiftHelperMainView.java

@@ -1,8 +1,10 @@
 package model;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
+import com.google.gson.stream.JsonReader;
+
 import javax.swing.*;
-import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
@@ -31,9 +33,11 @@ public class UpdateChecker {
         conn.setRequestMethod("GET");
         conn.setRequestProperty("Accept", "application/json");
 
-        try (InputStream inputStream = conn.getInputStream()) {
-            ObjectMapper objectMapper = new ObjectMapper();
-            return objectMapper.readValue(inputStream, VersionInfo.class);
+        try (InputStreamReader reader = new InputStreamReader(conn.getInputStream());
+             JsonReader jsonReader = new JsonReader(reader)) {
+
+            Gson gson = new Gson();
+            return gson.fromJson(jsonReader, VersionInfo.class);
         }
     }
 

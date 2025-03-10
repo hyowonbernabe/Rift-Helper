@@ -1,23 +1,10 @@
 package model;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
-
-@JsonIgnoreProperties(ignoreUnknown = true)
 public class Timer {
-    @JsonProperty("adjustedTimeLeftInPhase")
     private int adjustedTimeLeftInPhase;
-
-    @JsonProperty("internalNowInEpochMs")
     private long internalNowInEpochMs;
-
-    @JsonProperty("isInfinite")
     private boolean isInfinite;
-
-    @JsonProperty("phase")
     private String phase;
-
-    @JsonProperty("totalTimeInPhase")
     private int totalTimeInPhase;
 
     public Timer() {}

@@ -1,32 +1,13 @@
 package model;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
-
-@JsonIgnoreProperties(ignoreUnknown = true)
 public class Actions {
-    @JsonProperty("actorCellId")
     private int actorCellId;
-
-    @JsonProperty("championId")
     private int championId;
-
-    @JsonProperty("completed")
     private boolean completed;
-
-    @JsonProperty("id")
     private int id;
-
-    @JsonProperty("isAllyAction")
     private boolean isAllyAction;
-
-    @JsonProperty("isInProgress")
     private boolean isInProgress;
-
-    @JsonProperty("pickTurn")
     private int pickTurn;
-
-    @JsonProperty("type")
     private String type;
 
     public Actions() {}

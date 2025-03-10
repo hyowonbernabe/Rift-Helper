@@ -1,23 +1,10 @@
 package model;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
-
-@JsonIgnoreProperties(ignoreUnknown = true)
 public class ReadyCheck {
-    @JsonProperty("dodgeWarning")
     private String dodgeWarning;
-
-    @JsonProperty("playerResponse")
     private String playerResponse;
-
-    @JsonProperty("state")
     private String state;
-
-    @JsonProperty("suppressUx")
     private boolean suppressUx;
-
-    @JsonProperty("timer")
     private double timer;
 
     public String getDodgeWarning() {

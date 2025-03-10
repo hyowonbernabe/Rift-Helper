@@ -1,19 +1,10 @@
 package model;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.util.Arrays;
 
-@JsonIgnoreProperties(ignoreUnknown = true)
 public class Bans {
-    @JsonProperty("myTeamBans")
     private int[] myTeamBans;
-
-    @JsonProperty("numBans")
     private int numBans;
-
-    @JsonProperty("theirTeamBans")
     private int[] theirTeamBans;
 
     public Bans() {}
