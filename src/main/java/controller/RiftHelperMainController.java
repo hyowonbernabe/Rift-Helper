@@ -1161,7 +1161,7 @@ public class RiftHelperMainController {
             this.riftHelperMainView.buttonAutoCheckUpdateDisable.setEnabled(true);
 
             System.out.println("Update Checked");
-            UpdateChecker.checkForUpdate();
+            UpdateChecker.checkForUpdate(this.riftHelperMainView);
         } else {
             this.riftHelperMainView.buttonAutoCheckUpdateEnable.setEnabled(true);
             this.riftHelperMainView.buttonAutoCheckUpdateDisable.setEnabled(false);

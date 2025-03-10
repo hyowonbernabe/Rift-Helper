@@ -2,6 +2,7 @@ package model;
 
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
+import view.RiftHelperMainView;
 
 import javax.swing.*;
 import java.io.InputStreamReader;
@@ -9,15 +10,15 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 
 public class UpdateChecker {
-    private static final String CURRENT_VERSION = "1.3.0";
+    private static final String CURRENT_VERSION = "1.3.1";
     private static final String VERSION_URL = "https://raw.githubusercontent.com/hyowonbernabe/Rift-Helper/main/version.json\n";
 
-    public static void checkForUpdate() {
+    public static void checkForUpdate(RiftHelperMainView riftHelperMainView) {
         try {
             VersionInfo latestVersionInfo = fetchLatestVersionInfo(VERSION_URL);
 
             if (!CURRENT_VERSION.equals(latestVersionInfo.latest)) {
-                JOptionPane.showMessageDialog(null,
+                JOptionPane.showMessageDialog(riftHelperMainView,
                         "A new version (" + latestVersionInfo.latest + ") is available!\nCheck it out: " + latestVersionInfo.url,
                         "Update Available",
                         JOptionPane.INFORMATION_MESSAGE);
