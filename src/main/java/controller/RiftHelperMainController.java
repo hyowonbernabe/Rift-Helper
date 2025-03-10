@@ -115,7 +115,7 @@ public class RiftHelperMainController {
             if (session.isAllowRerolling()) {
                 autoReroll(rerollsRemaining);
                 autoSwap();
-                nameButtons();
+                nameButtons(actions);
             }
         });
 
@@ -1091,7 +1091,9 @@ public class RiftHelperMainController {
         }
     }
 
-    public void nameButtons() {
+    public void nameButtons(List<List<Actions>> actions) {
+        JButton[] buttons = this.riftHelperMainView.getButtonBench();
+
         // Increase Champion Bench if more than 5
         if (benchChampions.length > 5) {
             this.riftHelperMainView.panelQuickSwitchBench2.setVisible(true);
@@ -1099,32 +1101,16 @@ public class RiftHelperMainController {
             reInitialize();
         }
 
-        if (benchChampions == null || benchChampions.length < 0) {
-            this.riftHelperMainView.setButtonBench1Text(null);
-            this.riftHelperMainView.setButtonBench2Text(null);
-            this.riftHelperMainView.setButtonBench3Text(null);
-            this.riftHelperMainView.setButtonBench4Text(null);
-            this.riftHelperMainView.setButtonBench5Text(null);
-            this.riftHelperMainView.setButtonBench6Text(null);
-            this.riftHelperMainView.setButtonBench7Text(null);
-            this.riftHelperMainView.setButtonBench8Text(null);
-            this.riftHelperMainView.setButtonBench9Text(null);
-            this.riftHelperMainView.setButtonBench10Text(null);
+        if (actions == null) {
+            for (JButton button : buttons) {
+                button.setText(null);
+            }
             return;
         }
 
-
-
-        this.riftHelperMainView.setButtonBench1Text(DDragonParser.getChampionName(benchChampions[0]));
-        this.riftHelperMainView.setButtonBench2Text(DDragonParser.getChampionName(benchChampions[1]));
-        this.riftHelperMainView.setButtonBench3Text(DDragonParser.getChampionName(benchChampions[2]));
-        this.riftHelperMainView.setButtonBench4Text(DDragonParser.getChampionName(benchChampions[3]));
-        this.riftHelperMainView.setButtonBench5Text(DDragonParser.getChampionName(benchChampions[4]));
-        this.riftHelperMainView.setButtonBench6Text(DDragonParser.getChampionName(benchChampions[5]));
-        this.riftHelperMainView.setButtonBench7Text(DDragonParser.getChampionName(benchChampions[6]));
-        this.riftHelperMainView.setButtonBench8Text(DDragonParser.getChampionName(benchChampions[7]));
-        this.riftHelperMainView.setButtonBench9Text(DDragonParser.getChampionName(benchChampions[8]));
-        this.riftHelperMainView.setButtonBench10Text(DDragonParser.getChampionName(benchChampions[9]));
+        for (int i = 0; i < buttons.length; i++) {
+            buttons[i].setText(DDragonParser.getChampionName(benchChampions[i]));
+        }
     }
 
     public void autoSwap() {

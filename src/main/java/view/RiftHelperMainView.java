@@ -920,6 +920,13 @@ public class RiftHelperMainView extends JFrame {
         buttonSupport.setEnabled(true);
     }
 
+    public JButton[] getButtonBench() {
+        return new JButton[]{
+                buttonBench1, buttonBench2, buttonBench3, buttonBench4, buttonBench5,
+                buttonBench6, buttonBench7, buttonBench8, buttonBench9, buttonBench10
+        };
+    }
+
     public void setButtonBench1Text(String text) {
         buttonBench1.setText(text);
     }
