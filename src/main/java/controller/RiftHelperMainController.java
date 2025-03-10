@@ -33,7 +33,7 @@ public class RiftHelperMainController {
     private volatile boolean autoBanArena;
     private volatile boolean autoBanCrowdFavoriteArena;
     private volatile boolean autoBravery;
-    private int[] benchChampions;
+    private List<BenchChampions> benchChampions;
     private String[] priorityChampions;
     private String[] topChampions;
     private String[] jungleChampions;
@@ -138,155 +138,117 @@ public class RiftHelperMainController {
         });
 
         this.riftHelperMainView.addBench1ActionListener(e -> {
-            if (benchChampions == null || benchChampions.length < 1) {
+            if (benchChampions == null || benchChampions.size() < 1) {
                 return;
             }
 
-            LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + benchChampions[0]);
+            LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + benchChampions.getFirst().getChampionId());
         });
 
         this.riftHelperMainView.addBench2ActionListener(e -> {
-            if (benchChampions == null || benchChampions.length < 2) {
+            if (benchChampions == null || benchChampions.size() < 2) {
                 return;
             }
 
-            LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + benchChampions[1]);
+            LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + benchChampions.get(1).getChampionId());
         });
 
         this.riftHelperMainView.addBench3ActionListener(e -> {
-            if (benchChampions == null || benchChampions.length < 3) {
+            if (benchChampions == null || benchChampions.size() < 3) {
                 return;
             }
 
-            LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + benchChampions[2]);
+            LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + benchChampions.get(2).getChampionId());
         });
 
         this.riftHelperMainView.addBench4ActionListener(e -> {
-            if (benchChampions == null || benchChampions.length < 4) {
+            if (benchChampions == null || benchChampions.size() < 4) {
                 return;
             }
 
-            LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + benchChampions[3]);
+            LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + benchChampions.get(3).getChampionId());
         });
 
         this.riftHelperMainView.addBench5ActionListener(e -> {
-            if (benchChampions == null || benchChampions.length < 5) {
+            if (benchChampions == null || benchChampions.size() < 5) {
                 return;
             }
 
-            LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + benchChampions[4]);
+            LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + benchChampions.get(4).getChampionId());
         });
 
         this.riftHelperMainView.addBench6ActionListener(e -> {
-            if (benchChampions == null || benchChampions.length < 6) {
+            if (benchChampions == null || benchChampions.size() < 6) {
                 return;
             }
 
-            LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + benchChampions[5]);
+            LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + benchChampions.get(5).getChampionId());
         });
 
         this.riftHelperMainView.addBench7ActionListener(e -> {
-            if (benchChampions == null || benchChampions.length < 7) {
+            if (benchChampions == null || benchChampions.size() < 7) {
                 return;
             }
 
-            LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + benchChampions[6]);
+            LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + benchChampions.get(6).getChampionId());
         });
 
         this.riftHelperMainView.addBench8ActionListener(e -> {
-            if (benchChampions == null || benchChampions.length < 8) {
+            if (benchChampions == null || benchChampions.size() < 8) {
                 return;
             }
 
-            LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + benchChampions[7]);
+            LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + benchChampions.get(7).getChampionId());
         });
 
         this.riftHelperMainView.addBench9ActionListener(e -> {
-            if (benchChampions == null || benchChampions.length < 9) {
+            if (benchChampions == null || benchChampions.size() < 9) {
                 return;
             }
 
-            LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + benchChampions[8]);
+            LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + benchChampions.get(8).getChampionId());
         });
 
         this.riftHelperMainView.addBench10ActionListener(e -> {
-            if (benchChampions == null || benchChampions.length < 10) {
+            if (benchChampions == null || benchChampions.size() < 10) {
                 return;
             }
 
-            LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + benchChampions[9]);
+            LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + benchChampions.get(9).getChampionId());
         });
 
         this.riftHelperMainView.addAutoAcceptEnableListener(e -> {
             LCUPost.postToClient("/lol-matchmaking/v1/ready-check/accept");
 
-            if (autoDecline) {
-                JOptionPane.showMessageDialog(riftHelperMainView, "Auto Decline is enabled.", "Cannot Auto Accept", JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-
-            autoAccept = true;
-            System.out.println("Auto Accept Turned On: " + autoAccept);
-
-            riftHelperMainView.buttonAutoAcceptEnable.setEnabled(false);
-            riftHelperMainView.buttonAutoAcceptDisable.setEnabled(true);
-
-            socketReader.subscribe("OnJsonApiEvent_lol-matchmaking_v1_search", eventData -> {
-                Matchmaking matchmaking = Matchmaking.parseFromJson(eventData);
-                ReadyCheck readyCheck = matchmaking.getReadyCheck();
-
-                if (readyCheck.getState().equals("InProgress")) {
-                    LCUPost.postToClient("/lol-matchmaking/v1/ready-check/accept");
-                }
-            });
+            autoAcceptEnable(socketReader);
         });
 
         this.riftHelperMainView.addAutoAcceptDisableListener(e -> {
-            autoAccept = false;
-            System.out.println("Auto Accept Turned Off: " + autoAccept);
-
-            SwingUtilities.invokeLater(() -> {
-                riftHelperMainView.buttonAutoAcceptEnable.setEnabled(true);
-                riftHelperMainView.buttonAutoAcceptDisable.setEnabled(false);
-            });
-
-            socketReader.unsubscribe("OnJsonApiEvent_lol-matchmaking_v1_search");
+            autoAcceptDisable(socketReader);
         });
 
         this.riftHelperMainView.addAutoDeclineEnableListener(e -> {
             LCUPost.postToClient("/lol-matchmaking/v1/ready-check/decline");
 
-            if (autoAccept) {
-                JOptionPane.showMessageDialog(riftHelperMainView, "Auto Accept is enabled.", "Cannot Auto Decline", JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-
-            autoDecline = true;
-
-            SwingUtilities.invokeLater(() -> {
-                riftHelperMainView.buttonAutoDeclineEnable.setEnabled(false);
-                riftHelperMainView.buttonAutoDeclineDisable.setEnabled(true);
-            });
-
-            socketReader.subscribe("OnJsonApiEvent_lol-matchmaking_v1_search", eventData -> {
-                Matchmaking matchmaking = Matchmaking.parseFromJson(eventData);
-                ReadyCheck readyCheck = matchmaking.getReadyCheck();
-
-                if (readyCheck.getState().equals("InProgress")) {
-                    LCUPost.postToClient("/lol-matchmaking/v1/ready-check/decline");
-                }
-            });
+            autoDeclineEnable(socketReader);
         });
 
         this.riftHelperMainView.addAutoDeclineDisableListener(e -> {
-            autoDecline = false;
+            autoDeclineDisable(socketReader);
+        });
 
-            SwingUtilities.invokeLater(() -> {
-                riftHelperMainView.buttonAutoDeclineEnable.setEnabled(true);
-                riftHelperMainView.buttonAutoDeclineDisable.setEnabled(false);
-            });
+        this.riftHelperMainView.addChangeResponseAcceptListener(e -> {
+            LCUPost.postToClient("/lol-matchmaking/v1/ready-check/accept");
 
-            socketReader.unsubscribe("OnJsonApiEvent_lol-matchmaking_v1_search");
+            autoAcceptDisable(socketReader);
+            autoDeclineDisable(socketReader);
+        });
+
+        this.riftHelperMainView.addChangeResponseDeclineListener(e -> {
+            LCUPost.postToClient("/lol-matchmaking/v1/ready-check/decline");
+
+            autoAcceptDisable(socketReader);
+            autoDeclineDisable(socketReader);
         });
 
         this.riftHelperMainView.addAutoSwapEnableListener(e -> {
@@ -814,6 +776,74 @@ public class RiftHelperMainController {
         });
     }
 
+    private void autoDeclineDisable(LCUSocketReader socketReader) {
+        autoDecline = false;
+
+        SwingUtilities.invokeLater(() -> {
+            riftHelperMainView.buttonAutoDeclineEnable.setEnabled(true);
+            riftHelperMainView.buttonAutoDeclineDisable.setEnabled(false);
+        });
+
+        socketReader.unsubscribe("OnJsonApiEvent_lol-matchmaking_v1_search");
+    }
+
+    private void autoDeclineEnable(LCUSocketReader socketReader) {
+        if (autoAccept) {
+            JOptionPane.showMessageDialog(riftHelperMainView, "Auto Accept is enabled.", "Cannot Auto Decline", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        autoDecline = true;
+
+        SwingUtilities.invokeLater(() -> {
+            riftHelperMainView.buttonAutoDeclineEnable.setEnabled(false);
+            riftHelperMainView.buttonAutoDeclineDisable.setEnabled(true);
+        });
+
+        socketReader.subscribe("OnJsonApiEvent_lol-matchmaking_v1_search", eventData -> {
+            Matchmaking matchmaking = Matchmaking.parseFromJson(eventData);
+            ReadyCheck readyCheck = matchmaking.getReadyCheck();
+
+            if (readyCheck.getState().equals("InProgress")) {
+                LCUPost.postToClient("/lol-matchmaking/v1/ready-check/decline");
+            }
+        });
+    }
+
+    private void autoAcceptDisable(LCUSocketReader socketReader) {
+        autoAccept = false;
+        System.out.println("Auto Accept Turned Off: " + autoAccept);
+
+        SwingUtilities.invokeLater(() -> {
+            riftHelperMainView.buttonAutoAcceptEnable.setEnabled(true);
+            riftHelperMainView.buttonAutoAcceptDisable.setEnabled(false);
+        });
+
+        socketReader.unsubscribe("OnJsonApiEvent_lol-matchmaking_v1_search");
+    }
+
+    private void autoAcceptEnable(LCUSocketReader socketReader) {
+        if (autoDecline) {
+            JOptionPane.showMessageDialog(riftHelperMainView, "Auto Decline is enabled.", "Cannot Auto Accept", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        autoAccept = true;
+        System.out.println("Auto Accept Turned On: " + autoAccept);
+
+        riftHelperMainView.buttonAutoAcceptEnable.setEnabled(false);
+        riftHelperMainView.buttonAutoAcceptDisable.setEnabled(true);
+
+        socketReader.subscribe("OnJsonApiEvent_lol-matchmaking_v1_search", eventData -> {
+            Matchmaking matchmaking = Matchmaking.parseFromJson(eventData);
+            ReadyCheck readyCheck = matchmaking.getReadyCheck();
+
+            if (readyCheck.getState().equals("InProgress")) {
+                LCUPost.postToClient("/lol-matchmaking/v1/ready-check/accept");
+            }
+        });
+    }
+
     private void autoLock(String endpoint, int actionId, String assignedPosition) {
         if (autoLockRank) {
             switch (assignedPosition) {
@@ -1150,14 +1180,14 @@ public class RiftHelperMainController {
 
     public void nameButtons(JButton[] buttons) {
         // Increase Champion Bench if more than 5
-        if (benchChampions.length > 5) {
+        if (benchChampions.size() > 5) {
             this.riftHelperMainView.panelQuickSwitchBench2.setVisible(true);
 
             reInitialize();
         }
 
         for (int i = 0; i < buttons.length; i++) {
-            buttons[i].setText(DDragonParser.getChampionName(benchChampions[i]));
+            buttons[i].setText(DDragonParser.getChampionName(benchChampions.get(i).getChampionId()));
         }
     }
 
@@ -1177,8 +1207,8 @@ public class RiftHelperMainController {
             };
 
             for (int i = 0; i < autoSwapChampIdPriority.length; i++) {
-                for (int j = 0; j < benchChampions.length; j++) {
-                    if ((benchChampions[j] == autoSwapChampIdPriority[i]) && priority > i) {
+                for (int j = 0; j < benchChampions.size(); j++) {
+                    if ((benchChampions.get(j).getChampionId() == autoSwapChampIdPriority[i]) && priority > i) {
                         if (LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + autoSwapChampIdPriority[j]) == 204) {
                             priority = i;
                             return;

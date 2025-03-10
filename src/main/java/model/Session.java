@@ -15,7 +15,7 @@ public class Session {
     private boolean allowRerolling;
     private boolean allowSkinSelection;
     private Bans bans;
-    private int[] benchChampions;
+    private List<BenchChampions> benchChampions;
     private boolean benchEnabled;
     private int boostableSkinCount;
     private int counter;
@@ -36,7 +36,7 @@ public class Session {
     public Session() {}
 
     public Session(List<List<Actions>> actions, boolean allowBattleBoost, boolean allowDuplicatePicks, boolean allowLockedEvents,
-                   boolean allowRerolling, boolean allowSkinSelection, Bans bans, int[] benchChampions, boolean benchEnabled,
+                   boolean allowRerolling, boolean allowSkinSelection, Bans bans, List<BenchChampions> benchChampions, boolean benchEnabled,
                    int boostableSkinCount, int counter, int gameId, boolean hasSimultaneousBans, boolean hasSimultaneousPicks,
                    boolean isCustomGame, int localPlayerCellId, int lockedEventIndex, List<MyTeam> myTeam, List<PickOrderSwaps> pickOrderSwaps,
                    int recoveryCounter, int rerollsRemaining, boolean skipChampionSelect, List<TheirTeam> theirTeam, Timer timer) {
@@ -122,11 +122,11 @@ public class Session {
         this.bans = bans;
     }
 
-    public int[] getBenchChampions() {
+    public List<BenchChampions> getBenchChampions() {
         return benchChampions;
     }
 
-    public void setBenchChampions(int[] benchChampions) {
+    public void setBenchChampions(List<BenchChampions> benchChampions) {
         this.benchChampions = benchChampions;
     }
 
