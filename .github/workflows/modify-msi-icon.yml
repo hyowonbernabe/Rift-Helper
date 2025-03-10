@@ -23,17 +23,24 @@ jobs:
           echo "MSI_PATH=$($msiFile.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append
           Write-Host "Found MSI file: $($msiFile.FullName)"
 
-      - name: Download rcedit
+      - name: Download Resource Hacker
         run: |
-          Invoke-WebRequest -Uri "https://github.com/electron/rcedit/releases/latest/download/rcedit-x64.exe" -OutFile "rcedit.exe"
+          Invoke-WebRequest -Uri "http://www.angusj.com/resourcehacker/reshacker_setup.exe" -OutFile "reshacker_setup.exe"
+          Start-Process -FilePath ".\reshacker_setup.exe" -ArgumentList "/VERYSILENT /NORESTART /SUPPRESSMSGBOXES" -NoNewWindow -Wait
 
-      - name: Modify MSI Icon
+      - name: Modify MSI Icon with Resource Hacker
         shell: pwsh
         run: |
           $msiPath = "${{ env.MSI_PATH }}"
-          $iconPath = "${{ github.workspace }}\src\main\resources\Kindred.ico"  # ✅ Corrected path
+          $iconPath = "${{ github.workspace }}\src\main\resources\Kindred.ico"
+          $msiPathEscaped = "`"$msiPath`""  # Escape spaces
+          $iconPathEscaped = "`"$iconPath`""  # Escape spaces
+
           Write-Host "Updating MSI: $msiPath with icon: $iconPath"
-          Start-Process -FilePath "./rcedit.exe" -ArgumentList "`"$msiPath`" --set-icon `"$iconPath`"" -NoNewWindow -Wait
+
+          Start-Process -FilePath "C:\Program Files\Resource Hacker\ResourceHacker.exe" `
+            -ArgumentList "-open $msiPathEscaped -save $msiPathEscaped -action addoverwrite -res $iconPathEscaped -mask ICONGROUP,1," `
+            -NoNewWindow -Wait
 
       - name: Upload Modified MSI
         uses: actions/upload-artifact@v4
