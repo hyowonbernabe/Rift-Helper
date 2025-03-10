@@ -6,6 +6,7 @@ model\ReadyCheck.class
 model\Matchmaking.class
 model\Session.class
 model\Timer.class
+model\BenchChampions.class
 model\PickOrderSwaps.class
 model\CurrentDirectory.class
 model\Team.class
