@@ -16,11 +16,12 @@ jobs:
 
       - name: Find the Latest MSI File
         id: find-msi
+        shell: pwsh
         run: |
-          $msiFile = Get-ChildItem -Path . -Filter "Rift Helper-*.msi" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+          $msiFile = Get-ChildItem -Path "${{ github.workspace }}" -Filter "Rift Helper-*.msi" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
           if ($msiFile -eq $null) { Write-Host "No MSI file found!"; exit 1 }
           echo "MSI_PATH=$($msiFile.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append
-          echo "Found MSI file: $($msiFile.FullName)"
+          Write-Host "Found MSI file: $($msiFile.FullName)"
 
       - name: Download rcedit
         run: |
@@ -28,7 +29,9 @@ jobs:
 
       - name: Modify MSI Icon
         run: |
-          ./rcedit.exe "${{ env.MSI_PATH }}" --set-icon "src/main/resource/Kindred.ico"
+          $msiPath = "${{ env.MSI_PATH }}"
+          $msiPath = $msiPath -replace ' ', '` '  # Escape spaces
+          ./rcedit.exe "$msiPath" --set-icon "${{ github.workspace }}\src\main\resource\Kindred.ico"
 
       - name: Upload Modified MSI
         uses: actions/upload-artifact@v4
