@@ -69,8 +69,6 @@ public class RiftHelperMainController {
             List<MyTeam> myTeam = session.getMyTeam();
 
             userCellId = session.getLocalPlayerCellId();
-            rerollsRemaining = session.getRerollsRemaining();
-            benchChampions = session.getBenchChampions();
 
             System.out.println(session);
             if (!session.isAllowRerolling()) {
@@ -113,9 +111,22 @@ public class RiftHelperMainController {
             }
 
             if (session.isAllowRerolling()) {
+                rerollsRemaining = session.getRerollsRemaining();
+                benchChampions = session.getBenchChampions();
+                JButton[] buttons = this.riftHelperMainView.getButtonBench();
+
+                if (actions == null) {
+                    for (JButton button : buttons) {
+                        button.setText(null);
+                    }
+                    priority = 10;
+                    this.riftHelperMainView.panelQuickSwitchBench2.setVisible(false);
+                    return;
+                }
+
                 autoReroll(rerollsRemaining);
                 autoSwap();
-                nameButtons(actions);
+                nameButtons(buttons);
             }
         });
 
@@ -961,7 +972,7 @@ public class RiftHelperMainController {
         // Initialize Variables
         this.autoAccept = false;
         this.autoSwap = false;
-        this.priority = 1;
+        this.priority = 10;
         this.autoReroll = false;
 
         // Store Preferences
@@ -1084,28 +1095,21 @@ public class RiftHelperMainController {
     }
 
     public void autoReroll(int rerollsRemaining) {
-        if (rerollsRemaining > 0 && autoReroll) {
-            for (int i = 0; i < rerollsRemaining; i++) {
-                LCUPost.postToClient("/lol-champ-select/v1/session/my-selection/reroll");
+        if (autoReroll) {
+            if (rerollsRemaining > 0) {
+                for (int i = 0; i < rerollsRemaining; i++) {
+                    LCUPost.postToClient("/lol-champ-select/v1/session/my-selection/reroll");
+                }
             }
         }
     }
 
-    public void nameButtons(List<List<Actions>> actions) {
-        JButton[] buttons = this.riftHelperMainView.getButtonBench();
-
+    public void nameButtons(JButton[] buttons) {
         // Increase Champion Bench if more than 5
         if (benchChampions.length > 5) {
             this.riftHelperMainView.panelQuickSwitchBench2.setVisible(true);
 
             reInitialize();
-        }
-
-        if (actions == null) {
-            for (JButton button : buttons) {
-                button.setText(null);
-            }
-            return;
         }
 
         for (int i = 0; i < buttons.length; i++) {
@@ -1114,59 +1118,31 @@ public class RiftHelperMainController {
     }
 
     public void autoSwap() {
-        autoSwapExecutorService.submit(() -> {
-            while (autoSwap) {
+        if (autoSwap) {
+            int[] autoSwapChampIdPriority = {
+                DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxAutoSwapPriority1()),
+                DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxAutoSwapPriority2()),
+                DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxAutoSwapPriority3()),
+                DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxAutoSwapPriority4()),
+                DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxAutoSwapPriority5()),
+                DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxAutoSwapPriority6()),
+                DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxAutoSwapPriority7()),
+                DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxAutoSwapPriority8()),
+                DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxAutoSwapPriority9()),
+                DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxAutoSwapPriority10())
+            };
 
-                if (benchChampions == null) {
-                    continue;
-                }
-
-                int autoSwapChampIdPriority1 = DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxAutoSwapPriority1());
-                int autoSwapChampIdPriority2 = DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxAutoSwapPriority2());
-                int autoSwapChampIdPriority3 = DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxAutoSwapPriority3());
-                int autoSwapChampIdPriority4 = DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxAutoSwapPriority4());
-                int autoSwapChampIdPriority5 = DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxAutoSwapPriority5());
-                int autoSwapChampIdPriority6 = DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxAutoSwapPriority6());
-                int autoSwapChampIdPriority7 = DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxAutoSwapPriority7());
-                int autoSwapChampIdPriority8 = DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxAutoSwapPriority8());
-                int autoSwapChampIdPriority9 = DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxAutoSwapPriority9());
-                int autoSwapChampIdPriority10 = DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxAutoSwapPriority10());
-
-                for (int i = 0; i < benchChampions.length; i++) {
-                    if ((benchChampions[i] == autoSwapChampIdPriority1) && priority <= 10) {
-                        LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + autoSwapChampIdPriority1);
-                        priority = 10;
-                    } else if ((benchChampions[i] == autoSwapChampIdPriority2) && priority <= 9) {
-                        LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + autoSwapChampIdPriority2);
-                        priority = 9;
-                    } else if ((benchChampions[i] == autoSwapChampIdPriority3) && priority <= 8) {
-                        LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + autoSwapChampIdPriority3);
-                        priority = 8;
-                    } else if ((benchChampions[i] == autoSwapChampIdPriority4) && priority <= 7)  {
-                        LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + autoSwapChampIdPriority4);
-                        priority = 7;
-                    } else if ((benchChampions[i] == autoSwapChampIdPriority5) && priority <= 6) {
-                        LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + autoSwapChampIdPriority5);
-                        priority = 6;
-                    } else if ((benchChampions[i] == autoSwapChampIdPriority6) && priority <= 5) {
-                        LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + autoSwapChampIdPriority6);
-                        priority = 5;
-                    } else if ((benchChampions[i] == autoSwapChampIdPriority7) && priority <= 4) {
-                        LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + autoSwapChampIdPriority7);
-                        priority = 4;
-                    } else if ((benchChampions[i] == autoSwapChampIdPriority8) && priority <= 3) {
-                        LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + autoSwapChampIdPriority8);
-                        priority = 3;
-                    } else if ((benchChampions[i] == autoSwapChampIdPriority9) && priority <= 2) {
-                        LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + autoSwapChampIdPriority9);
-                        priority = 2;
-                    } else if ((benchChampions[i] == autoSwapChampIdPriority10) && priority <= 1) {
-                        LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + autoSwapChampIdPriority10);
-                        priority = 1;
+            for (int i = 0; i < autoSwapChampIdPriority.length; i++) {
+                for (int j = 0; j < benchChampions.length; j++) {
+                    if ((benchChampions[j] == autoSwapChampIdPriority[i]) && priority > i) {
+                        if (LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + autoSwapChampIdPriority[j]) == 204) {
+                            priority = i;
+                            return;
+                        }
                     }
                 }
             }
-        });
+        }
     }
 
     private void saveAutoSwap() {
