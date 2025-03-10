@@ -28,10 +28,13 @@ jobs:
           Invoke-WebRequest -Uri "https://github.com/electron/rcedit/releases/latest/download/rcedit-x64.exe" -OutFile "rcedit.exe"
 
       - name: Modify MSI Icon
+        shell: pwsh
         run: |
           $msiPath = "${{ env.MSI_PATH }}"
-          $msiPath = $msiPath -replace ' ', '` '  # Escape spaces
-          ./rcedit.exe "$msiPath" --set-icon "${{ github.workspace }}\src\main\resource\Kindred.ico"
+          $msiPath = "`"$msiPath`""  # Add quotes to handle spaces
+          $iconPath = "`"${{ github.workspace }}\src\main\resource\Kindred.ico`""  # Ensure correct icon path
+          Write-Host "Updating MSI: $msiPath with icon: $iconPath"
+          Start-Process -FilePath "./rcedit.exe" -ArgumentList "$msiPath --set-icon $iconPath" -NoNewWindow -Wait
 
       - name: Upload Modified MSI
         uses: actions/upload-artifact@v4
