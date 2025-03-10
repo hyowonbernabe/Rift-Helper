@@ -17,6 +17,7 @@ model\LCUPatch.class
 model\TheirTeam.class
 model\LCUPost.class
 controller\RiftHelperMainController.class
+model\GsonParser.class
 model\UpdateChecker$VersionInfo.class
 model\Bans.class
 view\RiftHelperMainView$1.class

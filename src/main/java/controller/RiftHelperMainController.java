@@ -31,6 +31,7 @@ public class RiftHelperMainController {
     private volatile boolean autoBan;
     private volatile boolean autoLockArena;
     private volatile boolean autoBanArena;
+    private volatile boolean autoBanCrowdFavoriteArena;
     private volatile boolean autoBravery;
     private int[] benchChampions;
     private String[] priorityChampions;
@@ -107,6 +108,7 @@ public class RiftHelperMainController {
                 if (isInProgressBanning) {
                     autoBan(endpointBanning, actionIdBanning, assignedPosition);
                     autoBanArena(endpointBanning, actionIdBanning);
+                    autoBanCrowdFavoriteArena(endpointBanning, actionIdBanning);
                 }
             }
 
@@ -703,6 +705,11 @@ public class RiftHelperMainController {
         });
 
         this.riftHelperMainView.addAutoBanArenaEnableListener(e -> {
+            if (autoBanCrowdFavoriteArena) {
+                JOptionPane.showMessageDialog(riftHelperMainView, "Auto Ban (Arena) is enabled.", "Cannot Auto Ban Crowd Favorite (Arena)", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
             autoBanArena = true;
             System.out.println("Auto Ban (Arena) Turned On: " + autoBanArena);
 
@@ -732,6 +739,31 @@ public class RiftHelperMainController {
             PreferenceManager.setAutoBanArenaPriority(ban);
 
             JOptionPane.showMessageDialog(riftHelperMainView, "Successfully saved!", "Save Success", JOptionPane.INFORMATION_MESSAGE);
+        });
+
+        this.riftHelperMainView.addAutoBanCrowdFavoriteEnableListener(e -> {
+            if (autoBanArena) {
+                JOptionPane.showMessageDialog(riftHelperMainView, "Auto Ban Crowd Favorite (Arena) is enabled.", "Cannot Auto Ban (Arena)", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            autoBanCrowdFavoriteArena = true;
+            System.out.println("Auto Ban Crowd Favorite (Arena) Turned On: " + autoBanCrowdFavoriteArena);
+
+            SwingUtilities.invokeLater(() -> {
+                riftHelperMainView.buttonAutoBanCrowdFavoriteEnable.setEnabled(false);
+                riftHelperMainView.buttonAutoBanCrowdFavoriteDisable.setEnabled(true);
+            });
+        });
+
+        this.riftHelperMainView.addAutoBanCrowdFavoriteDisableListener(e -> {
+            autoBanCrowdFavoriteArena = false;
+            System.out.println("Auto Ban Crowd Favorite (Arena) Turned Off: " + autoBanCrowdFavoriteArena);
+
+            SwingUtilities.invokeLater(() -> {
+                riftHelperMainView.buttonAutoBanCrowdFavoriteEnable.setEnabled(true);
+                riftHelperMainView.buttonAutoBanCrowdFavoriteDisable.setEnabled(false);
+            });
         });
 
         this.riftHelperMainView.addAutoBraveryArenaEnableListener(e -> {
@@ -917,6 +949,18 @@ public class RiftHelperMainController {
                     DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxAutoBanArenaPriority4()),
                     DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxAutoBanArenaPriority5())
             };
+
+            for (int i : banPriority) {
+                if (LCUPatch.patchToClientWithBody(endpoint, jsonBodyAutoChoose(actionId, i)) == 204) {
+                    return;
+                }
+            }
+        }
+    }
+
+    public void autoBanCrowdFavoriteArena(String endpoint, int actionId) {
+        if (autoBanCrowdFavoriteArena) {
+            int[] banPriority = GsonParser.parseFromJsonIntArray(LCUGet.getFromClient("/lol-lobby-team-builder/champ-select/v1/crowd-favorte-champion-list"));
 
             for (int i : banPriority) {
                 if (LCUPatch.patchToClientWithBody(endpoint, jsonBodyAutoChoose(actionId, i)) == 204) {

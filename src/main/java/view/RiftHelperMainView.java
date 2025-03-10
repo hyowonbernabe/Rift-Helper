@@ -211,8 +211,8 @@ public class RiftHelperMainView extends JFrame {
     public JButton buttonAutoCheckUpdateDisable;
     private JPanel panelTest;
     private JLabel labelAutoCheckUpdate;
-    private JButton buttonAutoBanCrowdFavoriteEnable;
-    private JButton buttonAutoBanCrowdFavoriteDisable;
+    public JButton buttonAutoBanCrowdFavoriteEnable;
+    public JButton buttonAutoBanCrowdFavoriteDisable;
     private JLabel labelAutoBanCrowdFavorite;
     private JPanel panelAutoBanArena;
     private JPanel panelAutoBravery;
@@ -255,6 +255,7 @@ public class RiftHelperMainView extends JFrame {
         buttonAutoBraveryArenaDisable.setEnabled(false);
         buttonAutoLockArenaDisable.setEnabled(false);
         buttonAutoBanArenaDisable.setEnabled(false);
+        buttonAutoBanCrowdFavoriteDisable.setEnabled(false);
 
         List<String> championNames = DDragonParser.fetchChampionNames();
 
