@@ -1813,7 +1813,7 @@ public class RiftHelperMainController {
             if (!autoSwapPriority && !autoSwapSurvey) {
                 return;
             }
-            Session s = Session.parseFromJson(LCUGet.getFromClient("/lol-champ-select/v1/session"));
+            Session s = Session.parseFromRaw(LCUGet.getFromClient("/lol-champ-select/v1/session"));
             if (s == null || !s.isAllowRerolling()) {
                 return;
             }
@@ -1841,7 +1841,7 @@ public class RiftHelperMainController {
         Thread t = new Thread(() -> {
             benchCycling = true;
             try {
-                Session s = Session.parseFromJson(LCUGet.getFromClient("/lol-champ-select/v1/session"));
+                Session s = Session.parseFromRaw(LCUGet.getFromClient("/lol-champ-select/v1/session"));
                 if (s == null || !s.isAllowRerolling()) {
                     return;
                 }
