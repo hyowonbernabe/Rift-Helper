@@ -32,10 +32,10 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.GraphicsEnvironment;
 import java.awt.Image;
 import java.awt.LayoutManager;
 import java.awt.Rectangle;
-import java.awt.Toolkit;
 import java.awt.MenuItem;
 import java.awt.PopupMenu;
 import java.awt.RenderingHints;
@@ -260,9 +260,8 @@ public class RiftHelperMainView extends JFrame {
         autoSave(buttonAutoSwapSave, swap);
 
         selectLane(0);
-        Dimension consistent = consistentSize();
-        setSize(consistent);
-        setMinimumSize(consistent);
+        pack();
+        setMinimumSize(new Dimension(px(420), px(300)));
         setLocationRelativeTo(null);
         setVisible(false);
     }
@@ -1302,27 +1301,16 @@ public class RiftHelperMainView extends JFrame {
     public void addResetListener(ActionListener l) { buttonReset.addActionListener(l); }
     public void addTestListener(ActionListener l) { buttonTest.addActionListener(l); }
 
-    /** Keep a fixed, consistent 16:9 window (see {@link #consistentSize()}); content scrolls instead
-     *  of the window resizing. pack() is repurposed to re-assert this on every layout pass, since the
-     *  controller calls it from loadPreferences and reInitialize. */
+    /** Size the window to the content at the current UI scale, capped to the usable screen (anything
+     *  beyond that scrolls). Every section stays fully visible with no clipping at whatever scale the
+     *  user picks, instead of forcing a fixed box the dense content overflowed. Called from the
+     *  constructor, loadPreferences, and reInitialize. */
     @Override
     public void pack() {
-        validate();
-        setSize(consistentSize());
-    }
-
-    /** 35% of the largest 16:9 box that fits the display resolution. A 1920x1080 screen gives
-     *  672x378; an ultrawide is fitted to 16:9 first (by height) before the 35% is applied, so the
-     *  window is the same proportion on every screen and anything taller just scrolls. */
-    private Dimension consistentSize() {
-        Dimension res = Toolkit.getDefaultToolkit().getScreenSize();
-        double ratio = 16.0 / 9.0;
-        int boxH = (res.width / (double) res.height >= ratio)
-                ? res.height
-                : (int) Math.round(res.width / ratio);
-        int h = (int) Math.round(boxH * 0.35);
-        int w = (int) Math.round(h * ratio);
-        return new Dimension(w, h);
+        super.pack();
+        Rectangle screen = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
+        Dimension pref = getSize();
+        setSize(Math.min(pref.width, screen.width), Math.min(pref.height, screen.height));
     }
 
     /** A panel that fills the scroll pane's width but keeps its natural height, so content scrolls

@@ -235,7 +235,7 @@ public class PreferenceManager {
 
     // UI scale as a percent (applied globally via flatlaf.uiScale at startup). Change this constant
     // to rebase the out-of-box default; users override it in Settings.
-    private static final int DEFAULT_UI_SCALE_PERCENT = 75;
+    private static final int DEFAULT_UI_SCALE_PERCENT = 90;
 
     public static void setUiScalePercent(int value) {
         prefs.putInt("uiScalePercent", Math.max(50, Math.min(value, 200)));
