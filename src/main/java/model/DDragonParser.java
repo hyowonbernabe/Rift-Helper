@@ -96,6 +96,11 @@ public class DDragonParser {
         return NAME_TO_ID.getOrDefault(championName, -1);
     }
 
+    /** Number of champions in the current Data Dragon roster (the survey's "total"). */
+    public static int championPoolSize() {
+        return NAMES.size();
+    }
+
     public static String getVersion() {
         return version;
     }

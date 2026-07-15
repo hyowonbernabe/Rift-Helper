@@ -309,8 +309,25 @@ public class PreferenceManager {
     public static void setAutoDecline(boolean value) { putBooleanFlushed("autoDecline", value); }
     public static boolean getAutoDecline() { return prefs.getBoolean("autoDecline", false); }
 
-    public static void setAutoSwap(boolean value) { putBooleanFlushed("autoSwapEnabled", value); }
-    public static boolean getAutoSwap() { return prefs.getBoolean("autoSwapEnabled", false); }
+    // Auto Swap Priority toggle (was "autoSwapEnabled"; migrate the old key once). Distinct from the
+    // 10-slot priority champion list above (get/setAutoSwapPriority(String[])).
+    public static void setAutoSwapPriorityEnabled(boolean value) { putBooleanFlushed("autoSwapPriorityEnabled", value); }
+    public static boolean getAutoSwapPriorityEnabled() {
+        if (prefs.get("autoSwapPriorityEnabled", null) == null && prefs.get("autoSwapEnabled", null) != null) {
+            boolean old = prefs.getBoolean("autoSwapEnabled", false);
+            putBooleanFlushed("autoSwapPriorityEnabled", old);
+            prefs.remove("autoSwapEnabled");
+        }
+        return prefs.getBoolean("autoSwapPriorityEnabled", false);
+    }
+
+    // Auto Swap Survey toggle (new).
+    public static void setAutoSwapSurveyEnabled(boolean value) { putBooleanFlushed("autoSwapSurveyEnabled", value); }
+    public static boolean getAutoSwapSurveyEnabled() { return prefs.getBoolean("autoSwapSurveyEnabled", false); }
+
+    // TEMP back-compat: keep the controller compiling until it moves to the new names (Task 2.2).
+    public static void setAutoSwap(boolean value) { setAutoSwapPriorityEnabled(value); }
+    public static boolean getAutoSwap() { return getAutoSwapPriorityEnabled(); }
 
     public static void setAutoReroll(boolean value) { putBooleanFlushed("autoReroll", value); }
     public static boolean getAutoReroll() { return prefs.getBoolean("autoReroll", false); }
