@@ -7,6 +7,8 @@ import model.AramSurveyStore;
 import model.DDragonParser;
 import model.SurveyRanker;
 import net.miginfocom.swing.MigLayout;
+import org.kordamp.ikonli.fontawesome5.FontAwesomeSolid;
+import org.kordamp.ikonli.swing.FontIcon;
 
 import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
@@ -33,7 +35,10 @@ import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Rectangle;
+import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
@@ -72,6 +77,14 @@ public class SurveyDialog extends JDialog {
     private static final Color C_LIKE = new Color(0x4B9E6A);
     private static final Color C_FINE = new Color(0x5A7BBF);
     private static final Color C_NEVER = new Color(0x8A5A5A);
+
+    // Badge accents: icon color, plus a subtle tinted fill and border derived from it (see tint()).
+    private static final String MIDDOT = " · "; // middle dot separator, never a colon
+    private static final Color BADGE_MASTERY = new Color(0xC9A44C); // gold
+    private static final Color BADGE_GRADE = new Color(0x8C6FD6);   // violet
+    private static final Color BADGE_GAMES = new Color(0x3AA6A0);   // teal
+    private static final Color BADGE_RECENT = new Color(0x4A9E5C);  // green
+    private static final Color BADGE_TIME = new Color(0x8593A6);    // slate
 
     private static final String[] STAGES = {"main", "like", "fine"};
 
@@ -114,6 +127,9 @@ public class SurveyDialog extends JDialog {
     private int stageDuelCount;
     private int stageEstimate = 1;
     private int stageProgressBase;
+    private volatile int stageRunId;          // bumped to invalidate a running/blocked stage worker
+    private String currentStageTier;          // stage currently being duelled (for undo restart)
+    private final List<String> stagePairs = new ArrayList<>(); // pairKeys answered in this stage, in order
 
     private boolean closed;
 
@@ -336,7 +352,7 @@ public class SurveyDialog extends JDialog {
         bindKey(KeyEvent.VK_BACK_SPACE, this::undoKey);
         bindKey(KeyEvent.VK_LEFT, () -> duelKey(-1));
         bindKey(KeyEvent.VK_RIGHT, () -> duelKey(1));
-        bindKey(KeyEvent.VK_EQUALS, () -> duelKey(0));
+        bindKey(KeyEvent.VK_SPACE, () -> duelKey(0));
     }
 
     private void bindKey(int keyCode, Runnable action) {
@@ -364,6 +380,8 @@ public class SurveyDialog extends JDialog {
     private void undoKey() {
         if (mode == Mode.TIER) {
             undoTier();
+        } else if (mode == Mode.DUEL) {
+            undoDuel();
         }
     }
 
@@ -388,9 +406,9 @@ public class SurveyDialog extends JDialog {
         card.setBackground(Theme.SURFACE_2);
         card.setBorder(cardBorder(Theme.LINE));
 
-        JLabel emoji = makeLabel("🧭", baseFont.deriveFont(fpt(34f)), Theme.TEXT); // compass
-        emoji.setHorizontalAlignment(SwingConstants.CENTER);
-        card.add(emoji, "align center");
+        JLabel icon = new JLabel(FontIcon.of(FontAwesomeSolid.CLIPBOARD_LIST, px(44), Theme.ACCENT));
+        icon.setHorizontalAlignment(SwingConstants.CENTER);
+        card.add(icon, "align center");
 
         JLabel title = makeLabel("How this survey is ordered",
                 baseFont.deriveFont(Font.BOLD, fpt(18f)), Theme.TEXT);
@@ -404,18 +422,19 @@ public class SurveyDialog extends JDialog {
         body.setHorizontalAlignment(SwingConstants.CENTER);
         card.add(body, "align center, growx, wmax " + px(420));
 
-        JLabel exLabel = makeLabel("Each champion shows quick context, for example:",
-                fSub, Theme.TEXT_FAINT);
-        exLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        card.add(exLabel, "align center, gaptop " + px(6));
-
-        JPanel examples = new JPanel(new MigLayout("insets 0, gap 6, wrap 2", ""));
-        examples.setOpaque(false);
-        examples.add(badgeChip("Mastery 7 - 452,180"));
-        examples.add(badgeChip("Best: A+"));
-        examples.add(badgeChip("ARAM 8 - Mayhem 2 - SR 1"));
-        examples.add(badgeChip("last played 2d ago"));
-        card.add(examples, "align center");
+        JPanel warn = new JPanel(new MigLayout(
+                "insets " + px(8) + " " + px(12) + " " + px(8) + " " + px(12) + ", gap " + px(8),
+                "[]" + px(8) + "[grow]", "[]"));
+        warn.setOpaque(true);
+        warn.setBackground(tint(Theme.AMBER));
+        warn.setBorder(BorderFactory.createLineBorder(tintBorder(Theme.AMBER)));
+        JLabel warnIcon = new JLabel(FontIcon.of(FontAwesomeSolid.EXCLAMATION_TRIANGLE, px(15), Theme.AMBER));
+        JLabel warnText = makeLabel("<html><div>Heads up: ranking every champion takes a while, but it "
+                + "is a one-time setup for the best zero-hand ARAM experience. You can stop and continue "
+                + "anytime.</div></html>", fSub, Theme.TEXT_DIM);
+        warn.add(warnIcon, "aligny top");
+        warn.add(warnText, "growx");
+        card.add(warn, "align center, growx, wmax " + px(440));
 
         JButton start = button(resuming ? "Continue" : "Start", Kind.PRIMARY);
         start.addActionListener(e -> beginAfterIntro());
@@ -441,7 +460,7 @@ public class SurveyDialog extends JDialog {
         JPanel p = column();
 
         JLabel step = makeLabel(
-                "Champion " + (data.decidedCount() + 1) + " of " + total + "   -   tap where it belongs",
+                "Champion " + (data.decidedCount() + 1) + " of " + total,
                 fSub, Theme.TEXT_DIM);
         step.setHorizontalAlignment(SwingConstants.CENTER);
         p.add(step, "align center");
@@ -485,10 +504,10 @@ public class SurveyDialog extends JDialog {
         JButton undo = button("Undo", Kind.GHOST);
         undo.setEnabled(!tierHistory.isEmpty());
         undo.addActionListener(e -> undoTier());
-        JButton finish = button("Finish tiers now", Kind.NORMAL);
-        finish.addActionListener(e -> beginStages());
+        JButton later = button("Continue Later", Kind.NORMAL);
+        later.addActionListener(e -> saveAndClose());
         actions.add(undo);
-        actions.add(finish);
+        actions.add(later);
         p.add(actions, "align center, gaptop " + px(2));
 
         showScreen(p);
@@ -539,7 +558,21 @@ public class SurveyDialog extends JDialog {
         runStage("main");
     }
 
+    /** Fresh entry into a stage: clear the undo history, then start the ranking worker. */
     private void runStage(String tier) {
+        stagePairs.clear();
+        startStage(tier);
+    }
+
+    /**
+     * (Re)start the ranking worker for {@code tier}. Undo calls this after removing the last answer,
+     * keeping {@link #stagePairs} intact so the cache replays every earlier answer and only re-asks
+     * the undone pair. Each run gets a {@link #stageRunId}; a bumped id or a close makes the run's
+     * asker throw {@link StageCancelled}, which unwinds {@code rank()} before it can cache a bogus
+     * answer for the pair on screen.
+     */
+    private void startStage(String tier) {
+        currentStageTier = tier;
         List<String> items = data.namesInTier(tier);
         if (items.size() <= 1) {
             data.rankedOrder.put(tier, new ArrayList<>(items));
@@ -549,21 +582,22 @@ public class SurveyDialog extends JDialog {
             return;
         }
 
-        stageDuelCount = 0;
+        stageDuelCount = stagePairs.size(); // continue the pick counter across an undo restart
         stageEstimate = Math.max(1, (int) Math.ceil(items.size() * (Math.log(items.size()) / Math.log(2))));
         stageProgressBase = stageBase(tier);
 
+        final int runId = ++stageRunId;
         final SynchronousQueue<Integer> queue = new SynchronousQueue<>();
         final SurveyRanker.Asker asker = (a, b) -> {
-            if (cancelled) {
-                return 0;
+            if (cancelled || runId != stageRunId) {
+                throw new StageCancelled();
             }
-            SwingUtilities.invokeLater(() -> showDuel(a, b, queue));
+            SwingUtilities.invokeLater(() -> showDuel(a, b, queue, runId));
             try {
                 return queue.take();
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
-                return 0;
+                throw new StageCancelled();
             }
         };
 
@@ -571,12 +605,14 @@ public class SurveyDialog extends JDialog {
             final List<String> ranked;
             try {
                 ranked = SurveyRanker.rank(items, data.comparisons, asker);
+            } catch (StageCancelled sc) {
+                return; // undo or close abandoned this run; the comparison cache is left untouched
             } catch (Exception ex) {
                 System.out.println("[Survey] ranking failed: " + ex.getMessage());
                 return;
             }
             SwingUtilities.invokeLater(() -> {
-                if (cancelled) {
+                if (cancelled || runId != stageRunId) {
                     return;
                 }
                 data.rankedOrder.put(tier, ranked);
@@ -590,13 +626,16 @@ public class SurveyDialog extends JDialog {
         worker.start();
     }
 
-    private void showDuel(String a, String b, SynchronousQueue<Integer> queue) {
+    private void showDuel(String a, String b, SynchronousQueue<Integer> queue, int runId) {
+        if (cancelled || runId != stageRunId) {
+            return; // a stale worker (undone / closed); ignore
+        }
         mode = Mode.DUEL;
         activeQueue = queue;
         activeA = a;
         activeB = b;
         stageDuelCount++;
-        hint("Keys:   Left = left champ    Right = right champ    = No preference");
+        hint("Left / Right = pick   ·   Space = no preference   ·   Backspace = undo");
         setProgress(stageProgressBase
                 + (int) Math.round(Math.min(1.0, stageDuelCount / (double) stageEstimate) * 15));
 
@@ -610,18 +649,33 @@ public class SurveyDialog extends JDialog {
         JPanel duel = new JPanel(new MigLayout("insets 0, gap 16", "[]16[]16[]"));
         duel.setOpaque(false);
         JButton pa = pickButton(a);
+        pa.setFocusable(false);
         pa.addActionListener(e -> answerDuel(a, b, -1, queue));
         JLabel vs = makeLabel("VS", baseFont.deriveFont(Font.BOLD, fpt(14f)), Theme.TEXT_FAINT);
         JButton pb = pickButton(b);
+        pb.setFocusable(false);
         pb.addActionListener(e -> answerDuel(a, b, 1, queue));
         duel.add(pa);
         duel.add(vs, "aligny center");
         duel.add(pb);
         p.add(duel, "align center, wmax " + px(520));
 
-        JButton tie = button("=   No preference", Kind.GHOST);
-        tie.addActionListener(e -> answerDuel(a, b, 0, queue));
-        p.add(tie, "align center, gaptop " + px(4));
+        JPanel actions = new JPanel(new MigLayout("insets 0, gap 10", ""));
+        actions.setOpaque(false);
+        JButton noPref = button("No preference", Kind.GHOST);
+        noPref.setFocusable(false);
+        noPref.addActionListener(e -> answerDuel(a, b, 0, queue));
+        JButton undo = button("Undo", Kind.GHOST);
+        undo.setFocusable(false);
+        undo.setEnabled(!stagePairs.isEmpty());
+        undo.addActionListener(e -> undoDuel());
+        JButton later = button("Continue Later", Kind.NORMAL);
+        later.setFocusable(false);
+        later.addActionListener(e -> saveAndClose());
+        actions.add(noPref);
+        actions.add(undo);
+        actions.add(later);
+        p.add(actions, "align center, gaptop " + px(6));
 
         showScreen(p);
     }
@@ -633,8 +687,10 @@ public class SurveyDialog extends JDialog {
         mode = Mode.NONE;
         activeQueue = null;
 
+        String key = AramSurveyData.pairKey(a, b);
         String winner = (answer == 0) ? "TIE" : (answer < 0 ? a : b);
-        data.comparisons.put(AramSurveyData.pairKey(a, b), winner);
+        data.comparisons.put(key, winner);
+        stagePairs.add(key); // remember this answer so Undo can drop it
         safeSave();
 
         try {
@@ -643,6 +699,30 @@ public class SurveyDialog extends JDialog {
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
         }
+    }
+
+    /**
+     * Step back one duel within the current stage. Removes the most recent answer from the cache and
+     * from {@link #stagePairs}, then restarts the stage: {@link SurveyRanker} replays every remaining
+     * cached answer instantly and stops to re-ask exactly the pair we dropped. Multi-level: repeat to
+     * walk further back. No-op once the stage has no answered pairs.
+     */
+    private void undoDuel() {
+        if (mode != Mode.DUEL || stagePairs.isEmpty() || currentStageTier == null) {
+            return;
+        }
+        String lastPair = stagePairs.remove(stagePairs.size() - 1);
+        data.comparisons.remove(lastPair);
+        safeSave();
+
+        mode = Mode.NONE;
+        activeQueue = null;
+        stageRunId++;               // invalidate the current run before we unblock its worker
+        Thread old = rankerThread;
+        if (old != null) {
+            old.interrupt();        // wakes queue.take(); the asker throws StageCancelled to unwind
+        }
+        startStage(currentStageTier); // keeps stagePairs; re-asks the dropped pair
     }
 
     private void offerNext(String doneTier) {
@@ -948,6 +1028,12 @@ public class SurveyDialog extends JDialog {
         savedTimer.restart();
     }
 
+    /** "Continue Later": persist and close. Autosave already ran on every choice; this is explicit. */
+    private void saveAndClose() {
+        safeSave();
+        closeDialog();
+    }
+
     private void closeDialog() {
         if (closed) {
             return;
@@ -964,6 +1050,13 @@ public class SurveyDialog extends JDialog {
             }
         } catch (Exception e) {
             System.out.println("[Survey] onClose failed: " + e.getMessage());
+        }
+    }
+
+    /** Cheap unwind signal: a stage's asker throws this to abandon {@code rank()} without caching. */
+    private static final class StageCancelled extends RuntimeException {
+        StageCancelled() {
+            super(null, null, false, false); // no message / no stack trace: pure control flow
         }
     }
 
@@ -1046,12 +1139,9 @@ public class SurveyDialog extends JDialog {
 
         JLabel t = makeLabel(niceName(key), baseFont.deriveFont(Font.BOLD, fpt(15f)), color);
         t.setHorizontalAlignment(SwingConstants.CENTER);
-        JLabel k = makeLabel("press " + keyNumber(key), baseFont.deriveFont(Font.PLAIN, fpt(11f)), Theme.TEXT_FAINT);
-        k.setHorizontalAlignment(SwingConstants.CENTER);
         JLabel d = makeLabel(tierDesc(key), baseFont.deriveFont(Font.PLAIN, fpt(11f)), Theme.TEXT_DIM);
         d.setHorizontalAlignment(SwingConstants.CENTER);
         card.add(t, "align center");
-        card.add(k, "align center");
         card.add(d, "align center");
 
         card.addMouseListener(new MouseAdapter() {
@@ -1095,12 +1185,13 @@ public class SurveyDialog extends JDialog {
     }
 
     /**
-     * Muted context badges for a champion, built from the fetched play history. Returns an empty
-     * panel when there is no data for {@code name} (or seeding produced nothing), so callers can
-     * skip adding it.
+     * Colored context badges for a champion, built from the fetched play history. Uniform pills:
+     * same height, rounded, a leading tinted icon and Title Case text with middot separators.
+     * Returns an empty panel when there is no data for {@code name} (or seeding produced nothing),
+     * so callers can skip adding it. Laid out centered in a wrapping row.
      */
     private JComponent badgesFor(String name) {
-        JPanel wrap = new JPanel(new MigLayout("insets 0, gap 6, wrap 3", ""));
+        JPanel wrap = new JPanel(new MigLayout("insets 0, gap 6, wrap 3, alignx center", ""));
         wrap.setOpaque(false);
         Map<String, AramSeeder.ChampInfo> map = infos;
         AramSeeder.ChampInfo info = (map == null) ? null : map.get(name);
@@ -1108,11 +1199,11 @@ public class SurveyDialog extends JDialog {
             return wrap;
         }
         if (info.masteryLevel > 0 || info.masteryPoints > 0) {
-            wrap.add(badgeChip("Mastery " + info.masteryLevel + " - "
-                    + String.format("%,d", info.masteryPoints)));
+            wrap.add(badgeChip(FontAwesomeSolid.CROWN, BADGE_MASTERY,
+                    "Mastery " + info.masteryLevel + MIDDOT + String.format("%,d", info.masteryPoints)));
         }
         if (info.highestGrade != null && !info.highestGrade.isBlank()) {
-            wrap.add(badgeChip("Best: " + info.highestGrade));
+            wrap.add(badgeChip(FontAwesomeSolid.MEDAL, BADGE_GRADE, "Best " + info.highestGrade.trim()));
         }
         List<String> games = new ArrayList<>();
         if (info.aramGames > 0) {
@@ -1125,27 +1216,31 @@ public class SurveyDialog extends JDialog {
             games.add("SR " + info.srGames);
         }
         if (!games.isEmpty()) {
-            wrap.add(badgeChip(String.join(" - ", games)));
+            wrap.add(badgeChip(FontAwesomeSolid.GAMEPAD, BADGE_GAMES, String.join(MIDDOT, games)));
         }
         if (info.recentWins > 0 || info.recentLosses > 0) {
-            wrap.add(badgeChip("recent " + info.recentWins + "W " + info.recentLosses + "L"));
+            // CROSSED_SWORDS is FontAwesome Pro (absent from the free pack), so CHART_LINE stands in.
+            wrap.add(badgeChip(FontAwesomeSolid.CHART_LINE, BADGE_RECENT,
+                    info.recentWins + "W " + info.recentLosses + "L"));
         }
         if (info.lastPlayMillis > 0) {
-            wrap.add(badgeChip("last played " + relativeAge(info.lastPlayMillis)));
+            wrap.add(badgeChip(FontAwesomeSolid.CLOCK, BADGE_TIME, relativeAge(info.lastPlayMillis)));
         }
         return wrap;
     }
 
-    private JLabel badgeChip(String text) {
-        JLabel l = new JLabel(text);
-        l.setFont(baseFont.deriveFont(Font.PLAIN, fpt(11f)));
-        l.setForeground(Theme.TEXT_FAINT);
-        l.setOpaque(true);
-        l.setBackground(Theme.SURFACE_2);
-        l.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(Theme.LINE),
-                BorderFactory.createEmptyBorder(px(3), px(9), px(3), px(9))));
-        return l;
+    /** One uniform pill: fixed px(20) height, rounded, leading accent icon + centered text. */
+    private JComponent badgeChip(FontAwesomeSolid glyph, Color accent, String text) {
+        Pill pill = new Pill(tint(accent), tintBorder(accent));
+        pill.setLayout(new MigLayout("insets 0 " + px(9) + " 0 " + px(9) + ", gap " + px(5),
+                "[][]", "[" + px(20) + "!]"));
+        JLabel icon = new JLabel(FontIcon.of(glyph, px(11), accent));
+        JLabel label = new JLabel(text);
+        label.setFont(baseFont.deriveFont(Font.PLAIN, fpt(11f)));
+        label.setForeground(Theme.TEXT);
+        pill.add(icon, "aligny center");
+        pill.add(label, "aligny center");
+        return pill;
     }
 
     private Border cardBorder(Color line) {
@@ -1206,16 +1301,6 @@ public class SurveyDialog extends JDialog {
             case "fine" -> "If nothing better";
             case "never" -> "Won't swap";
             default -> "";
-        };
-    }
-
-    private static int keyNumber(String tier) {
-        return switch (tier) {
-            case "main" -> 1;
-            case "like" -> 2;
-            case "fine" -> 3;
-            case "never" -> 4;
-            default -> 0;
         };
     }
 
@@ -1306,6 +1391,56 @@ public class SurveyDialog extends JDialog {
 
     private static int px(int v) {
         return UIScale.scale(v);
+    }
+
+    // ------------------------------------------------------------------ badge color helpers
+
+    /** Subtle badge fill: mostly the surface with a hint of the accent. */
+    private static Color tint(Color accent) {
+        return mix(accent, Theme.SURFACE_2, 0.82);
+    }
+
+    /** Badge border: a more present blend of the accent so pills read as colored, not grey. */
+    private static Color tintBorder(Color accent) {
+        return mix(accent, Theme.SURFACE_2, 0.52);
+    }
+
+    private static Color mix(Color a, Color b, double t) {
+        return new Color(
+                clampByte(a.getRed() * (1 - t) + b.getRed() * t),
+                clampByte(a.getGreen() * (1 - t) + b.getGreen() * t),
+                clampByte(a.getBlue() * (1 - t) + b.getBlue() * t));
+    }
+
+    private static int clampByte(double v) {
+        return Math.max(0, Math.min(255, (int) Math.round(v)));
+    }
+
+    /** Rounded, tinted badge background painted behind a MigLayout of icon + text. */
+    private static final class Pill extends JPanel {
+        private final Color fill;
+        private final Color stroke;
+
+        Pill(Color fill, Color stroke) {
+            this.fill = fill;
+            this.stroke = stroke;
+            setOpaque(false);
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            int w = getWidth();
+            int h = getHeight();
+            int arc = h; // fully rounded ends
+            g2.setColor(fill);
+            g2.fillRoundRect(0, 0, w - 1, h - 1, arc, arc);
+            g2.setColor(stroke);
+            g2.drawRoundRect(0, 0, w - 1, h - 1, arc, arc);
+            g2.dispose();
+            super.paintComponent(g);
+        }
     }
 
     /** Content host that fills the scroll viewport width and scrolls only vertically. */
