@@ -35,4 +35,5 @@ bin/
 .DS_Store
 
 ### Superpowers docs (design/spec docs, not committed) ###
-docs/superpowers/
+docs/superpowers/.superpowers/
+.superpowers
