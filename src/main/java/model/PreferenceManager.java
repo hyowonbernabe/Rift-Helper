@@ -250,6 +250,21 @@ public class PreferenceManager {
         return Math.max(50, Math.min(prefs.getInt("uiScalePercent", DEFAULT_UI_SCALE_PERCENT), 200));
     }
 
+    // Window size the user dragged to (persisted). 0 = never set -> use the computed default. Position
+    // is intentionally NOT saved; the window always spawns centered.
+    public static void setWindowSize(int w, int h) {
+        prefs.putInt("windowWidth", w);
+        prefs.putInt("windowHeight", h);
+        try {
+            prefs.flush();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    public static boolean hasWindowSize() { return prefs.getInt("windowWidth", 0) > 0; }
+    public static int getWindowWidth() { return prefs.getInt("windowWidth", 0); }
+    public static int getWindowHeight() { return prefs.getInt("windowHeight", 0); }
+
     // ---- Auto game-start loop (all opt-in, default OFF) ----
 
     private static void putBooleanFlushed(String key, boolean value) {

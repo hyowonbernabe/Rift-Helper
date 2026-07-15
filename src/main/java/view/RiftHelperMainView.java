@@ -3,6 +3,7 @@ package view;
 import com.formdev.flatlaf.util.UIScale;
 import model.DDragonParser;
 import model.LCUAuth;
+import model.PreferenceManager;
 import net.miginfocom.swing.MigLayout;
 
 import javax.imageio.ImageIO;
@@ -36,6 +37,9 @@ import java.awt.GraphicsEnvironment;
 import java.awt.Image;
 import java.awt.LayoutManager;
 import java.awt.Rectangle;
+import java.awt.Toolkit;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.MenuItem;
 import java.awt.PopupMenu;
 import java.awt.RenderingHints;
@@ -73,6 +77,7 @@ public class RiftHelperMainView extends JFrame {
     private JPanel railPanel;
     private JPanel statusStrip;
     private JPanel aramSection;
+    private Dimension lastProgrammaticSize; // to tell our own setSize apart from a user drag
 
     // ---- Enable/Disable buttons: never shown, kept so the controller wiring is unchanged. ----
     public final JButton buttonAutoAcceptEnable = new JButton();
@@ -283,9 +288,25 @@ public class RiftHelperMainView extends JFrame {
         autoSave(buttonAutoBanArenaSave, arenaBan);
         autoSave(buttonAutoSwapSave, swap);
 
+        // Persist the user's manual resize; always reused (and never auto-recomputed) afterwards.
+        addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                if (!isShowing()) {
+                    return;
+                }
+                Dimension cur = getSize();
+                if (cur.equals(lastProgrammaticSize)) {
+                    return; // our own setSize, not a user drag
+                }
+                lastProgrammaticSize = cur;
+                PreferenceManager.setWindowSize(cur.width, cur.height);
+            }
+        });
+
         selectLane(0);
-        pack();
         setMinimumSize(new Dimension(px(420), px(300)));
+        pack();
         setLocationRelativeTo(null);
         setVisible(false);
     }
@@ -1565,31 +1586,42 @@ public class RiftHelperMainView extends JFrame {
     public void addResetListener(ActionListener l) { buttonReset.addActionListener(l); }
     public void addTestListener(ActionListener l) { buttonTest.addActionListener(l); }
 
-    /** Size the window to the content at the current UI scale, capped to the usable screen (anything
-     *  beyond that scrolls). Every section stays fully visible with no clipping at whatever scale the
-     *  user picks, instead of forcing a fixed box the dense content overflowed. Called from the
-     *  constructor, loadPreferences, and reInitialize. */
+    /** Apply the window size: the size the user last dragged to (persisted) if any, else a computed
+     *  default (~700 wide at 1080p, scaled up on higher-resolution 16:9 displays). Once the user has
+     *  resized, that size is respected and never recomputed. Content scrolls within. */
     @Override
     public void pack() {
-        super.pack();
+        validate();
+        applyWindowSize(savedOrDefaultSize());
+    }
+
+    private Dimension savedOrDefaultSize() {
         Rectangle screen = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
-        Dimension cpPref = getContentPane().getPreferredSize();
-        int chromeW = getWidth() - cpPref.width;   // window decoration (border) width
-        int chromeH = getHeight() - cpPref.height;
+        int w, h;
+        if (PreferenceManager.hasWindowSize()) {
+            w = PreferenceManager.getWindowWidth();
+            h = PreferenceManager.getWindowHeight();
+        } else {
+            Dimension d = defaultSize();
+            w = d.width;
+            h = d.height;
+        }
+        return new Dimension(Math.min(w, screen.width), Math.min(h, screen.height));
+    }
 
-        // Width is fit to the ARAM Quick Switch Bench - the widest element that must not wrap. Every
-        // other section is single-column and narrower; long text wraps to this width.
-        int railW = railPanel != null ? railPanel.getPreferredSize().width : 0;
-        int statusW = statusStrip != null ? statusStrip.getPreferredSize().width : 0;
-        // Cap the ARAM content width so a long label (e.g. the onboarding banner) wraps instead of
-        // stretching the window; the bench (~5 buttons) still fits comfortably under this.
-        int aramW = Math.min(aramSection != null ? aramSection.getPreferredSize().width : 0, px(360));
-        int mainW = Math.max(statusW, px(16) * 2 + aramW);   // content pane inner width
-        int w = Math.min(railW + mainW + chromeW, screen.width);
+    /** ~700x600 at 1920x1080, scaled by the display's fitted-16:9 width (bigger on higher res). */
+    private Dimension defaultSize() {
+        Dimension res = Toolkit.getDefaultToolkit().getScreenSize();
+        double ratio = 16.0 / 9.0;
+        double boxW = (res.width / (double) res.height >= ratio) ? res.height * ratio : res.width;
+        double factor = boxW / 1920.0;
+        return new Dimension((int) Math.round(700 * factor), (int) Math.round(600 * factor));
+    }
 
-        // Height stays compact; taller sections scroll inside their own pane.
-        int h = Math.min(Math.min(cpPref.height + chromeH, px(640)), screen.height);
-        setSize(w, h);
+    /** Set size programmatically, recording it so the resize listener doesn't mistake it for a drag. */
+    private void applyWindowSize(Dimension d) {
+        lastProgrammaticSize = d;
+        setSize(d);
     }
 
     /** A panel that fills the scroll pane's width but keeps its natural height, so content scrolls
