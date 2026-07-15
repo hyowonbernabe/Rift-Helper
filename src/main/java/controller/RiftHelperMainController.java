@@ -430,6 +430,13 @@ public class RiftHelperMainController {
                 new view.NotifyTutorialDialog(riftHelperMainView,
                         riftHelperMainView::getNotifyTopic, riftHelperMainView::setNotifyTopic).open());
 
+        // Hide / Show the League client window (backend keeps running). Off the EDT: tearing down or
+        // relaunching the client UX can take a moment.
+        this.riftHelperMainView.addHideClientListener(e ->
+                new Thread(() -> LCUPost.postToClient("/riotclient/kill-ux"), "hide-client").start());
+        this.riftHelperMainView.addShowClientListener(e ->
+                new Thread(() -> LCUPost.postToClient("/riotclient/launch-ux"), "show-client").start());
+
         this.riftHelperMainView.addAlwaysOnTopEnableListener(e -> {
             alwaysOnTop = true;
             this.riftHelperMainView.setAlwaysOnTop(alwaysOnTop);

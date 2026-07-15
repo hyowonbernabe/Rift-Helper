@@ -203,6 +203,9 @@ public class RiftHelperMainView extends JFrame {
     private final JSpinner trollSwapDelaySpinner = new JSpinner(new SpinnerNumberModel(100, 0, 5000, 50));
     // Notify setup tutorial button.
     public final JButton buttonNotifyTutorial = new JButton();
+    // Hide/Show the League client UX (kill-ux / launch-ux).
+    public final JButton buttonHideClient = new JButton();
+    public final JButton buttonShowClient = new JButton();
 
     // ARAM survey onboarding banner + Auto Swap Survey card widgets.
     private JPanel surveyBanner;
@@ -828,6 +831,8 @@ public class RiftHelperMainView extends JFrame {
     public void setTrollSwapDelayMs(int ms) { trollSwapDelaySpinner.setValue(Math.max(0, Math.min(ms, 5000))); }
     public void addTrollSwapDelayChangeListener(Runnable r) { trollSwapDelaySpinner.addChangeListener(e -> r.run()); }
     public void addNotifyTutorialListener(ActionListener l) { buttonNotifyTutorial.addActionListener(l); }
+    public void addHideClientListener(ActionListener l) { buttonHideClient.addActionListener(l); }
+    public void addShowClientListener(ActionListener l) { buttonShowClient.addActionListener(l); }
 
     // ---- ARAM survey API ----
 
@@ -1082,6 +1087,22 @@ public class RiftHelperMainView extends JFrame {
         scaleControls.add(buttonUiScaleApply);
         window.add(spinnerRow("UI Scale (%)", "Size of everything in the app. Apply restarts to take effect.", scaleControls), "growx");
         panel.add(window, "growx");
+
+        Card client = new Card("insets 4 6 8 6, wrap 1, fillx", "[grow,fill]", "");
+        client.add(cardTitle("League Client", Icons.G.TRAY), "gapbottom 6");
+        JPanel clientBtns = new JPanel(new MigLayout("insets 0, gap 8", "[]8[]"));
+        clientBtns.setOpaque(false);
+        styleButton(buttonHideClient, "Hide Client", Icons.G.TRAY, ButtonKind.NORMAL);
+        styleButton(buttonShowClient, "Show Client", Icons.G.PIN, ButtonKind.NORMAL);
+        clientBtns.add(buttonHideClient);
+        clientBtns.add(buttonShowClient);
+        client.add(clientBtns);
+        JLabel clientNote = new JLabel("<html>Hide removes the League window entirely - the client keeps running "
+                + "in the background (still logged in and in queue). Show brings it back.</html>");
+        clientNote.setFont(fSub);
+        clientNote.setForeground(Theme.TEXT_FAINT);
+        client.add(clientNote, "growx, gaptop 8");
+        panel.add(client, "growx");
 
         Card prefs = new Card("insets 4 6 8 6, wrap 1, fillx", "[grow,fill]", "");
         prefs.add(cardTitle("Preferences", Icons.G.SAVE), "gapbottom 6");
