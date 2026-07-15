@@ -31,9 +31,10 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.GraphicsEnvironment;
 import java.awt.Image;
+import java.awt.LayoutManager;
 import java.awt.Rectangle;
+import java.awt.Toolkit;
 import java.awt.MenuItem;
 import java.awt.PopupMenu;
 import java.awt.RenderingHints;
@@ -65,8 +66,7 @@ public class RiftHelperMainView extends JFrame {
     private Font fEyebrow;
 
     private final CardLayout cards = new CardLayout();
-    // Tracks viewport width (so cards still fill the pane) but not height (so it can grow and scroll).
-    private final JPanel content = new ScrollablePanel(cards);
+    private final JPanel content = new JPanel(cards);
     private final ButtonGroup navGroup = new ButtonGroup();
 
     // ---- Enable/Disable buttons: never shown, kept so the controller wiring is unchanged. ----
@@ -203,14 +203,7 @@ public class RiftHelperMainView extends JFrame {
         content.setOpaque(false);
         content.setBorder(BorderFactory.createEmptyBorder(14, 16, 16, 16));
         buildPanels();
-        // Scroll the content vertically so a tall section never pushes the window off-screen.
-        JScrollPane scroll = new JScrollPane(content,
-                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        scroll.setOpaque(false);
-        scroll.getViewport().setOpaque(false);
-        scroll.setBorder(BorderFactory.createEmptyBorder());
-        scroll.getVerticalScrollBar().setUnitIncrement(16);
-        main.add(scroll, "grow");
+        main.add(content, "grow");
 
         rootPanel.add(rail, "growy");
         rootPanel.add(main, "grow");
@@ -263,8 +256,9 @@ public class RiftHelperMainView extends JFrame {
         autoSave(buttonAutoSwapSave, swap);
 
         selectLane(0);
-        pack();
-        setMinimumSize(new Dimension(760, Math.min(getHeight(), 640)));
+        Dimension consistent = consistentSize();
+        setSize(consistent);
+        setMinimumSize(consistent);
         setLocationRelativeTo(null);
         setVisible(false);
     }
@@ -357,18 +351,30 @@ public class RiftHelperMainView extends JFrame {
     // ---------------------------------------------------------------- panels
 
     private void buildPanels() {
-        content.add(buildLobby(), "lobby");
-        content.add(buildRift(), "rift");
-        content.add(buildAram(), "aram");
-        content.add(buildArena(), "arena");
-        content.add(buildLoot(), "loot");
-        content.add(buildNotifications(), "notifications");
-        content.add(buildSettings(), "settings");
-        content.add(buildInfo(), "info");
+        content.add(scrollWrap(buildLobby()), "lobby");
+        content.add(scrollWrap(buildRift()), "rift");
+        content.add(scrollWrap(buildAram()), "aram");
+        content.add(scrollWrap(buildArena()), "arena");
+        content.add(scrollWrap(buildLoot()), "loot");
+        content.add(scrollWrap(buildNotifications()), "notifications");
+        content.add(scrollWrap(buildSettings()), "settings");
+        content.add(scrollWrap(buildInfo()), "info");
+    }
+
+    /** Wrap a category panel in its own vertical scroll pane, so each section keeps an independent
+     *  scroll position (scrolling one no longer moves the others). */
+    private JScrollPane scrollWrap(JPanel view) {
+        JScrollPane sp = new JScrollPane(view,
+                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        sp.setOpaque(false);
+        sp.getViewport().setOpaque(false);
+        sp.setBorder(BorderFactory.createEmptyBorder());
+        sp.getVerticalScrollBar().setUnitIncrement(16);
+        return sp;
     }
 
     private JPanel section(String title, String sub) {
-        JPanel panel = new JPanel(new MigLayout("insets 2, wrap 1, gap 12, fillx", "[grow,fill]"));
+        JPanel panel = new ScrollablePanel(new MigLayout("insets 2, wrap 1, gap 12, fillx", "[grow,fill]"));
         panel.setOpaque(false);
         panel.add(header(title, sub), "growx");
         return panel;
@@ -1262,24 +1268,33 @@ public class RiftHelperMainView extends JFrame {
     public void addResetListener(ActionListener l) { buttonReset.addActionListener(l); }
     public void addTestListener(ActionListener l) { buttonTest.addActionListener(l); }
 
-    /** After every layout pack, clamp the window to the screen so a tall section can't overflow it
-     *  (the content scrolls instead). Covers the constructor, loadPreferences, and reInitialize packs. */
+    /** Keep a fixed, consistent 16:9 window (see {@link #consistentSize()}); content scrolls instead
+     *  of the window resizing. pack() is repurposed to re-assert this on every layout pass, since the
+     *  controller calls it from loadPreferences and reInitialize. */
     @Override
     public void pack() {
-        super.pack();
-        Rectangle max = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
-        Dimension size = getSize();
-        int w = Math.min(size.width, max.width);
-        int h = Math.min(size.height, max.height);
-        if (w != size.width || h != size.height) {
-            setSize(w, h);
-        }
+        validate();
+        setSize(consistentSize());
+    }
+
+    /** 35% of the largest 16:9 box that fits the display resolution. A 1920x1080 screen gives
+     *  672x378; an ultrawide is fitted to 16:9 first (by height) before the 35% is applied, so the
+     *  window is the same proportion on every screen and anything taller just scrolls. */
+    private Dimension consistentSize() {
+        Dimension res = Toolkit.getDefaultToolkit().getScreenSize();
+        double ratio = 16.0 / 9.0;
+        int boxH = (res.width / (double) res.height >= ratio)
+                ? res.height
+                : (int) Math.round(res.width / ratio);
+        int h = (int) Math.round(boxH * 0.35);
+        int w = (int) Math.round(h * ratio);
+        return new Dimension(w, h);
     }
 
     /** A panel that fills the scroll pane's width but keeps its natural height, so content scrolls
      *  vertically only. */
     private static final class ScrollablePanel extends JPanel implements Scrollable {
-        ScrollablePanel(CardLayout layout) {
+        ScrollablePanel(LayoutManager layout) {
             super(layout);
         }
 
