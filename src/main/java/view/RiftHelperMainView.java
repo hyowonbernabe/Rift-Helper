@@ -14,9 +14,11 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import javax.swing.JToggleButton;
+import javax.swing.Scrollable;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingConstants;
 import javax.swing.UIManager;
@@ -29,7 +31,9 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.GraphicsEnvironment;
 import java.awt.Image;
+import java.awt.Rectangle;
 import java.awt.MenuItem;
 import java.awt.PopupMenu;
 import java.awt.RenderingHints;
@@ -61,7 +65,8 @@ public class RiftHelperMainView extends JFrame {
     private Font fEyebrow;
 
     private final CardLayout cards = new CardLayout();
-    private final JPanel content = new JPanel(cards);
+    // Tracks viewport width (so cards still fill the pane) but not height (so it can grow and scroll).
+    private final JPanel content = new ScrollablePanel(cards);
     private final ButtonGroup navGroup = new ButtonGroup();
 
     // ---- Enable/Disable buttons: never shown, kept so the controller wiring is unchanged. ----
@@ -198,7 +203,14 @@ public class RiftHelperMainView extends JFrame {
         content.setOpaque(false);
         content.setBorder(BorderFactory.createEmptyBorder(14, 16, 16, 16));
         buildPanels();
-        main.add(content, "grow");
+        // Scroll the content vertically so a tall section never pushes the window off-screen.
+        JScrollPane scroll = new JScrollPane(content,
+                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        scroll.setOpaque(false);
+        scroll.getViewport().setOpaque(false);
+        scroll.setBorder(BorderFactory.createEmptyBorder());
+        scroll.getVerticalScrollBar().setUnitIncrement(16);
+        main.add(scroll, "grow");
 
         rootPanel.add(rail, "growy");
         rootPanel.add(main, "grow");
@@ -1249,6 +1261,53 @@ public class RiftHelperMainView extends JFrame {
     public void addImportListener(ActionListener l) { buttonImport.addActionListener(l); }
     public void addResetListener(ActionListener l) { buttonReset.addActionListener(l); }
     public void addTestListener(ActionListener l) { buttonTest.addActionListener(l); }
+
+    /** After every layout pack, clamp the window to the screen so a tall section can't overflow it
+     *  (the content scrolls instead). Covers the constructor, loadPreferences, and reInitialize packs. */
+    @Override
+    public void pack() {
+        super.pack();
+        Rectangle max = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
+        Dimension size = getSize();
+        int w = Math.min(size.width, max.width);
+        int h = Math.min(size.height, max.height);
+        if (w != size.width || h != size.height) {
+            setSize(w, h);
+        }
+    }
+
+    /** A panel that fills the scroll pane's width but keeps its natural height, so content scrolls
+     *  vertically only. */
+    private static final class ScrollablePanel extends JPanel implements Scrollable {
+        ScrollablePanel(CardLayout layout) {
+            super(layout);
+        }
+
+        @Override
+        public Dimension getPreferredScrollableViewportSize() {
+            return getPreferredSize();
+        }
+
+        @Override
+        public int getScrollableUnitIncrement(Rectangle visibleRect, int orientation, int direction) {
+            return 16;
+        }
+
+        @Override
+        public int getScrollableBlockIncrement(Rectangle visibleRect, int orientation, int direction) {
+            return orientation == SwingConstants.VERTICAL ? visibleRect.height : visibleRect.width;
+        }
+
+        @Override
+        public boolean getScrollableTracksViewportWidth() {
+            return true;
+        }
+
+        @Override
+        public boolean getScrollableTracksViewportHeight() {
+            return false;
+        }
+    }
 
     /** Custom rail navigation button. */
     private class NavButton extends JToggleButton {
