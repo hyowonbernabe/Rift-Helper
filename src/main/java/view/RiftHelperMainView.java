@@ -387,7 +387,7 @@ public class RiftHelperMainView extends JFrame {
     }
 
     private JPanel section(String title, String sub) {
-        JPanel panel = new ScrollablePanel(new MigLayout("insets 2, wrap 1, gap 12, fillx", "[grow,fill]"));
+        JPanel panel = new ScrollablePanel(new MigLayout("insets 2, wrap 1, gap 8, fillx", "[grow,fill]"));
         panel.setOpaque(false);
         panel.add(header(title, sub), "growx");
         return panel;
@@ -431,7 +431,7 @@ public class RiftHelperMainView extends JFrame {
         l.setForeground(Theme.TEXT);
         textCol.add(l, "growx");
         if (desc != null) {
-            JLabel d = new JLabel(desc);
+            JLabel d = new JLabel("<html>" + desc + "</html>");
             d.setFont(fSub);
             d.setForeground(Theme.TEXT_FAINT);
             textCol.add(d, "growx");
@@ -452,7 +452,7 @@ public class RiftHelperMainView extends JFrame {
         l.setForeground(Theme.TEXT);
         textCol.add(l, "growx");
         if (desc != null) {
-            JLabel d = new JLabel(desc);
+            JLabel d = new JLabel("<html>" + desc + "</html>");
             d.setFont(fSub);
             d.setForeground(Theme.TEXT_FAINT);
             textCol.add(d, "growx");
@@ -483,10 +483,10 @@ public class RiftHelperMainView extends JFrame {
                 buttonAutoDeclineEnable, buttonAutoDeclineDisable), "growx");
         panel.add(toggles, "growx");
 
-        JLabel note = new JLabel("Auto Accept and Auto Decline are mutually exclusive.");
+        JLabel note = new JLabel("<html>Auto Accept and Auto Decline are mutually exclusive.</html>");
         note.setFont(fSub);
         note.setForeground(Theme.TEXT_FAINT);
-        panel.add(note, "gapx 4");
+        panel.add(note, "growx, gapx 4");
 
         Card loop = new Card("insets 4 6 4 6, wrap 1, fillx", "[grow,fill]", "");
         loop.add(cardTitle("Auto Game Loop", Icons.G.UPDATE), "gapbottom 6");
@@ -506,10 +506,10 @@ public class RiftHelperMainView extends JFrame {
                 buttonSoloAutoQueueEnable, buttonSoloAutoQueueDisable), "growx");
         panel.add(loop, "growx, gaptop 6");
 
-        JLabel loopNote = new JLabel("Group and Solo Auto Queue are mutually exclusive.");
+        JLabel loopNote = new JLabel("<html>Group and Solo Auto Queue are mutually exclusive.</html>");
         loopNote.setFont(fSub);
         loopNote.setForeground(Theme.TEXT_FAINT);
-        panel.add(loopNote, "gapx 4");
+        panel.add(loopNote, "growx, gapx 4");
         return panel;
     }
 
@@ -518,12 +518,9 @@ public class RiftHelperMainView extends JFrame {
     private JPanel buildRift() {
         JPanel panel = section("Summoner's Rift", "ranked and draft pick / ban priorities");
 
-        JPanel cols = new JPanel(new MigLayout("insets 0, gap 12, fillx", "[grow,fill]12[grow,fill]", "[top]"));
-        cols.setOpaque(false);
-
         Card lock = new Card("insets 4 6 8 6, wrap 1, fillx", "[grow,fill]", "");
-        lock.add(cardHeaderWithToggle("Auto Lock", Icons.G.LOCK, buttonAutoLockEnable, buttonAutoLockDisable), "growx, gapbottom 10");
-        lock.add(buildLaneSelector(), "growx, gapbottom 10");
+        lock.add(cardHeaderWithToggle("Auto Lock", Icons.G.LOCK, buttonAutoLockEnable, buttonAutoLockDisable), "growx, gapbottom 8");
+        lock.add(buildLaneSelector(), "growx, gapbottom 8");
         lanePanel.setOpaque(false);
         lanePanel.add(priorityColumn(top), "top");
         lanePanel.add(priorityColumn(jungle), "jungle");
@@ -531,14 +528,12 @@ public class RiftHelperMainView extends JFrame {
         lanePanel.add(priorityColumn(bot), "bot");
         lanePanel.add(priorityColumn(support), "support");
         lock.add(lanePanel, "growx");
-        cols.add(lock, "grow");
+        panel.add(lock, "growx");
 
         Card ban = new Card("insets 4 6 8 6, wrap 1, fillx", "[grow,fill]", "");
-        ban.add(cardHeaderWithToggle("Auto Ban", Icons.G.BAN, buttonAutoBanEnable, buttonAutoBanDisable), "growx, gapbottom 10");
+        ban.add(cardHeaderWithToggle("Auto Ban", Icons.G.BAN, buttonAutoBanEnable, buttonAutoBanDisable), "growx, gapbottom 8");
         ban.add(priorityColumn(autoBan), "growx");
-        cols.add(ban, "grow");
-
-        panel.add(cols, "growx");
+        panel.add(ban, "growx");
         return panel;
     }
 
@@ -563,12 +558,30 @@ public class RiftHelperMainView extends JFrame {
     private JPanel buildAram() {
         JPanel panel = section("ARAM", "bench swaps");
 
-        JPanel cols = new JPanel(new MigLayout("insets 0, gap 12, fillx", "[grow,fill]12[grow,fill]", "[top]"));
-        cols.setOpaque(false);
+        // Quick Switch Bench on top.
+        Card bench = new Card("insets 4 6 8 6, wrap 1, fillx", "[grow,fill]", "");
+        bench.add(cardTitle("Quick Switch Bench", Icons.G.SWAP), "growx, gapbottom 8");
+        JPanel benchGrid = new JPanel(new MigLayout("insets 0, wrap 5, gap 6", "[grow,fill]", ""));
+        benchGrid.setOpaque(false);
+        panelQuickSwitchBench2 = new JPanel(new MigLayout("insets 0, wrap 5, gap 6", "[grow,fill]", ""));
+        panelQuickSwitchBench2.setOpaque(false);
+        for (int i = 0; i < this.bench.length; i++) {
+            this.bench[i] = new ChampionButton();
+            this.bench[i].setPreferredSize(new Dimension(px(50), px(50)));
+            if (i < 5) {
+                benchGrid.add(this.bench[i], "grow");
+            } else {
+                panelQuickSwitchBench2.add(this.bench[i], "grow");
+            }
+        }
+        bench.add(benchGrid, "growx");
+        bench.add(panelQuickSwitchBench2, "growx, gaptop 6");
+        panel.add(bench, "growx");
 
+        // Auto Swap below.
         Card swapCard = new Card("insets 4 6 8 6, wrap 1, fillx", "[grow,fill]", "");
-        swapCard.add(cardHeaderWithToggle("Auto Swap", Icons.G.SWAP, buttonAutoSwapEnable, buttonAutoSwapDisable), "gapbottom 10");
-        JPanel swapGrid = new JPanel(new MigLayout("insets 0, wrap 2, gapy 6", "[18!]8[grow,fill]"));
+        swapCard.add(cardHeaderWithToggle("Auto Swap", Icons.G.SWAP, buttonAutoSwapEnable, buttonAutoSwapDisable), "gapbottom 8");
+        JPanel swapGrid = new JPanel(new MigLayout("insets 0, wrap 2, gapy 5", "[18!]8[grow,fill]"));
         swapGrid.setOpaque(false);
         for (int i = 0; i < swap.length; i++) {
             swapLabels[i] = numberLabel(i + 1);
@@ -582,29 +595,8 @@ public class RiftHelperMainView extends JFrame {
         styleButton(buttonAutoSwapAdd, "", Icons.G.PLUS, ButtonKind.GHOST);
         swapActions.add(buttonAutoSwapSubtract);
         swapActions.add(buttonAutoSwapAdd);
-        swapCard.add(swapActions, "gaptop 10");
-        cols.add(swapCard, "grow");
-
-        Card right = new Card("insets 4 6 8 6, wrap 1, fillx", "[grow,fill]", "");
-        right.add(cardTitle("Quick Switch Bench", Icons.G.SWAP), "growx, gapbottom 12");
-        JPanel benchGrid = new JPanel(new MigLayout("insets 0, wrap 5, gap 7", "[grow,fill]", ""));
-        benchGrid.setOpaque(false);
-        panelQuickSwitchBench2 = new JPanel(new MigLayout("insets 0, wrap 5, gap 7", "[grow,fill]", ""));
-        panelQuickSwitchBench2.setOpaque(false);
-        for (int i = 0; i < bench.length; i++) {
-            bench[i] = new ChampionButton();
-            bench[i].setPreferredSize(new Dimension(px(58), px(58)));
-            if (i < 5) {
-                benchGrid.add(bench[i], "grow");
-            } else {
-                panelQuickSwitchBench2.add(bench[i], "grow");
-            }
-        }
-        right.add(benchGrid, "growx");
-        right.add(panelQuickSwitchBench2, "growx, gaptop 7");
-        cols.add(right, "grow");
-
-        panel.add(cols, "growx");
+        swapCard.add(swapActions, "gaptop 8");
+        panel.add(swapCard, "growx");
         return panel;
     }
 
@@ -613,28 +605,23 @@ public class RiftHelperMainView extends JFrame {
     private JPanel buildArena() {
         JPanel panel = section("Arena", "2v2v2v2 lock, ban and bravery");
 
-        JPanel cols = new JPanel(new MigLayout("insets 0, gap 12, fillx", "[grow,fill]12[grow,fill]", "[top]"));
-        cols.setOpaque(false);
-
         Card lock = new Card("insets 4 6 8 6, wrap 1, fillx", "[grow,fill]", "");
-        lock.add(cardHeaderWithToggle("Auto Lock", Icons.G.LOCK, buttonAutoLockArenaEnable, buttonAutoLockArenaDisable), "growx, gapbottom 10");
+        lock.add(cardHeaderWithToggle("Auto Lock", Icons.G.LOCK, buttonAutoLockArenaEnable, buttonAutoLockArenaDisable), "growx, gapbottom 8");
         lock.add(priorityColumn(arenaLock), "growx");
-        JLabel lockNote = new JLabel("Disabled while Auto Bravery is on.");
+        JLabel lockNote = new JLabel("<html>Disabled while Auto Bravery is on.</html>");
         lockNote.setFont(fSub);
         lockNote.setForeground(Theme.TEXT_FAINT);
-        lock.add(lockNote, "gaptop 6");
-        cols.add(lock, "grow");
+        lock.add(lockNote, "growx, gaptop 6");
+        panel.add(lock, "growx");
 
         Card ban = new Card("insets 4 6 8 6, wrap 1, fillx", "[grow,fill]", "");
-        ban.add(cardHeaderWithToggle("Auto Ban", Icons.G.BAN, buttonAutoBanArenaEnable, buttonAutoBanArenaDisable), "growx, gapbottom 10");
+        ban.add(cardHeaderWithToggle("Auto Ban", Icons.G.BAN, buttonAutoBanArenaEnable, buttonAutoBanArenaDisable), "growx, gapbottom 8");
         ban.add(priorityColumn(arenaBan), "growx");
-        JLabel banNote = new JLabel("Disabled while Auto Ban Crowd Favorite is on.");
+        JLabel banNote = new JLabel("<html>Disabled while Auto Ban Crowd Favorite is on.</html>");
         banNote.setFont(fSub);
         banNote.setForeground(Theme.TEXT_FAINT);
-        ban.add(banNote, "gaptop 6");
-        cols.add(ban, "grow");
-
-        panel.add(cols, "growx");
+        ban.add(banNote, "growx, gaptop 6");
+        panel.add(ban, "growx");
 
         Card extras = new Card("insets 4 6 4 6, wrap 1, fillx", "[grow,fill]", "");
         extras.add(toggleRow("Auto Bravery", "Auto-lock the game's random Bravery pick.",
@@ -660,10 +647,10 @@ public class RiftHelperMainView extends JFrame {
         cbtns.add(buttonDisenchantChampionsSafe);
         cbtns.add(buttonDisenchantChampionsHard);
         champs.add(cbtns);
-        JLabel note = new JLabel("Both modes ask for confirmation and a typed code. Hard mode cannot be undone.");
+        JLabel note = new JLabel("<html>Both modes ask for confirmation and a typed code. Hard mode cannot be undone.</html>");
         note.setFont(fSub);
         note.setForeground(Theme.AMBER);
-        champs.add(note, "gaptop 10");
+        champs.add(note, "growx, gaptop 10");
         panel.add(champs, "growx");
 
         Card skins = new Card("insets 4 6 8 6, wrap 1, fillx", "[grow,fill]", "");
@@ -737,10 +724,10 @@ public class RiftHelperMainView extends JFrame {
                 buttonNotifyGameStartingEnable, buttonNotifyGameStartingDisable), "growx");
         panel.add(events, "growx");
 
-        JLabel note = new JLabel("The master switch and a topic must both be set for any notification to send.");
+        JLabel note = new JLabel("<html>The master switch and a topic must both be set for any notification to send.</html>");
         note.setFont(fSub);
         note.setForeground(Theme.TEXT_FAINT);
-        panel.add(note, "gapx 4");
+        panel.add(note, "growx, gapx 4");
         return panel;
     }
 
@@ -748,9 +735,6 @@ public class RiftHelperMainView extends JFrame {
 
     private JPanel buildSettings() {
         JPanel panel = section("Settings", "app behavior and preferences");
-
-        JPanel cols = new JPanel(new MigLayout("insets 0, gap 12, fillx", "[grow,fill]12[grow,fill]", "[top]"));
-        cols.setOpaque(false);
 
         Card window = new Card("insets 4 6 4 6, wrap 1, fillx", "[grow,fill]", "");
         window.add(cardTitle("Window and Updates", Icons.G.PIN), "gapbottom 6");
@@ -766,7 +750,7 @@ public class RiftHelperMainView extends JFrame {
         styleButton(buttonUiScaleApply, "Apply", null, ButtonKind.PRIMARY);
         scaleControls.add(buttonUiScaleApply);
         window.add(spinnerRow("UI Scale (%)", "Size of everything in the app. Apply restarts to take effect.", scaleControls), "growx");
-        cols.add(window, "grow");
+        panel.add(window, "growx");
 
         Card prefs = new Card("insets 4 6 8 6, wrap 1, fillx", "[grow,fill]", "");
         prefs.add(cardTitle("Preferences", Icons.G.SAVE), "gapbottom 6");
@@ -783,9 +767,7 @@ public class RiftHelperMainView extends JFrame {
         pbtns.add(buttonImport);
         pbtns.add(buttonReset);
         prefs.add(pbtns, "growx");
-        cols.add(prefs, "grow");
-
-        panel.add(cols, "growx");
+        panel.add(prefs, "growx");
         return panel;
     }
 
@@ -1310,7 +1292,11 @@ public class RiftHelperMainView extends JFrame {
         super.pack();
         Rectangle screen = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
         Dimension pref = getSize();
-        setSize(Math.min(pref.width, screen.width), Math.min(pref.height, screen.height));
+        // Compact ceiling (scaled with the UI scale); sections taller/wider than this scroll inside
+        // their own pane rather than growing the window. Long text wraps to this width.
+        int w = Math.min(Math.min(pref.width, px(560)), screen.width);
+        int h = Math.min(Math.min(pref.height, px(640)), screen.height);
+        setSize(w, h);
     }
 
     /** A panel that fills the scroll pane's width but keeps its natural height, so content scrolls
