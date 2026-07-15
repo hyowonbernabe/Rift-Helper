@@ -3,6 +3,7 @@ package main;
 import com.formdev.flatlaf.FlatDarkLaf;
 import controller.RiftHelperMainController;
 import model.LCUAuth;
+import model.PreferenceManager;
 import model.SSLBypass;
 import view.RiftHelperMainView;
 
@@ -15,6 +16,7 @@ public class RiftHelperMain {
     }
 
     public static void main(String[] args) {
+        setupUiScale();
         FlatDarkLaf.setup();
         SSLBypass.disableSSLVerification();
 
@@ -31,6 +33,49 @@ public class RiftHelperMain {
         new RiftHelperMain(riftHelperMainView, riftHelperMainController);
 
         checkDisconnect();
+    }
+
+    // Scale the whole UI by the user-configured factor (Settings > UI Scale, persisted). FlatLaf's
+    // uiScale scales fonts, MigLayout gaps, and component insets globally; the view scales its
+    // hand-set fonts/icons/dims by the same factor (UIScale.getUserScaleFactor). Must be set before
+    // FlatLaf initializes, which is why changing the setting needs a restart.
+    private static void setupUiScale() {
+        try {
+            double scale = PreferenceManager.getUiScalePercent() / 100.0;
+            System.setProperty("flatlaf.uiScale", String.format(java.util.Locale.US, "%.3f", scale));
+        } catch (Throwable t) {
+            // Leave the default scale if the preference can't be read.
+        }
+    }
+
+    /** Relaunch the app in a fresh process so a new UI scale takes effect immediately. The scale is
+     *  read once at startup (before FlatLaf initializes) and baked into the components, so applying
+     *  a change means starting over. Works both for `java -jar` (dev) and the jpackage exe. */
+    public static void restart() {
+        try {
+            ProcessHandle.Info info = ProcessHandle.current().info();
+            String cmd = info.command().orElse(null);
+            if (cmd == null) {
+                return;
+            }
+            java.util.List<String> command = new java.util.ArrayList<>();
+            command.add(cmd);
+            String lc = cmd.toLowerCase();
+            if (lc.endsWith("java.exe") || lc.endsWith("javaw.exe") || lc.endsWith("java")) {
+                // Dev launch: re-run this jar.
+                String jar = new java.io.File(RiftHelperMain.class.getProtectionDomain()
+                        .getCodeSource().getLocation().toURI()).getPath();
+                command.add("-jar");
+                command.add(jar);
+            } else {
+                // Packaged exe launcher: relaunch it with its original arguments.
+                info.arguments().ifPresent(args -> java.util.Collections.addAll(command, args));
+            }
+            new ProcessBuilder(command).start();
+            System.exit(0);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private static void checkDisconnect() {

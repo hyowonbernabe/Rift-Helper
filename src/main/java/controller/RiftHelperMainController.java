@@ -38,8 +38,33 @@ public class RiftHelperMainController {
     private volatile boolean groupAutoQueue;
     private volatile boolean soloAutoQueue;
     private volatile boolean autoMinimize;
+    private volatile boolean notifyEnabled;
+    private volatile String notifyTopic = "";
+    private volatile boolean notifyMatchFound;
+    private volatile boolean notifyChampPicked;
+    private volatile boolean notifyChampPickedAram;
+    private volatile boolean notifyChampSwapAram;
+    private volatile boolean notifyChampBanned;
+    private volatile boolean notifyOnlyWhenAway;
+    private volatile int notifyIdleSeconds = 30;
+    private volatile boolean notifyHonor;
+    private volatile boolean notifyReturnedToLobby;
+    private volatile boolean notifyAutoQueue;
+    private volatile boolean notifyGameStarting;
     private volatile String lastGameflowPhase = "";
     private volatile boolean autoQueueArmed = false;
+    // Notification dedup: champ-select session events repeat while an action is in progress, so fire
+    // the pick/ban notification only once per champ select. Reset on ChampSelect entry.
+    private volatile boolean notifiedPick = false;
+    private volatile boolean notifiedBan = false;
+    // Play Again is called in both PreEndOfGame and EndOfGame; notify "returned to lobby" once per
+    // game. Reset when a new game starts (InProgress).
+    private volatile boolean notifiedReturnToLobby = false;
+    // Ready-check search events repeat for ~12s; notify "match found" once per search. Reset on
+    // Matchmaking entry (re-arms for the next queue, and for a re-search after a decline).
+    private volatile boolean notifiedMatchFound = false;
+    // ARAM assigns a random champion; notify it once per champ select. Reset on ChampSelect entry.
+    private volatile boolean notifiedAramPick = false;
     private List<BenchChampions> benchChampions;
     private String[] priorityChampions;
     private String[] topChampions;
@@ -108,16 +133,25 @@ public class RiftHelperMainController {
                 String endpointPicking = "/lol-champ-select/v1/session/actions/" + actionIdPicking;
                 String endpointBanning = "/lol-champ-select/v1/session/actions/" + actionIdBanning;
 
+                int pickedId = -1;
+                boolean braveryPicked = false;
                 if (isInProgressPicking) {
-                    autoLock(endpointPicking, actionIdPicking, assignedPosition);
-                    autoBravery(endpointPicking, actionIdPicking);
-                    autoLockArena(endpointPicking, actionIdPicking);
+                    pickedId = autoLock(endpointPicking, actionIdPicking, assignedPosition);   // SR/normal
+                    braveryPicked = autoBravery(endpointPicking, actionIdPicking);             // Arena random
+                    if (pickedId < 0) {
+                        pickedId = autoLockArena(endpointPicking, actionIdPicking);            // Arena list
+                    }
                 }
 
+                int bannedId = -1;
                 if (isInProgressBanning) {
-                    autoBan(endpointBanning, actionIdBanning, assignedPosition);
-                    autoBanArena(endpointBanning, actionIdBanning);
-                    autoBanCrowdFavoriteArena(endpointBanning, actionIdBanning);
+                    bannedId = autoBan(endpointBanning, actionIdBanning, assignedPosition);
+                    if (bannedId < 0) {
+                        bannedId = autoBanArena(endpointBanning, actionIdBanning);
+                    }
+                    if (bannedId < 0) {
+                        bannedId = autoBanCrowdFavoriteArena(endpointBanning, actionIdBanning);
+                    }
                 }
 
                 // Tuck the client away right after an automated pick/ban (only when that auto action
@@ -125,6 +159,28 @@ public class RiftHelperMainController {
                 if ((isInProgressPicking && (autoLockRank || autoLockArena || autoBravery))
                         || (isInProgressBanning && (autoBan || autoBanArena || autoBanCrowdFavoriteArena))) {
                     dndMinimize();
+                }
+
+                // One notification per champ select for the pick and for the ban (session events
+                // repeat while the action is in progress; notifiedPick/notifiedBan dedupe).
+                if (isInProgressPicking && !notifiedPick && (autoLockRank || autoLockArena || autoBravery)) {
+                    notifiedPick = true;
+                    if (pickedId >= 0) {
+                        String forLane = (assignedPosition == null || assignedPosition.isBlank())
+                                ? "" : " for " + assignedPosition;
+                        notify(notifyChampPicked, "Champion Picked",
+                                "Locked in " + DDragonParser.getChampionName(pickedId) + forLane + ".", 3, "white_check_mark");
+                    } else if (braveryPicked) {
+                        notify(notifyChampPicked, "Champion Picked",
+                                "Bravery pick locked. Champion is revealed in game.", 3, "game_die");
+                    }
+                }
+                if (isInProgressBanning && !notifiedBan && (autoBan || autoBanArena || autoBanCrowdFavoriteArena)) {
+                    notifiedBan = true;
+                    String banMsg = bannedId >= 0
+                            ? "Banned " + DDragonParser.getChampionName(bannedId) + "."
+                            : "Ban locked in.";
+                    notify(notifyChampBanned, "Champion Banned", banMsg, 3, "no_entry");
                 }
             }
 
@@ -142,7 +198,21 @@ public class RiftHelperMainController {
                     return;
                 }
 
-                autoSwap();
+                // Notify the random champion the user was assigned (once per ARAM/Mayhem champ select).
+                if (!notifiedAramPick) {
+                    int myChampId = localChampionId(myTeam);
+                    if (myChampId > 0) {
+                        notifiedAramPick = true;
+                        notify(notifyChampPickedAram, "Champion Picked (ARAM)",
+                                "Your random champion: " + DDragonParser.getChampionName(myChampId) + ".", 3, "snowflake");
+                    }
+                }
+
+                int swappedId = autoSwap();
+                if (swappedId >= 0) {
+                    notify(notifyChampSwapAram, "Champion Swap (ARAM)",
+                            "Swapped to " + DDragonParser.getChampionName(swappedId) + ".", 3, "twisted_rightwards_arrows");
+                }
                 nameButtons(buttons);
             }
         });
@@ -808,6 +878,43 @@ public class RiftHelperMainController {
         this.riftHelperMainView.addAutoMinimizeEnableListener(e -> setAutoMinimize(true));
         this.riftHelperMainView.addAutoMinimizeDisableListener(e -> setAutoMinimize(false));
 
+        this.riftHelperMainView.addNotifyEnableListener(e -> setNotifyEnabled(true));
+        this.riftHelperMainView.addNotifyDisableListener(e -> setNotifyEnabled(false));
+        this.riftHelperMainView.addNotifyMatchFoundEnableListener(e -> setNotifyMatchFound(true));
+        this.riftHelperMainView.addNotifyMatchFoundDisableListener(e -> setNotifyMatchFound(false));
+        this.riftHelperMainView.addNotifyChampPickedEnableListener(e -> setNotifyChampPicked(true));
+        this.riftHelperMainView.addNotifyChampPickedDisableListener(e -> setNotifyChampPicked(false));
+        this.riftHelperMainView.addNotifyChampPickedAramEnableListener(e -> setNotifyChampPickedAram(true));
+        this.riftHelperMainView.addNotifyChampPickedAramDisableListener(e -> setNotifyChampPickedAram(false));
+        this.riftHelperMainView.addNotifyChampSwapAramEnableListener(e -> setNotifyChampSwapAram(true));
+        this.riftHelperMainView.addNotifyChampSwapAramDisableListener(e -> setNotifyChampSwapAram(false));
+        this.riftHelperMainView.addNotifyChampBannedEnableListener(e -> setNotifyChampBanned(true));
+        this.riftHelperMainView.addNotifyChampBannedDisableListener(e -> setNotifyChampBanned(false));
+        this.riftHelperMainView.addNotifyOnlyWhenAwayEnableListener(e -> setNotifyOnlyWhenAway(true));
+        this.riftHelperMainView.addNotifyOnlyWhenAwayDisableListener(e -> setNotifyOnlyWhenAway(false));
+        this.riftHelperMainView.addNotifyIdleSecondsChangeListener(() -> {
+            notifyIdleSeconds = this.riftHelperMainView.getNotifyIdleSeconds();
+            PreferenceManager.setNotifyIdleSeconds(notifyIdleSeconds);
+        });
+        this.riftHelperMainView.addUiScaleChangeListener(() ->
+                PreferenceManager.setUiScalePercent(this.riftHelperMainView.getUiScalePercent()));
+        this.riftHelperMainView.addUiScaleApplyListener(e -> {
+            PreferenceManager.setUiScalePercent(this.riftHelperMainView.getUiScalePercent());
+            main.RiftHelperMain.restart();
+        });
+        this.riftHelperMainView.addNotifyHonorEnableListener(e -> setNotifyHonor(true));
+        this.riftHelperMainView.addNotifyHonorDisableListener(e -> setNotifyHonor(false));
+        this.riftHelperMainView.addNotifyReturnedToLobbyEnableListener(e -> setNotifyReturnedToLobby(true));
+        this.riftHelperMainView.addNotifyReturnedToLobbyDisableListener(e -> setNotifyReturnedToLobby(false));
+        this.riftHelperMainView.addNotifyAutoQueueEnableListener(e -> setNotifyAutoQueue(true));
+        this.riftHelperMainView.addNotifyAutoQueueDisableListener(e -> setNotifyAutoQueue(false));
+        this.riftHelperMainView.addNotifyGameStartingEnableListener(e -> setNotifyGameStarting(true));
+        this.riftHelperMainView.addNotifyGameStartingDisableListener(e -> setNotifyGameStarting(false));
+        this.riftHelperMainView.addNotifyTopicChangeListener(() -> {
+            notifyTopic = this.riftHelperMainView.getNotifyTopic();
+            PreferenceManager.setNotifyTopic(notifyTopic);
+        });
+
         // Restore persisted matchmaking toggles here (they subscribe to the websocket, which needs
         // socketReader - not available yet in loadPreferences during startProgram()).
         if (autoAccept) {
@@ -870,6 +977,93 @@ public class RiftHelperMainController {
         PreferenceManager.setAutoMinimize(on);
     }
 
+    private void setNotifyEnabled(boolean on) {
+        notifyEnabled = on;
+        applyNotifyButtons(riftHelperMainView.buttonNotifyEnable, riftHelperMainView.buttonNotifyDisable, on);
+        PreferenceManager.setNotifyEnabled(on);
+    }
+
+    private void setNotifyMatchFound(boolean on) {
+        notifyMatchFound = on;
+        applyNotifyButtons(riftHelperMainView.buttonNotifyMatchFoundEnable, riftHelperMainView.buttonNotifyMatchFoundDisable, on);
+        PreferenceManager.setNotifyMatchFound(on);
+    }
+
+    private void setNotifyChampPicked(boolean on) {
+        notifyChampPicked = on;
+        applyNotifyButtons(riftHelperMainView.buttonNotifyChampPickedEnable, riftHelperMainView.buttonNotifyChampPickedDisable, on);
+        PreferenceManager.setNotifyChampPicked(on);
+    }
+
+    private void setNotifyChampPickedAram(boolean on) {
+        notifyChampPickedAram = on;
+        applyNotifyButtons(riftHelperMainView.buttonNotifyChampPickedAramEnable, riftHelperMainView.buttonNotifyChampPickedAramDisable, on);
+        PreferenceManager.setNotifyChampPickedAram(on);
+    }
+
+    private void setNotifyChampSwapAram(boolean on) {
+        notifyChampSwapAram = on;
+        applyNotifyButtons(riftHelperMainView.buttonNotifyChampSwapAramEnable, riftHelperMainView.buttonNotifyChampSwapAramDisable, on);
+        PreferenceManager.setNotifyChampSwapAram(on);
+    }
+
+    private void setNotifyChampBanned(boolean on) {
+        notifyChampBanned = on;
+        applyNotifyButtons(riftHelperMainView.buttonNotifyChampBannedEnable, riftHelperMainView.buttonNotifyChampBannedDisable, on);
+        PreferenceManager.setNotifyChampBanned(on);
+    }
+
+    private void setNotifyOnlyWhenAway(boolean on) {
+        notifyOnlyWhenAway = on;
+        applyNotifyButtons(riftHelperMainView.buttonNotifyOnlyWhenAwayEnable, riftHelperMainView.buttonNotifyOnlyWhenAwayDisable, on);
+        PreferenceManager.setNotifyOnlyWhenAway(on);
+    }
+
+    private void setNotifyHonor(boolean on) {
+        notifyHonor = on;
+        applyNotifyButtons(riftHelperMainView.buttonNotifyHonorEnable, riftHelperMainView.buttonNotifyHonorDisable, on);
+        PreferenceManager.setNotifyHonor(on);
+    }
+
+    private void setNotifyReturnedToLobby(boolean on) {
+        notifyReturnedToLobby = on;
+        applyNotifyButtons(riftHelperMainView.buttonNotifyReturnedToLobbyEnable, riftHelperMainView.buttonNotifyReturnedToLobbyDisable, on);
+        PreferenceManager.setNotifyReturnedToLobby(on);
+    }
+
+    private void setNotifyAutoQueue(boolean on) {
+        notifyAutoQueue = on;
+        applyNotifyButtons(riftHelperMainView.buttonNotifyAutoQueueEnable, riftHelperMainView.buttonNotifyAutoQueueDisable, on);
+        PreferenceManager.setNotifyAutoQueue(on);
+    }
+
+    private void setNotifyGameStarting(boolean on) {
+        notifyGameStarting = on;
+        applyNotifyButtons(riftHelperMainView.buttonNotifyGameStartingEnable, riftHelperMainView.buttonNotifyGameStartingDisable, on);
+        PreferenceManager.setNotifyGameStarting(on);
+    }
+
+    private void applyNotifyButtons(JButton enable, JButton disable, boolean on) {
+        SwingUtilities.invokeLater(() -> {
+            enable.setEnabled(!on);
+            disable.setEnabled(on);
+        });
+    }
+
+    /** Publish one ntfy notification, gated by the master switch, the per-event toggle, and a topic.
+     *  Runs off-thread inside {@link Ntfy}, so it never stalls the socket event handlers. */
+    private void notify(boolean eventEnabled, String title, String message, int priority, String tags) {
+        if (!notifyEnabled || !eventEnabled) {
+            return;
+        }
+        // "Only notify when away": suppress while the user is actively using the PC or watching a
+        // fullscreen video. Cheap native check (JNA), fails open. See WindowsPresence.
+        if (notifyOnlyWhenAway && !WindowsPresence.shouldNotify(notifyIdleSeconds * 1000L)) {
+            return;
+        }
+        Ntfy.publish(notifyTopic, title, message, priority, tags);
+    }
+
     /** Minimize the League client, but only when Auto Minimize (DND) is on. Called right after an
      *  automated action so the client is tucked away at the exact moment it would pop up. */
     private void dndMinimize() {
@@ -895,20 +1089,41 @@ public class RiftHelperMainController {
         System.out.println("Gameflow phase: " + phase);
 
         switch (phase) {
+            case "ChampSelect" -> {
+                autoQueueArmed = false;
+                notifiedPick = false;
+                notifiedBan = false;
+                notifiedAramPick = false;
+            }
+            case "Matchmaking" -> {
+                autoQueueArmed = false;
+                notifiedMatchFound = false;
+            }
+            case "InProgress" -> {
+                autoQueueArmed = false;
+                notifiedReturnToLobby = false;
+                notify(notifyGameStarting, "Game Starting", "Loading into the game.", 4, "rocket");
+            }
             case "PreEndOfGame" -> {
                 if (autoHonor) {
-                    Honor.honorFriends();
+                    int honored = Honor.honorFriends();
                     dndMinimize();
+                    if (honored > 0) {
+                        notify(notifyHonor, "Honor Cast",
+                                "Honored " + honored + (honored == 1 ? " friend." : " friends."), 2, "handshake");
+                    }
                 }
                 // Arena (and some modes) never emit EndOfGame; they go PreEndOfGame -> Lobby. So try
                 // Play Again here too. It returns the party to the lobby (keeps the group).
                 if (autoSkipScreens) {
                     Lobby.playAgain();
+                    notifyReturnedToLobbyOnce();
                 }
             }
             case "EndOfGame" -> {
                 if (autoSkipScreens) {
                     Lobby.playAgain();
+                    notifyReturnedToLobbyOnce();
                 }
             }
             case "Lobby" -> {
@@ -917,6 +1132,16 @@ public class RiftHelperMainController {
             }
             default -> autoQueueArmed = false;
         }
+    }
+
+    // Notify "returned to lobby" at most once per game (Play Again runs in both PreEndOfGame and
+    // EndOfGame). Reset on the next InProgress.
+    private void notifyReturnedToLobbyOnce() {
+        if (notifiedReturnToLobby) {
+            return;
+        }
+        notifiedReturnToLobby = true;
+        notify(notifyReturnedToLobby, "Back in Lobby", "Returned to the lobby after the game.", 2, "arrows_counterclockwise");
     }
 
     // Fires at most once per Lobby entry (autoQueueArmed), and only from the Lobby phase.
@@ -930,6 +1155,8 @@ public class RiftHelperMainController {
             autoQueueArmed = false;
             Lobby.startSearch();
             dndMinimize();
+            String mode = soloAutoQueue ? "solo" : "group (" + members + " members)";
+            notify(notifyAutoQueue, "Queue Started", "Started searching for a match: " + mode + ".", 3, "mag");
             System.out.println("Auto queue started (members=" + members + ")");
         }
     }
@@ -1003,11 +1230,16 @@ public class RiftHelperMainController {
             if (readyCheck.getState().equals("InProgress")) {
                 LCUPost.postToClient("/lol-matchmaking/v1/ready-check/accept");
                 dndMinimize();
+                if (!notifiedMatchFound) {
+                    notifiedMatchFound = true;
+                    notify(notifyMatchFound, "Match Found", "Ready check accepted.", 4, "video_game");
+                }
             }
         });
     }
 
-    private void autoLock(String endpoint, int actionId, String assignedPosition) {
+    /** Returns the champion id locked (via the priority list), or -1 if nothing was locked. */
+    private int autoLock(String endpoint, int actionId, String assignedPosition) {
         if (autoLockRank) {
             switch (assignedPosition) {
                 case "top" -> {
@@ -1021,7 +1253,7 @@ public class RiftHelperMainController {
 
                     for (int i : topPriority) {
                         if (LCUPatch.patchToClientWithBody(endpoint, jsonBodyAutoChoose(actionId, i)) == 204) {
-                            return;
+                            return i;
                         }
                     }
                 }
@@ -1036,7 +1268,7 @@ public class RiftHelperMainController {
 
                     for (int i : junglePriority) {
                         if (LCUPatch.patchToClientWithBody(endpoint, jsonBodyAutoChoose(actionId, i)) == 204) {
-                            return;
+                            return i;
                         }
                     }
                 }
@@ -1051,7 +1283,7 @@ public class RiftHelperMainController {
 
                     for (int i : midPriority) {
                         if (LCUPatch.patchToClientWithBody(endpoint, jsonBodyAutoChoose(actionId, i)) == 204) {
-                            return;
+                            return i;
                         }
                     }
                 }
@@ -1066,7 +1298,7 @@ public class RiftHelperMainController {
 
                     for (int i : botPriority) {
                         if (LCUPatch.patchToClientWithBody(endpoint, jsonBodyAutoChoose(actionId, i)) == 204) {
-                            return;
+                            return i;
                         }
                     }
                 }
@@ -1081,15 +1313,17 @@ public class RiftHelperMainController {
 
                     for (int i : supportPriorities) {
                         if (LCUPatch.patchToClientWithBody(endpoint, jsonBodyAutoChoose(actionId, i)) == 204) {
-                            return;
+                            return i;
                         }
                     }
                 }
             }
         }
+        return -1;
     }
 
-    private void autoBan(String endpoint, int actionId, String assignedPosition) {
+    /** Returns the champion id banned (via the priority list), or -1 if nothing was banned. */
+    private int autoBan(String endpoint, int actionId, String assignedPosition) {
         if (autoBan) {
             if (assignedPosition.equals("top") || assignedPosition.equals("jungle") || assignedPosition.equals("middle") || assignedPosition.equals("bottom") || assignedPosition.equals("support")) {
                 int[] banPriority = {
@@ -1102,20 +1336,25 @@ public class RiftHelperMainController {
 
                 for (int i : banPriority) {
                     if (LCUPatch.patchToClientWithBody(endpoint, jsonBodyAutoChoose(actionId, i)) == 204) {
-                        return;
+                        return i;
                     }
                 }
             }
         }
+        return -1;
     }
 
-    public void autoBravery(String endpoint, int actionId) {
+    /** Returns true if a Bravery (random) pick was locked. The champion is unknown until in-game. */
+    public boolean autoBravery(String endpoint, int actionId) {
         if (autoBravery) {
             LCUPatch.patchToClientWithBody(endpoint, jsonBodyAutoChoose(actionId, -3));
+            return true;
         }
+        return false;
     }
 
-    public void autoLockArena(String endpoint, int actionId) {
+    /** Returns the Arena champion id locked (via the priority list), or -1 if nothing was locked. */
+    public int autoLockArena(String endpoint, int actionId) {
         if (autoLockArena) {
             int[] championPriorities = {
                     DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxAutoLockArenaPriority1()),
@@ -1127,13 +1366,15 @@ public class RiftHelperMainController {
 
             for (int i : championPriorities) {
                 if (LCUPatch.patchToClientWithBody(endpoint, jsonBodyAutoChoose(actionId, i)) == 204) {
-                    return;
+                    return i;
                 }
             }
         }
+        return -1;
     }
 
-    public void autoBanArena(String endpoint, int actionId) {
+    /** Returns the Arena champion id banned (via the priority list), or -1 if nothing was banned. */
+    public int autoBanArena(String endpoint, int actionId) {
         if (autoBanArena) {
             int[] banPriority = {
                     DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxAutoBanArenaPriority1()),
@@ -1145,22 +1386,25 @@ public class RiftHelperMainController {
 
             for (int i : banPriority) {
                 if (LCUPatch.patchToClientWithBody(endpoint, jsonBodyAutoChoose(actionId, i)) == 204) {
-                    return;
+                    return i;
                 }
             }
         }
+        return -1;
     }
 
-    public void autoBanCrowdFavoriteArena(String endpoint, int actionId) {
+    /** Returns the crowd-favorite champion id banned, or -1 if nothing was banned. */
+    public int autoBanCrowdFavoriteArena(String endpoint, int actionId) {
         if (autoBanCrowdFavoriteArena) {
             int[] banPriority = GsonParser.parseFromJsonIntArray(LCUGet.getFromClient("/lol-lobby-team-builder/champ-select/v1/crowd-favorte-champion-list"));
 
             for (int i : banPriority) {
                 if (LCUPatch.patchToClientWithBody(endpoint, jsonBodyAutoChoose(actionId, i)) == 204) {
-                    return;
+                    return i;
                 }
             }
         }
+        return -1;
     }
 
     private String jsonBodyAutoChoose(int actionId, int championId) {
@@ -1229,6 +1473,19 @@ public class RiftHelperMainController {
         this.groupAutoQueue = PreferenceManager.getGroupAutoQueue();
         this.soloAutoQueue = PreferenceManager.getSoloAutoQueue();
         this.autoMinimize = PreferenceManager.getAutoMinimize();
+        this.notifyEnabled = PreferenceManager.getNotifyEnabled();
+        this.notifyTopic = PreferenceManager.getNotifyTopic();
+        this.notifyMatchFound = PreferenceManager.getNotifyMatchFound();
+        this.notifyChampPicked = PreferenceManager.getNotifyChampPicked();
+        this.notifyChampPickedAram = PreferenceManager.getNotifyChampPickedAram();
+        this.notifyChampSwapAram = PreferenceManager.getNotifyChampSwapAram();
+        this.notifyChampBanned = PreferenceManager.getNotifyChampBanned();
+        this.notifyOnlyWhenAway = PreferenceManager.getNotifyOnlyWhenAway();
+        this.notifyIdleSeconds = PreferenceManager.getNotifyIdleSeconds();
+        this.notifyHonor = PreferenceManager.getNotifyHonor();
+        this.notifyReturnedToLobby = PreferenceManager.getNotifyReturnedToLobby();
+        this.notifyAutoQueue = PreferenceManager.getNotifyAutoQueue();
+        this.notifyGameStarting = PreferenceManager.getNotifyGameStarting();
         this.autoLockLaneChoice = PreferenceManager.getAutoLockLaneChoice();
         this.autoAccept = PreferenceManager.getAutoAccept();
         this.autoDecline = PreferenceManager.getAutoDecline();
@@ -1355,6 +1612,20 @@ public class RiftHelperMainController {
         this.riftHelperMainView.buttonSoloAutoQueueDisable.setEnabled(soloAutoQueue);
         this.riftHelperMainView.buttonAutoMinimizeEnable.setEnabled(!autoMinimize);
         this.riftHelperMainView.buttonAutoMinimizeDisable.setEnabled(autoMinimize);
+        this.riftHelperMainView.setNotifyTopic(notifyTopic);
+        this.riftHelperMainView.setNotifyIdleSeconds(notifyIdleSeconds);
+        this.riftHelperMainView.setUiScalePercent(PreferenceManager.getUiScalePercent());
+        applyToggleButtons(riftHelperMainView.buttonNotifyEnable, riftHelperMainView.buttonNotifyDisable, notifyEnabled);
+        applyToggleButtons(riftHelperMainView.buttonNotifyOnlyWhenAwayEnable, riftHelperMainView.buttonNotifyOnlyWhenAwayDisable, notifyOnlyWhenAway);
+        applyToggleButtons(riftHelperMainView.buttonNotifyMatchFoundEnable, riftHelperMainView.buttonNotifyMatchFoundDisable, notifyMatchFound);
+        applyToggleButtons(riftHelperMainView.buttonNotifyChampPickedEnable, riftHelperMainView.buttonNotifyChampPickedDisable, notifyChampPicked);
+        applyToggleButtons(riftHelperMainView.buttonNotifyChampPickedAramEnable, riftHelperMainView.buttonNotifyChampPickedAramDisable, notifyChampPickedAram);
+        applyToggleButtons(riftHelperMainView.buttonNotifyChampSwapAramEnable, riftHelperMainView.buttonNotifyChampSwapAramDisable, notifyChampSwapAram);
+        applyToggleButtons(riftHelperMainView.buttonNotifyChampBannedEnable, riftHelperMainView.buttonNotifyChampBannedDisable, notifyChampBanned);
+        applyToggleButtons(riftHelperMainView.buttonNotifyHonorEnable, riftHelperMainView.buttonNotifyHonorDisable, notifyHonor);
+        applyToggleButtons(riftHelperMainView.buttonNotifyReturnedToLobbyEnable, riftHelperMainView.buttonNotifyReturnedToLobbyDisable, notifyReturnedToLobby);
+        applyToggleButtons(riftHelperMainView.buttonNotifyAutoQueueEnable, riftHelperMainView.buttonNotifyAutoQueueDisable, notifyAutoQueue);
+        applyToggleButtons(riftHelperMainView.buttonNotifyGameStartingEnable, riftHelperMainView.buttonNotifyGameStartingDisable, notifyGameStarting);
         applyToggleButtons(riftHelperMainView.buttonAutoLockEnable, riftHelperMainView.buttonAutoLockDisable, autoLockRank);
         applyToggleButtons(riftHelperMainView.buttonAutoBanEnable, riftHelperMainView.buttonAutoBanDisable, autoBan);
         applyToggleButtons(riftHelperMainView.buttonAutoLockArenaEnable, riftHelperMainView.buttonAutoLockArenaDisable, autoLockArena);
@@ -1382,7 +1653,8 @@ public class RiftHelperMainController {
         }
     }
 
-    public void autoSwap() {
+    /** Returns the champion id swapped in from the bench, or -1 if no swap happened. */
+    public int autoSwap() {
         if (autoSwap) {
             int[] autoSwapChampIdPriority = {
                 DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxAutoSwapPriority1()),
@@ -1402,12 +1674,26 @@ public class RiftHelperMainController {
                     if ((benchChampions.get(j).getChampionId() == autoSwapChampIdPriority[i]) && priority > i) {
                         if (LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + autoSwapChampIdPriority[j]) == 204) {
                             priority = i;
-                            return;
+                            return autoSwapChampIdPriority[j];
                         }
                     }
                 }
             }
         }
+        return -1;
+    }
+
+    /** The local player's assigned champion id from myTeam (0 if not present yet). */
+    private int localChampionId(List<MyTeam> myTeam) {
+        if (myTeam == null) {
+            return 0;
+        }
+        for (MyTeam m : myTeam) {
+            if (m.getCellId() == userCellId) {
+                return m.getChampionId();
+            }
+        }
+        return 0;
     }
 
     private void saveAutoSwap() {

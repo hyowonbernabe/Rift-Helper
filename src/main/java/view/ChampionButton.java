@@ -1,5 +1,7 @@
 package view;
 
+import com.formdev.flatlaf.util.UIScale;
+
 import javax.swing.JButton;
 import javax.swing.SwingConstants;
 
@@ -25,7 +27,7 @@ public class ChampionButton extends JButton {
             return;
         }
         final String requested = text;
-        ChampionIcons.load(text, 32, icon -> {
+        ChampionIcons.load(text, UIScale.scale(32), icon -> {
             // ignore a stale load if the bench slot changed champion in the meantime
             if (requested.equals(champion)) {
                 setIcon(icon);

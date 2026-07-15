@@ -1,5 +1,6 @@
 package view;
 
+import com.formdev.flatlaf.util.UIScale;
 import model.DDragonParser;
 import model.LCUAuth;
 import net.miginfocom.swing.MigLayout;
@@ -14,9 +15,16 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JSpinner;
+import javax.swing.JTextField;
 import javax.swing.JToggleButton;
+import javax.swing.Scrollable;
+import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingConstants;
 import javax.swing.UIManager;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.awt.CardLayout;
 import java.awt.Color;
 import java.awt.Cursor;
@@ -24,7 +32,10 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.GraphicsEnvironment;
 import java.awt.Image;
+import java.awt.LayoutManager;
+import java.awt.Rectangle;
 import java.awt.MenuItem;
 import java.awt.PopupMenu;
 import java.awt.RenderingHints;
@@ -58,6 +69,10 @@ public class RiftHelperMainView extends JFrame {
     private final CardLayout cards = new CardLayout();
     private final JPanel content = new JPanel(cards);
     private final ButtonGroup navGroup = new ButtonGroup();
+    // Kept for sizing: the window width is fit to the ARAM bench (the widest must-not-wrap element).
+    private JPanel railPanel;
+    private JPanel statusStrip;
+    private JPanel aramSection;
 
     // ---- Enable/Disable buttons: never shown, kept so the controller wiring is unchanged. ----
     public final JButton buttonAutoAcceptEnable = new JButton();
@@ -96,6 +111,35 @@ public class RiftHelperMainView extends JFrame {
     public final JButton buttonSoloAutoQueueDisable = new JButton();
     public final JButton buttonAutoMinimizeEnable = new JButton();
     public final JButton buttonAutoMinimizeDisable = new JButton();
+    public final JButton buttonNotifyEnable = new JButton();
+    public final JButton buttonNotifyDisable = new JButton();
+    public final JButton buttonNotifyMatchFoundEnable = new JButton();
+    public final JButton buttonNotifyMatchFoundDisable = new JButton();
+    public final JButton buttonNotifyChampPickedEnable = new JButton();
+    public final JButton buttonNotifyChampPickedDisable = new JButton();
+    public final JButton buttonNotifyChampPickedAramEnable = new JButton();
+    public final JButton buttonNotifyChampPickedAramDisable = new JButton();
+    public final JButton buttonNotifyChampSwapAramEnable = new JButton();
+    public final JButton buttonNotifyChampSwapAramDisable = new JButton();
+    public final JButton buttonNotifyChampBannedEnable = new JButton();
+    public final JButton buttonNotifyChampBannedDisable = new JButton();
+    public final JButton buttonNotifyOnlyWhenAwayEnable = new JButton();
+    public final JButton buttonNotifyOnlyWhenAwayDisable = new JButton();
+    public final JButton buttonNotifyHonorEnable = new JButton();
+    public final JButton buttonNotifyHonorDisable = new JButton();
+    public final JButton buttonNotifyReturnedToLobbyEnable = new JButton();
+    public final JButton buttonNotifyReturnedToLobbyDisable = new JButton();
+    public final JButton buttonNotifyAutoQueueEnable = new JButton();
+    public final JButton buttonNotifyAutoQueueDisable = new JButton();
+    public final JButton buttonNotifyGameStartingEnable = new JButton();
+    public final JButton buttonNotifyGameStartingDisable = new JButton();
+
+    // ntfy topic name (persisted). Live-persisted via a DocumentListener, no Save button.
+    private final JTextField notifyTopicField = new JTextField();
+    // Idle threshold (seconds) for the "Only notify when away" gate.
+    private final JSpinner notifyIdleSpinner = new JSpinner(new SpinnerNumberModel(30, 5, 3600, 5));
+    // UI scale (percent). Persisted; applied at startup, so a change needs a restart.
+    private final JSpinner uiScaleSpinner = new JSpinner(new SpinnerNumberModel(75, 50, 200, 5));
 
     // ---- Action buttons ----
     private final JButton buttonChangeResponseAccept = new JButton();
@@ -107,6 +151,7 @@ public class RiftHelperMainView extends JFrame {
     private final JButton buttonAutoBanSave = new JButton();
     private final JButton buttonAutoLockArenaSave = new JButton();
     private final JButton buttonAutoBanArenaSave = new JButton();
+    private final JButton buttonUiScaleApply = new JButton();
     private final JButton buttonImport = new JButton();
     private final JButton buttonExport = new JButton();
     private final JButton buttonReset = new JButton();
@@ -164,7 +209,7 @@ public class RiftHelperMainView extends JFrame {
         main.setOpaque(false);
         main.add(buildStatusStrip(), "growx, wrap");
         content.setOpaque(false);
-        content.setBorder(BorderFactory.createEmptyBorder(14, 16, 16, 16));
+        content.setBorder(BorderFactory.createEmptyBorder(px(14), px(16), px(16), px(16)));
         buildPanels();
         main.add(content, "grow");
 
@@ -208,7 +253,7 @@ public class RiftHelperMainView extends JFrame {
             }
         }
         // Warm the icon cache so pickers/bench render instantly (sizes used: face 22, list 24, bench 32).
-        DDragonParser.prefetchIcons(22, 24, 32);
+        DDragonParser.prefetchIcons(px(22), px(24), px(32));
 
         // Auto-save: any champion change fires the existing (now silent) save handler, so there are
         // no Save buttons. Programmatic setSelectedName during preference load does not fire this.
@@ -220,7 +265,7 @@ public class RiftHelperMainView extends JFrame {
 
         selectLane(0);
         pack();
-        setMinimumSize(new Dimension(760, Math.min(getHeight(), 640)));
+        setMinimumSize(new Dimension(px(420), px(300)));
         setLocationRelativeTo(null);
         setVisible(false);
     }
@@ -230,12 +275,22 @@ public class RiftHelperMainView extends JFrame {
         if (base == null) {
             base = new Font(Font.SANS_SERIF, Font.PLAIN, 13);
         }
-        fBody = base.deriveFont(Font.PLAIN, 13f);
-        fBodyBold = base.deriveFont(Font.BOLD, 13f);
-        fTitle = base.deriveFont(Font.BOLD, 15f);
+        fBody = base.deriveFont(Font.PLAIN, fpt(13f));
+        fBodyBold = base.deriveFont(Font.BOLD, fpt(13f));
+        fTitle = base.deriveFont(Font.BOLD, fpt(15f));
         // Integer point sizes only: fractional sizes make Swing's label renderer open gaps mid-word.
-        fSub = base.deriveFont(Font.PLAIN, 12f);
-        fEyebrow = base.deriveFont(Font.BOLD, 11f);
+        fSub = base.deriveFont(Font.PLAIN, fpt(12f));
+        fEyebrow = base.deriveFont(Font.BOLD, fpt(11f));
+    }
+
+    // UI scale helpers: fpt = scaled integer font point size (integer keeps Swing from opening gaps
+    // mid-word); px = scaled integer pixel size. Factor comes from FlatLaf's uiScale (set in main).
+    private static float fpt(float pt) {
+        return Math.round(UIScale.scale(pt));
+    }
+
+    private static int px(int v) {
+        return UIScale.scale(v);
     }
 
     private static ChampionPicker[] pickers(int n) {
@@ -253,25 +308,16 @@ public class RiftHelperMainView extends JFrame {
         rail.setBackground(Theme.RAIL);
         rail.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, Theme.LINE));
 
-        JPanel brand = new JPanel(new MigLayout("insets 4 6 10 6, gap 8", "[]8[]"));
-        brand.setOpaque(false);
-        ImageIcon markIcon = kindredMark(22);
-        JLabel mark = markIcon != null ? new JLabel(markIcon) : new JLabel();
-        JLabel name = new JLabel("Rift Helper");
-        name.setFont(fTitle);
-        name.setForeground(Theme.TEXT);
-        brand.add(mark);
-        brand.add(name);
-        rail.add(brand, "growx");
-
         rail.add(navButton("Lobby", Icons.G.LOBBY, "lobby", true), "growx");
-        rail.add(navButton("Summoner's Rift", Icons.G.RIFT, "rift", false), "growx");
+        rail.add(navButton("Rift", Icons.G.RIFT, "rift", false), "growx");
         rail.add(navButton("ARAM", Icons.G.ARAM, "aram", false), "growx");
         rail.add(navButton("Arena", Icons.G.ARENA, "arena", false), "growx");
         rail.add(navButton("Loot", Icons.G.LOOT, "loot", false), "growx");
+        rail.add(navButton("Notify", Icons.G.BELL, "notifications", false), "growx");
         rail.add(Box.createGlue(), "growy, push");
         rail.add(navButton("Settings", Icons.G.SETTINGS, "settings", false), "growx");
         rail.add(navButton("Info", Icons.G.INFO, "info", false), "growx");
+        this.railPanel = rail;
         return rail;
     }
 
@@ -287,12 +333,13 @@ public class RiftHelperMainView extends JFrame {
         JPanel strip = new JPanel(new MigLayout("insets 8 16 8 16, gap 14", "[]14[]14[]push[]", "[]"));
         strip.setBackground(Theme.SURFACE_1);
         strip.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Theme.LINE));
+        this.statusStrip = strip;
 
         JLabel connected = new JLabel("Connected");
-        connected.setIcon(dotIcon(Theme.GREEN, 9));
+        connected.setIcon(dotIcon(Theme.GREEN, px(9)));
         connected.setFont(fBodyBold);
         connected.setForeground(Theme.TEXT);
-        connected.setIconTextGap(7);
+        connected.setIconTextGap(px(7));
 
         JLabel client = new JLabel("LeagueClientUx");
         client.setFont(fSub);
@@ -312,17 +359,31 @@ public class RiftHelperMainView extends JFrame {
     // ---------------------------------------------------------------- panels
 
     private void buildPanels() {
-        content.add(buildLobby(), "lobby");
-        content.add(buildRift(), "rift");
-        content.add(buildAram(), "aram");
-        content.add(buildArena(), "arena");
-        content.add(buildLoot(), "loot");
-        content.add(buildSettings(), "settings");
-        content.add(buildInfo(), "info");
+        content.add(scrollWrap(buildLobby()), "lobby");
+        content.add(scrollWrap(buildRift()), "rift");
+        aramSection = buildAram();
+        content.add(scrollWrap(aramSection), "aram");
+        content.add(scrollWrap(buildArena()), "arena");
+        content.add(scrollWrap(buildLoot()), "loot");
+        content.add(scrollWrap(buildNotifications()), "notifications");
+        content.add(scrollWrap(buildSettings()), "settings");
+        content.add(scrollWrap(buildInfo()), "info");
+    }
+
+    /** Wrap a category panel in its own vertical scroll pane, so each section keeps an independent
+     *  scroll position (scrolling one no longer moves the others). */
+    private JScrollPane scrollWrap(JPanel view) {
+        JScrollPane sp = new JScrollPane(view,
+                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        sp.setOpaque(false);
+        sp.getViewport().setOpaque(false);
+        sp.setBorder(BorderFactory.createEmptyBorder());
+        sp.getVerticalScrollBar().setUnitIncrement(16);
+        return sp;
     }
 
     private JPanel section(String title, String sub) {
-        JPanel panel = new JPanel(new MigLayout("insets 2, wrap 1, gap 12, fillx", "[grow,fill]"));
+        JPanel panel = new ScrollablePanel(new MigLayout("insets 2, wrap 1, gap 8, fillx", "[grow,fill]"));
         panel.setOpaque(false);
         panel.add(header(title, sub), "growx");
         return panel;
@@ -332,7 +393,7 @@ public class RiftHelperMainView extends JFrame {
         JPanel head = new JPanel(new MigLayout("insets 0 2 0 2, gap 10", "[]10[]push"));
         head.setOpaque(false);
         JLabel t = new JLabel(title);
-        t.setFont(fTitle.deriveFont(17f));
+        t.setFont(fTitle.deriveFont(fpt(17f)));
         t.setForeground(Theme.TEXT);
         head.add(t);
         if (sub != null) {
@@ -346,11 +407,11 @@ public class RiftHelperMainView extends JFrame {
 
     private JLabel cardTitle(String text, Icons.G glyph) {
         JLabel l = new JLabel(text);
-        l.setFont(fBodyBold.deriveFont(14f));
+        l.setFont(fBodyBold.deriveFont(fpt(14f)));
         l.setForeground(Theme.TEXT);
         if (glyph != null) {
-            l.setIcon(Icons.of(glyph, 15, Theme.ACCENT));
-            l.setIconTextGap(8);
+            l.setIcon(Icons.of(glyph, px(15), Theme.ACCENT));
+            l.setIconTextGap(px(8));
         }
         return l;
     }
@@ -366,7 +427,7 @@ public class RiftHelperMainView extends JFrame {
         l.setForeground(Theme.TEXT);
         textCol.add(l, "growx");
         if (desc != null) {
-            JLabel d = new JLabel(desc);
+            JLabel d = new JLabel("<html>" + desc + "</html>");
             d.setFont(fSub);
             d.setForeground(Theme.TEXT_FAINT);
             textCol.add(d, "growx");
@@ -376,11 +437,32 @@ public class RiftHelperMainView extends JFrame {
         return row;
     }
 
+    /** A row like {@link #toggleRow} but with an arbitrary control (e.g. a spinner) on the right. */
+    private JPanel spinnerRow(String label, String desc, javax.swing.JComponent field) {
+        JPanel row = new JPanel(new MigLayout("insets 6 2 6 2, gap 12, fillx", "[grow,fill][]"));
+        row.setOpaque(false);
+        JPanel textCol = new JPanel(new MigLayout("insets 0, wrap 1, gap 1", "[grow,fill]"));
+        textCol.setOpaque(false);
+        JLabel l = new JLabel(label);
+        l.setFont(fBody);
+        l.setForeground(Theme.TEXT);
+        textCol.add(l, "growx");
+        if (desc != null) {
+            JLabel d = new JLabel("<html>" + desc + "</html>");
+            d.setFont(fSub);
+            d.setForeground(Theme.TEXT_FAINT);
+            textCol.add(d, "growx");
+        }
+        row.add(textCol, "growx");
+        row.add(field);
+        return row;
+    }
+
     private JPanel divider() {
         JPanel line = new JPanel();
         line.setBackground(Theme.LINE_SOFT);
-        line.setPreferredSize(new Dimension(10, 1));
-        line.setMinimumSize(new Dimension(10, 1));
+        line.setPreferredSize(new Dimension(px(10), 1));
+        line.setMinimumSize(new Dimension(px(10), 1));
         return line;
     }
 
@@ -397,10 +479,10 @@ public class RiftHelperMainView extends JFrame {
                 buttonAutoDeclineEnable, buttonAutoDeclineDisable), "growx");
         panel.add(toggles, "growx");
 
-        JLabel note = new JLabel("Auto Accept and Auto Decline are mutually exclusive.");
+        JLabel note = new JLabel("<html>Auto Accept and Auto Decline are mutually exclusive.</html>");
         note.setFont(fSub);
         note.setForeground(Theme.TEXT_FAINT);
-        panel.add(note, "gapx 4");
+        panel.add(note, "growx, gapx 4");
 
         Card loop = new Card("insets 4 6 4 6, wrap 1, fillx", "[grow,fill]", "");
         loop.add(cardTitle("Auto Game Loop", Icons.G.UPDATE), "gapbottom 6");
@@ -420,24 +502,21 @@ public class RiftHelperMainView extends JFrame {
                 buttonSoloAutoQueueEnable, buttonSoloAutoQueueDisable), "growx");
         panel.add(loop, "growx, gaptop 6");
 
-        JLabel loopNote = new JLabel("Group and Solo Auto Queue are mutually exclusive.");
+        JLabel loopNote = new JLabel("<html>Group and Solo Auto Queue are mutually exclusive.</html>");
         loopNote.setFont(fSub);
         loopNote.setForeground(Theme.TEXT_FAINT);
-        panel.add(loopNote, "gapx 4");
+        panel.add(loopNote, "growx, gapx 4");
         return panel;
     }
 
     // ---- Summoner's Rift ----
 
     private JPanel buildRift() {
-        JPanel panel = section("Summoner's Rift", "ranked and draft pick / ban priorities");
-
-        JPanel cols = new JPanel(new MigLayout("insets 0, gap 12, fillx", "[grow,fill]12[grow,fill]", "[top]"));
-        cols.setOpaque(false);
+        JPanel panel = section("Rift", "ranked and draft pick / ban priorities");
 
         Card lock = new Card("insets 4 6 8 6, wrap 1, fillx", "[grow,fill]", "");
-        lock.add(cardHeaderWithToggle("Auto Lock", Icons.G.LOCK, buttonAutoLockEnable, buttonAutoLockDisable), "growx, gapbottom 10");
-        lock.add(buildLaneSelector(), "growx, gapbottom 10");
+        lock.add(cardHeaderWithToggle("Auto Lock", Icons.G.LOCK, buttonAutoLockEnable, buttonAutoLockDisable), "growx, gapbottom 8");
+        lock.add(buildLaneSelector(), "growx, gapbottom 8");
         lanePanel.setOpaque(false);
         lanePanel.add(priorityColumn(top), "top");
         lanePanel.add(priorityColumn(jungle), "jungle");
@@ -445,14 +524,12 @@ public class RiftHelperMainView extends JFrame {
         lanePanel.add(priorityColumn(bot), "bot");
         lanePanel.add(priorityColumn(support), "support");
         lock.add(lanePanel, "growx");
-        cols.add(lock, "grow");
+        panel.add(lock, "growx");
 
         Card ban = new Card("insets 4 6 8 6, wrap 1, fillx", "[grow,fill]", "");
-        ban.add(cardHeaderWithToggle("Auto Ban", Icons.G.BAN, buttonAutoBanEnable, buttonAutoBanDisable), "growx, gapbottom 10");
+        ban.add(cardHeaderWithToggle("Auto Ban", Icons.G.BAN, buttonAutoBanEnable, buttonAutoBanDisable), "growx, gapbottom 8");
         ban.add(priorityColumn(autoBan), "growx");
-        cols.add(ban, "grow");
-
-        panel.add(cols, "growx");
+        panel.add(ban, "growx");
         return panel;
     }
 
@@ -477,12 +554,30 @@ public class RiftHelperMainView extends JFrame {
     private JPanel buildAram() {
         JPanel panel = section("ARAM", "bench swaps");
 
-        JPanel cols = new JPanel(new MigLayout("insets 0, gap 12, fillx", "[grow,fill]12[grow,fill]", "[top]"));
-        cols.setOpaque(false);
+        // Quick Switch Bench on top.
+        Card bench = new Card("insets 4 6 8 6, wrap 1, fillx", "[grow,fill]", "");
+        bench.add(cardTitle("Quick Switch Bench", Icons.G.SWAP), "growx, gapbottom 8");
+        JPanel benchGrid = new JPanel(new MigLayout("insets 0, wrap 5, gap 6", "[grow,fill]", ""));
+        benchGrid.setOpaque(false);
+        panelQuickSwitchBench2 = new JPanel(new MigLayout("insets 0, wrap 5, gap 6", "[grow,fill]", ""));
+        panelQuickSwitchBench2.setOpaque(false);
+        for (int i = 0; i < this.bench.length; i++) {
+            this.bench[i] = new ChampionButton();
+            this.bench[i].setPreferredSize(new Dimension(px(50), px(50)));
+            if (i < 5) {
+                benchGrid.add(this.bench[i], "grow");
+            } else {
+                panelQuickSwitchBench2.add(this.bench[i], "grow");
+            }
+        }
+        bench.add(benchGrid, "growx");
+        bench.add(panelQuickSwitchBench2, "growx, gaptop 6");
+        panel.add(bench, "growx");
 
+        // Auto Swap below.
         Card swapCard = new Card("insets 4 6 8 6, wrap 1, fillx", "[grow,fill]", "");
-        swapCard.add(cardHeaderWithToggle("Auto Swap", Icons.G.SWAP, buttonAutoSwapEnable, buttonAutoSwapDisable), "gapbottom 10");
-        JPanel swapGrid = new JPanel(new MigLayout("insets 0, wrap 2, gapy 6", "[18!]8[grow,fill]"));
+        swapCard.add(cardHeaderWithToggle("Auto Swap", Icons.G.SWAP, buttonAutoSwapEnable, buttonAutoSwapDisable), "gapbottom 8");
+        JPanel swapGrid = new JPanel(new MigLayout("insets 0, wrap 2, gapy 5", "[18!]8[grow,fill]"));
         swapGrid.setOpaque(false);
         for (int i = 0; i < swap.length; i++) {
             swapLabels[i] = numberLabel(i + 1);
@@ -496,29 +591,8 @@ public class RiftHelperMainView extends JFrame {
         styleButton(buttonAutoSwapAdd, "", Icons.G.PLUS, ButtonKind.GHOST);
         swapActions.add(buttonAutoSwapSubtract);
         swapActions.add(buttonAutoSwapAdd);
-        swapCard.add(swapActions, "gaptop 10");
-        cols.add(swapCard, "grow");
-
-        Card right = new Card("insets 4 6 8 6, wrap 1, fillx", "[grow,fill]", "");
-        right.add(cardTitle("Quick Switch Bench", Icons.G.SWAP), "growx, gapbottom 12");
-        JPanel benchGrid = new JPanel(new MigLayout("insets 0, wrap 5, gap 7", "[grow,fill]", ""));
-        benchGrid.setOpaque(false);
-        panelQuickSwitchBench2 = new JPanel(new MigLayout("insets 0, wrap 5, gap 7", "[grow,fill]", ""));
-        panelQuickSwitchBench2.setOpaque(false);
-        for (int i = 0; i < bench.length; i++) {
-            bench[i] = new ChampionButton();
-            bench[i].setPreferredSize(new Dimension(58, 58));
-            if (i < 5) {
-                benchGrid.add(bench[i], "grow");
-            } else {
-                panelQuickSwitchBench2.add(bench[i], "grow");
-            }
-        }
-        right.add(benchGrid, "growx");
-        right.add(panelQuickSwitchBench2, "growx, gaptop 7");
-        cols.add(right, "grow");
-
-        panel.add(cols, "growx");
+        swapCard.add(swapActions, "gaptop 8");
+        panel.add(swapCard, "growx");
         return panel;
     }
 
@@ -527,28 +601,23 @@ public class RiftHelperMainView extends JFrame {
     private JPanel buildArena() {
         JPanel panel = section("Arena", "2v2v2v2 lock, ban and bravery");
 
-        JPanel cols = new JPanel(new MigLayout("insets 0, gap 12, fillx", "[grow,fill]12[grow,fill]", "[top]"));
-        cols.setOpaque(false);
-
         Card lock = new Card("insets 4 6 8 6, wrap 1, fillx", "[grow,fill]", "");
-        lock.add(cardHeaderWithToggle("Auto Lock", Icons.G.LOCK, buttonAutoLockArenaEnable, buttonAutoLockArenaDisable), "growx, gapbottom 10");
+        lock.add(cardHeaderWithToggle("Auto Lock", Icons.G.LOCK, buttonAutoLockArenaEnable, buttonAutoLockArenaDisable), "growx, gapbottom 8");
         lock.add(priorityColumn(arenaLock), "growx");
-        JLabel lockNote = new JLabel("Disabled while Auto Bravery is on.");
+        JLabel lockNote = new JLabel("<html>Disabled while Auto Bravery is on.</html>");
         lockNote.setFont(fSub);
         lockNote.setForeground(Theme.TEXT_FAINT);
-        lock.add(lockNote, "gaptop 6");
-        cols.add(lock, "grow");
+        lock.add(lockNote, "growx, gaptop 6");
+        panel.add(lock, "growx");
 
         Card ban = new Card("insets 4 6 8 6, wrap 1, fillx", "[grow,fill]", "");
-        ban.add(cardHeaderWithToggle("Auto Ban", Icons.G.BAN, buttonAutoBanArenaEnable, buttonAutoBanArenaDisable), "growx, gapbottom 10");
+        ban.add(cardHeaderWithToggle("Auto Ban", Icons.G.BAN, buttonAutoBanArenaEnable, buttonAutoBanArenaDisable), "growx, gapbottom 8");
         ban.add(priorityColumn(arenaBan), "growx");
-        JLabel banNote = new JLabel("Disabled while Auto Ban Crowd Favorite is on.");
+        JLabel banNote = new JLabel("<html>Disabled while Auto Ban Crowd Favorite is on.</html>");
         banNote.setFont(fSub);
         banNote.setForeground(Theme.TEXT_FAINT);
-        ban.add(banNote, "gaptop 6");
-        cols.add(ban, "grow");
-
-        panel.add(cols, "growx");
+        ban.add(banNote, "growx, gaptop 6");
+        panel.add(ban, "growx");
 
         Card extras = new Card("insets 4 6 4 6, wrap 1, fillx", "[grow,fill]", "");
         extras.add(toggleRow("Auto Bravery", "Auto-lock the game's random Bravery pick.",
@@ -574,10 +643,10 @@ public class RiftHelperMainView extends JFrame {
         cbtns.add(buttonDisenchantChampionsSafe);
         cbtns.add(buttonDisenchantChampionsHard);
         champs.add(cbtns);
-        JLabel note = new JLabel("Both modes ask for confirmation and a typed code. Hard mode cannot be undone.");
+        JLabel note = new JLabel("<html>Both modes ask for confirmation and a typed code. Hard mode cannot be undone.</html>");
         note.setFont(fSub);
         note.setForeground(Theme.AMBER);
-        champs.add(note, "gaptop 10");
+        champs.add(note, "growx, gaptop 10");
         panel.add(champs, "growx");
 
         Card skins = new Card("insets 4 6 8 6, wrap 1, fillx", "[grow,fill]", "");
@@ -593,13 +662,75 @@ public class RiftHelperMainView extends JFrame {
         return panel;
     }
 
+    // ---- Notifications ----
+
+    private JPanel buildNotifications() {
+        JPanel panel = section("Notify", "phone alerts via ntfy.sh");
+
+        Card master = new Card("insets 4 6 8 6, wrap 1, fillx", "[grow,fill]", "");
+        master.add(toggleRow("Enable Notifications", "Master switch for all phone notifications.",
+                buttonNotifyEnable, buttonNotifyDisable), "growx");
+        master.add(divider(), "growx, gapy 2 2");
+        JLabel topicLabel = new JLabel("ntfy Topic");
+        topicLabel.setFont(fBody);
+        topicLabel.setForeground(Theme.TEXT);
+        master.add(topicLabel, "gaptop 6");
+        notifyTopicField.setFont(fBody);
+        master.add(notifyTopicField, "growx, gaptop 2");
+        JLabel topicHelp = new JLabel("<html>Install the ntfy app on your phone and subscribe to this exact topic. "
+                + "Pick something unique and hard to guess (anyone with the name can read your alerts).</html>");
+        topicHelp.setFont(fSub);
+        topicHelp.setForeground(Theme.TEXT_FAINT);
+        master.add(topicHelp, "growx, gaptop 4");
+        master.add(divider(), "growx, gapy 6 2");
+        master.add(toggleRow("Only Notify When Away", "Hold notifications while you are using the PC or watching fullscreen video.",
+                buttonNotifyOnlyWhenAwayEnable, buttonNotifyOnlyWhenAwayDisable), "growx");
+        notifyIdleSpinner.setPreferredSize(new Dimension(px(72), px(28)));
+        master.add(spinnerRow("Idle Threshold (seconds)",
+                "How long with no keyboard or mouse before you count as away.", notifyIdleSpinner), "growx");
+        panel.add(master, "growx");
+
+        Card events = new Card("insets 4 6 4 6, wrap 1, fillx", "[grow,fill]", "");
+        events.add(cardTitle("Events", Icons.G.BELL), "gapbottom 6");
+        events.add(toggleRow("Match Found", "When a ready-check is auto-accepted.",
+                buttonNotifyMatchFoundEnable, buttonNotifyMatchFoundDisable), "growx");
+        events.add(divider(), "growx, gapy 2 2");
+        events.add(toggleRow("Champion Picked", "When a champion is auto-locked (normal and Arena games).",
+                buttonNotifyChampPickedEnable, buttonNotifyChampPickedDisable), "growx");
+        events.add(divider(), "growx, gapy 2 2");
+        events.add(toggleRow("Champion Picked (ARAM)", "The random champion you are given in ARAM / Mayhem.",
+                buttonNotifyChampPickedAramEnable, buttonNotifyChampPickedAramDisable), "growx");
+        events.add(divider(), "growx, gapy 2 2");
+        events.add(toggleRow("Champion Swap (ARAM)", "When an auto-swap takes a champion off the bench.",
+                buttonNotifyChampSwapAramEnable, buttonNotifyChampSwapAramDisable), "growx");
+        events.add(divider(), "growx, gapy 2 2");
+        events.add(toggleRow("Champion Banned", "When a ban is auto-locked.",
+                buttonNotifyChampBannedEnable, buttonNotifyChampBannedDisable), "growx");
+        events.add(divider(), "growx, gapy 2 2");
+        events.add(toggleRow("Honor Cast", "When friends are auto-honored after a game.",
+                buttonNotifyHonorEnable, buttonNotifyHonorDisable), "growx");
+        events.add(divider(), "growx, gapy 2 2");
+        events.add(toggleRow("Returned to Lobby", "When the post-game screens are auto-skipped.",
+                buttonNotifyReturnedToLobbyEnable, buttonNotifyReturnedToLobbyDisable), "growx");
+        events.add(divider(), "growx, gapy 2 2");
+        events.add(toggleRow("Queue Started", "When auto-queue starts a match search.",
+                buttonNotifyAutoQueueEnable, buttonNotifyAutoQueueDisable), "growx");
+        events.add(divider(), "growx, gapy 2 2");
+        events.add(toggleRow("Game Starting", "When the game loads (In Progress).",
+                buttonNotifyGameStartingEnable, buttonNotifyGameStartingDisable), "growx");
+        panel.add(events, "growx");
+
+        JLabel note = new JLabel("<html>The master switch and a topic must both be set for any notification to send.</html>");
+        note.setFont(fSub);
+        note.setForeground(Theme.TEXT_FAINT);
+        panel.add(note, "growx, gapx 4");
+        return panel;
+    }
+
     // ---- Settings ----
 
     private JPanel buildSettings() {
         JPanel panel = section("Settings", "app behavior and preferences");
-
-        JPanel cols = new JPanel(new MigLayout("insets 0, gap 12, fillx", "[grow,fill]12[grow,fill]", "[top]"));
-        cols.setOpaque(false);
 
         Card window = new Card("insets 4 6 4 6, wrap 1, fillx", "[grow,fill]", "");
         window.add(cardTitle("Window and Updates", Icons.G.PIN), "gapbottom 6");
@@ -607,7 +738,15 @@ public class RiftHelperMainView extends JFrame {
         window.add(toggleRow("Center GUI on Update", null, buttonCenterGUIEnable, buttonCenterGUIDisable), "growx");
         window.add(toggleRow("System Tray", null, buttonSystemTrayEnable, buttonSystemTrayDisable), "growx");
         window.add(toggleRow("Auto Check for Updates", null, buttonAutoCheckUpdateEnable, buttonAutoCheckUpdateDisable), "growx");
-        cols.add(window, "grow");
+        window.add(divider(), "growx, gapy 2 2");
+        uiScaleSpinner.setPreferredSize(new Dimension(px(72), px(28)));
+        JPanel scaleControls = new JPanel(new MigLayout("insets 0, gap 6", "[]6[]"));
+        scaleControls.setOpaque(false);
+        scaleControls.add(uiScaleSpinner);
+        styleButton(buttonUiScaleApply, "Apply", null, ButtonKind.PRIMARY);
+        scaleControls.add(buttonUiScaleApply);
+        window.add(spinnerRow("UI Scale (%)", "Size of everything in the app. Apply restarts to take effect.", scaleControls), "growx");
+        panel.add(window, "growx");
 
         Card prefs = new Card("insets 4 6 8 6, wrap 1, fillx", "[grow,fill]", "");
         prefs.add(cardTitle("Preferences", Icons.G.SAVE), "gapbottom 6");
@@ -624,9 +763,7 @@ public class RiftHelperMainView extends JFrame {
         pbtns.add(buttonImport);
         pbtns.add(buttonReset);
         prefs.add(pbtns, "growx");
-        cols.add(prefs, "grow");
-
-        panel.add(cols, "growx");
+        panel.add(prefs, "growx");
         return panel;
     }
 
@@ -636,12 +773,12 @@ public class RiftHelperMainView extends JFrame {
         JPanel panel = section("Info", "about");
 
         Card about = new Card("insets 8 8 12 8, gap 16", "[]16[grow,fill]", "[]");
-        ImageIcon big = kindredMark(64);
+        ImageIcon big = kindredMark(px(64));
         about.add(big != null ? new JLabel(big) : new JLabel(), "aligny top");
         JPanel textCol = new JPanel(new MigLayout("insets 0, wrap 1, gap 4", "[grow,fill]"));
         textCol.setOpaque(false);
         JLabel name = new JLabel("Rift Helper");
-        name.setFont(fTitle.deriveFont(20f));
+        name.setFont(fTitle.deriveFont(fpt(20f)));
         name.setForeground(Theme.TEXT);
         JLabel blurb = new JLabel("<html>Automates queue, champ select, and lobby actions through the League Client (LCU) API. No injection, no memory reads.</html>");
         blurb.setFont(fSub);
@@ -725,7 +862,7 @@ public class RiftHelperMainView extends JFrame {
         b.setFont(fBody);
         b.setFocusPainted(false);
         b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        b.setBorder(BorderFactory.createEmptyBorder(7, 13, 7, 13));
+        b.setBorder(BorderFactory.createEmptyBorder(px(7), px(13), px(7), px(13)));
         Color fg;
         Color bg;
         Color line;
@@ -763,8 +900,8 @@ public class RiftHelperMainView extends JFrame {
         b.putClientProperty("JComponent.roundRect", true);
         b.putClientProperty("JButton.borderColor", line);
         if (glyph != null) {
-            b.setIcon(Icons.of(glyph, 15, fg));
-            b.setIconTextGap(text == null || text.isEmpty() ? 0 : 7);
+            b.setIcon(Icons.of(glyph, px(15), fg));
+            b.setIconTextGap(text == null || text.isEmpty() ? 0 : px(7));
         }
     }
 
@@ -773,12 +910,12 @@ public class RiftHelperMainView extends JFrame {
         b.setFont(fBody);
         b.setFocusPainted(false);
         b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        b.setBorder(BorderFactory.createEmptyBorder(6, 12, 6, 12));
+        b.setBorder(BorderFactory.createEmptyBorder(px(6), px(12), px(6), px(12)));
         b.setContentAreaFilled(true);
         b.setOpaque(true);
         b.setBackground(Theme.SURFACE_0);
         b.setForeground(Theme.TEXT_DIM);
-        b.setIconTextGap(6);
+        b.setIconTextGap(px(6));
         b.putClientProperty("JComponent.roundRect", true);
     }
 
@@ -790,7 +927,7 @@ public class RiftHelperMainView extends JFrame {
             boolean on = i == index;
             laneButtons[i].setBackground(on ? Theme.ACCENT_SOFT : Theme.SURFACE_0);
             laneButtons[i].setForeground(on ? Theme.ACCENT_TEXT : Theme.TEXT_DIM);
-            laneButtons[i].setIcon(Icons.of(glyphs[i], 14, on ? Theme.ACCENT_TEXT : Theme.TEXT_DIM));
+            laneButtons[i].setIcon(Icons.of(glyphs[i], px(14), on ? Theme.ACCENT_TEXT : Theme.TEXT_DIM));
         }
         laneCards.show(lanePanel, laneNames[index]);
     }
@@ -1094,12 +1231,111 @@ public class RiftHelperMainView extends JFrame {
     public void addSoloAutoQueueDisableListener(ActionListener l) { buttonSoloAutoQueueDisable.addActionListener(l); }
     public void addAutoMinimizeEnableListener(ActionListener l) { buttonAutoMinimizeEnable.addActionListener(l); }
     public void addAutoMinimizeDisableListener(ActionListener l) { buttonAutoMinimizeDisable.addActionListener(l); }
+
+    // ---- Notifications ----
+    public String getNotifyTopic() { return notifyTopicField.getText().trim(); }
+    public void setNotifyTopic(String s) { notifyTopicField.setText(s == null ? "" : s); }
+    /** Runs r on any edit to the topic field (auto-save, no Save button). */
+    public void addNotifyTopicChangeListener(Runnable r) {
+        notifyTopicField.getDocument().addDocumentListener(new DocumentListener() {
+            public void insertUpdate(DocumentEvent e) { r.run(); }
+            public void removeUpdate(DocumentEvent e) { r.run(); }
+            public void changedUpdate(DocumentEvent e) { r.run(); }
+        });
+    }
+    public void addNotifyEnableListener(ActionListener l) { buttonNotifyEnable.addActionListener(l); }
+    public void addNotifyDisableListener(ActionListener l) { buttonNotifyDisable.addActionListener(l); }
+    public void addNotifyMatchFoundEnableListener(ActionListener l) { buttonNotifyMatchFoundEnable.addActionListener(l); }
+    public void addNotifyMatchFoundDisableListener(ActionListener l) { buttonNotifyMatchFoundDisable.addActionListener(l); }
+    public void addNotifyChampPickedEnableListener(ActionListener l) { buttonNotifyChampPickedEnable.addActionListener(l); }
+    public void addNotifyChampPickedDisableListener(ActionListener l) { buttonNotifyChampPickedDisable.addActionListener(l); }
+    public void addNotifyChampPickedAramEnableListener(ActionListener l) { buttonNotifyChampPickedAramEnable.addActionListener(l); }
+    public void addNotifyChampPickedAramDisableListener(ActionListener l) { buttonNotifyChampPickedAramDisable.addActionListener(l); }
+    public void addNotifyChampSwapAramEnableListener(ActionListener l) { buttonNotifyChampSwapAramEnable.addActionListener(l); }
+    public void addNotifyChampSwapAramDisableListener(ActionListener l) { buttonNotifyChampSwapAramDisable.addActionListener(l); }
+    public void addNotifyChampBannedEnableListener(ActionListener l) { buttonNotifyChampBannedEnable.addActionListener(l); }
+    public void addNotifyChampBannedDisableListener(ActionListener l) { buttonNotifyChampBannedDisable.addActionListener(l); }
+    public void addNotifyOnlyWhenAwayEnableListener(ActionListener l) { buttonNotifyOnlyWhenAwayEnable.addActionListener(l); }
+    public void addNotifyOnlyWhenAwayDisableListener(ActionListener l) { buttonNotifyOnlyWhenAwayDisable.addActionListener(l); }
+    public int getNotifyIdleSeconds() { return (Integer) notifyIdleSpinner.getValue(); }
+    public void setNotifyIdleSeconds(int s) { notifyIdleSpinner.setValue(Math.max(5, s)); }
+    public void addNotifyIdleSecondsChangeListener(Runnable r) { notifyIdleSpinner.addChangeListener(e -> r.run()); }
+    public int getUiScalePercent() { return (Integer) uiScaleSpinner.getValue(); }
+    public void setUiScalePercent(int p) { uiScaleSpinner.setValue(Math.max(50, Math.min(p, 200))); }
+    public void addUiScaleChangeListener(Runnable r) { uiScaleSpinner.addChangeListener(e -> r.run()); }
+    public void addUiScaleApplyListener(ActionListener l) { buttonUiScaleApply.addActionListener(l); }
+    public void addNotifyHonorEnableListener(ActionListener l) { buttonNotifyHonorEnable.addActionListener(l); }
+    public void addNotifyHonorDisableListener(ActionListener l) { buttonNotifyHonorDisable.addActionListener(l); }
+    public void addNotifyReturnedToLobbyEnableListener(ActionListener l) { buttonNotifyReturnedToLobbyEnable.addActionListener(l); }
+    public void addNotifyReturnedToLobbyDisableListener(ActionListener l) { buttonNotifyReturnedToLobbyDisable.addActionListener(l); }
+    public void addNotifyAutoQueueEnableListener(ActionListener l) { buttonNotifyAutoQueueEnable.addActionListener(l); }
+    public void addNotifyAutoQueueDisableListener(ActionListener l) { buttonNotifyAutoQueueDisable.addActionListener(l); }
+    public void addNotifyGameStartingEnableListener(ActionListener l) { buttonNotifyGameStartingEnable.addActionListener(l); }
+    public void addNotifyGameStartingDisableListener(ActionListener l) { buttonNotifyGameStartingDisable.addActionListener(l); }
     public void addAutoBanCrowdFavoriteEnableListener(ActionListener l) { buttonAutoBanCrowdFavoriteEnable.addActionListener(l); }
     public void addAutoBanCrowdFavoriteDisableListener(ActionListener l) { buttonAutoBanCrowdFavoriteDisable.addActionListener(l); }
     public void addExportListener(ActionListener l) { buttonExport.addActionListener(l); }
     public void addImportListener(ActionListener l) { buttonImport.addActionListener(l); }
     public void addResetListener(ActionListener l) { buttonReset.addActionListener(l); }
     public void addTestListener(ActionListener l) { buttonTest.addActionListener(l); }
+
+    /** Size the window to the content at the current UI scale, capped to the usable screen (anything
+     *  beyond that scrolls). Every section stays fully visible with no clipping at whatever scale the
+     *  user picks, instead of forcing a fixed box the dense content overflowed. Called from the
+     *  constructor, loadPreferences, and reInitialize. */
+    @Override
+    public void pack() {
+        super.pack();
+        Rectangle screen = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
+        Dimension cpPref = getContentPane().getPreferredSize();
+        int chromeW = getWidth() - cpPref.width;   // window decoration (border) width
+        int chromeH = getHeight() - cpPref.height;
+
+        // Width is fit to the ARAM Quick Switch Bench - the widest element that must not wrap. Every
+        // other section is single-column and narrower; long text wraps to this width.
+        int railW = railPanel != null ? railPanel.getPreferredSize().width : 0;
+        int statusW = statusStrip != null ? statusStrip.getPreferredSize().width : 0;
+        int aramW = aramSection != null ? aramSection.getPreferredSize().width : 0;
+        int mainW = Math.max(statusW, px(16) * 2 + aramW);   // content pane inner width
+        int w = Math.min(railW + mainW + chromeW, screen.width);
+
+        // Height stays compact; taller sections scroll inside their own pane.
+        int h = Math.min(Math.min(cpPref.height + chromeH, px(640)), screen.height);
+        setSize(w, h);
+    }
+
+    /** A panel that fills the scroll pane's width but keeps its natural height, so content scrolls
+     *  vertically only. */
+    private static final class ScrollablePanel extends JPanel implements Scrollable {
+        ScrollablePanel(LayoutManager layout) {
+            super(layout);
+        }
+
+        @Override
+        public Dimension getPreferredScrollableViewportSize() {
+            return getPreferredSize();
+        }
+
+        @Override
+        public int getScrollableUnitIncrement(Rectangle visibleRect, int orientation, int direction) {
+            return 16;
+        }
+
+        @Override
+        public int getScrollableBlockIncrement(Rectangle visibleRect, int orientation, int direction) {
+            return orientation == SwingConstants.VERTICAL ? visibleRect.height : visibleRect.width;
+        }
+
+        @Override
+        public boolean getScrollableTracksViewportWidth() {
+            return true;
+        }
+
+        @Override
+        public boolean getScrollableTracksViewportHeight() {
+            return false;
+        }
+    }
 
     /** Custom rail navigation button. */
     private class NavButton extends JToggleButton {
@@ -1116,9 +1352,9 @@ public class RiftHelperMainView extends JFrame {
             setRolloverEnabled(true);
             setHorizontalAlignment(SwingConstants.LEFT);
             setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-            setBorder(BorderFactory.createEmptyBorder(9, 12, 9, 11));
-            setIconTextGap(11);
-            setIcon(Icons.of(glyph, 17, Theme.TEXT_DIM));
+            setBorder(BorderFactory.createEmptyBorder(px(9), px(12), px(9), px(11)));
+            setIconTextGap(px(11));
+            setIcon(Icons.of(glyph, px(17), Theme.TEXT_DIM));
         }
 
         @Override

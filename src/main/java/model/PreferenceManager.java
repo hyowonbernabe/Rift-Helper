@@ -233,6 +233,23 @@ public class PreferenceManager {
         return prefs.getBoolean(PREF_AUTO_CHECK_UPDATE, true);
     }
 
+    // UI scale as a percent (applied globally via flatlaf.uiScale at startup). Change this constant
+    // to rebase the out-of-box default; users override it in Settings.
+    private static final int DEFAULT_UI_SCALE_PERCENT = 90;
+
+    public static void setUiScalePercent(int value) {
+        prefs.putInt("uiScalePercent", Math.max(50, Math.min(value, 200)));
+        try {
+            prefs.flush();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static int getUiScalePercent() {
+        return Math.max(50, Math.min(prefs.getInt("uiScalePercent", DEFAULT_UI_SCALE_PERCENT), 200));
+    }
+
     // ---- Auto game-start loop (all opt-in, default OFF) ----
 
     private static void putBooleanFlushed(String key, boolean value) {
@@ -315,6 +332,59 @@ public class PreferenceManager {
 
     public static void setAutoBravery(boolean value) { putBooleanFlushed("autoBravery", value); }
     public static boolean getAutoBravery() { return prefs.getBoolean("autoBravery", false); }
+
+    // ---- Phone notifications (ntfy.sh). Master defaults OFF; events default ON so once the user
+    //      turns the master on and sets a topic, notifications just work. ----
+
+    public static void setNotifyEnabled(boolean value) { putBooleanFlushed("notifyEnabled", value); }
+    public static boolean getNotifyEnabled() { return prefs.getBoolean("notifyEnabled", false); }
+
+    public static void setNotifyTopic(String value) {
+        if (value == null || value.isBlank()) {
+            prefs.remove("notifyTopic");
+        } else {
+            prefs.put("notifyTopic", value.trim());
+        }
+        try {
+            prefs.flush();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    public static String getNotifyTopic() { return prefs.get("notifyTopic", ""); }
+
+    public static void setNotifyMatchFound(boolean value) { putBooleanFlushed("notifyMatchFound", value); }
+    public static boolean getNotifyMatchFound() { return prefs.getBoolean("notifyMatchFound", true); }
+
+    public static void setNotifyChampPicked(boolean value) { putBooleanFlushed("notifyChampPicked", value); }
+    public static boolean getNotifyChampPicked() { return prefs.getBoolean("notifyChampPicked", true); }
+
+    public static void setNotifyChampPickedAram(boolean value) { putBooleanFlushed("notifyChampPickedAram", value); }
+    public static boolean getNotifyChampPickedAram() { return prefs.getBoolean("notifyChampPickedAram", true); }
+
+    public static void setNotifyChampSwapAram(boolean value) { putBooleanFlushed("notifyChampSwapAram", value); }
+    public static boolean getNotifyChampSwapAram() { return prefs.getBoolean("notifyChampSwapAram", true); }
+
+    public static void setNotifyChampBanned(boolean value) { putBooleanFlushed("notifyChampBanned", value); }
+    public static boolean getNotifyChampBanned() { return prefs.getBoolean("notifyChampBanned", true); }
+
+    public static void setNotifyOnlyWhenAway(boolean value) { putBooleanFlushed("notifyOnlyWhenAway", value); }
+    public static boolean getNotifyOnlyWhenAway() { return prefs.getBoolean("notifyOnlyWhenAway", false); }
+
+    public static void setNotifyIdleSeconds(int value) { prefs.putInt("notifyIdleSeconds", value); try { prefs.flush(); } catch (Exception e) { e.printStackTrace(); } }
+    public static int getNotifyIdleSeconds() { return prefs.getInt("notifyIdleSeconds", 30); }
+
+    public static void setNotifyHonor(boolean value) { putBooleanFlushed("notifyHonor", value); }
+    public static boolean getNotifyHonor() { return prefs.getBoolean("notifyHonor", true); }
+
+    public static void setNotifyReturnedToLobby(boolean value) { putBooleanFlushed("notifyReturnedToLobby", value); }
+    public static boolean getNotifyReturnedToLobby() { return prefs.getBoolean("notifyReturnedToLobby", true); }
+
+    public static void setNotifyAutoQueue(boolean value) { putBooleanFlushed("notifyAutoQueue", value); }
+    public static boolean getNotifyAutoQueue() { return prefs.getBoolean("notifyAutoQueue", true); }
+
+    public static void setNotifyGameStarting(boolean value) { putBooleanFlushed("notifyGameStarting", value); }
+    public static boolean getNotifyGameStarting() { return prefs.getBoolean("notifyGameStarting", true); }
 
     public static void exportPreferences() {
         try {
