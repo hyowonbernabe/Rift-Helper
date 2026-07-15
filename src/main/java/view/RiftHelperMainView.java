@@ -1,5 +1,6 @@
 package view;
 
+import com.formdev.flatlaf.util.UIScale;
 import model.DDragonParser;
 import model.LCUAuth;
 import net.miginfocom.swing.MigLayout;
@@ -201,7 +202,7 @@ public class RiftHelperMainView extends JFrame {
         main.setOpaque(false);
         main.add(buildStatusStrip(), "growx, wrap");
         content.setOpaque(false);
-        content.setBorder(BorderFactory.createEmptyBorder(14, 16, 16, 16));
+        content.setBorder(BorderFactory.createEmptyBorder(px(14), px(16), px(16), px(16)));
         buildPanels();
         main.add(content, "grow");
 
@@ -245,7 +246,7 @@ public class RiftHelperMainView extends JFrame {
             }
         }
         // Warm the icon cache so pickers/bench render instantly (sizes used: face 22, list 24, bench 32).
-        DDragonParser.prefetchIcons(22, 24, 32);
+        DDragonParser.prefetchIcons(px(22), px(24), px(32));
 
         // Auto-save: any champion change fires the existing (now silent) save handler, so there are
         // no Save buttons. Programmatic setSelectedName during preference load does not fire this.
@@ -268,12 +269,22 @@ public class RiftHelperMainView extends JFrame {
         if (base == null) {
             base = new Font(Font.SANS_SERIF, Font.PLAIN, 13);
         }
-        fBody = base.deriveFont(Font.PLAIN, 13f);
-        fBodyBold = base.deriveFont(Font.BOLD, 13f);
-        fTitle = base.deriveFont(Font.BOLD, 15f);
+        fBody = base.deriveFont(Font.PLAIN, fpt(13f));
+        fBodyBold = base.deriveFont(Font.BOLD, fpt(13f));
+        fTitle = base.deriveFont(Font.BOLD, fpt(15f));
         // Integer point sizes only: fractional sizes make Swing's label renderer open gaps mid-word.
-        fSub = base.deriveFont(Font.PLAIN, 12f);
-        fEyebrow = base.deriveFont(Font.BOLD, 11f);
+        fSub = base.deriveFont(Font.PLAIN, fpt(12f));
+        fEyebrow = base.deriveFont(Font.BOLD, fpt(11f));
+    }
+
+    // UI scale helpers: fpt = scaled integer font point size (integer keeps Swing from opening gaps
+    // mid-word); px = scaled integer pixel size. Factor comes from FlatLaf's uiScale (set in main).
+    private static float fpt(float pt) {
+        return Math.round(UIScale.scale(pt));
+    }
+
+    private static int px(int v) {
+        return UIScale.scale(v);
     }
 
     private static ChampionPicker[] pickers(int n) {
@@ -293,7 +304,7 @@ public class RiftHelperMainView extends JFrame {
 
         JPanel brand = new JPanel(new MigLayout("insets 4 6 10 6, gap 8", "[]8[]"));
         brand.setOpaque(false);
-        ImageIcon markIcon = kindredMark(22);
+        ImageIcon markIcon = kindredMark(px(22));
         JLabel mark = markIcon != null ? new JLabel(markIcon) : new JLabel();
         JLabel name = new JLabel("Rift Helper");
         name.setFont(fTitle);
@@ -328,10 +339,10 @@ public class RiftHelperMainView extends JFrame {
         strip.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Theme.LINE));
 
         JLabel connected = new JLabel("Connected");
-        connected.setIcon(dotIcon(Theme.GREEN, 9));
+        connected.setIcon(dotIcon(Theme.GREEN, px(9)));
         connected.setFont(fBodyBold);
         connected.setForeground(Theme.TEXT);
-        connected.setIconTextGap(7);
+        connected.setIconTextGap(px(7));
 
         JLabel client = new JLabel("LeagueClientUx");
         client.setFont(fSub);
@@ -384,7 +395,7 @@ public class RiftHelperMainView extends JFrame {
         JPanel head = new JPanel(new MigLayout("insets 0 2 0 2, gap 10", "[]10[]push"));
         head.setOpaque(false);
         JLabel t = new JLabel(title);
-        t.setFont(fTitle.deriveFont(17f));
+        t.setFont(fTitle.deriveFont(fpt(17f)));
         t.setForeground(Theme.TEXT);
         head.add(t);
         if (sub != null) {
@@ -398,11 +409,11 @@ public class RiftHelperMainView extends JFrame {
 
     private JLabel cardTitle(String text, Icons.G glyph) {
         JLabel l = new JLabel(text);
-        l.setFont(fBodyBold.deriveFont(14f));
+        l.setFont(fBodyBold.deriveFont(fpt(14f)));
         l.setForeground(Theme.TEXT);
         if (glyph != null) {
-            l.setIcon(Icons.of(glyph, 15, Theme.ACCENT));
-            l.setIconTextGap(8);
+            l.setIcon(Icons.of(glyph, px(15), Theme.ACCENT));
+            l.setIconTextGap(px(8));
         }
         return l;
     }
@@ -431,8 +442,8 @@ public class RiftHelperMainView extends JFrame {
     private JPanel divider() {
         JPanel line = new JPanel();
         line.setBackground(Theme.LINE_SOFT);
-        line.setPreferredSize(new Dimension(10, 1));
-        line.setMinimumSize(new Dimension(10, 1));
+        line.setPreferredSize(new Dimension(px(10), 1));
+        line.setMinimumSize(new Dimension(px(10), 1));
         return line;
     }
 
@@ -559,7 +570,7 @@ public class RiftHelperMainView extends JFrame {
         panelQuickSwitchBench2.setOpaque(false);
         for (int i = 0; i < bench.length; i++) {
             bench[i] = new ChampionButton();
-            bench[i].setPreferredSize(new Dimension(58, 58));
+            bench[i].setPreferredSize(new Dimension(px(58), px(58)));
             if (i < 5) {
                 benchGrid.add(bench[i], "grow");
             } else {
@@ -681,7 +692,7 @@ public class RiftHelperMainView extends JFrame {
         idleText.add(idleLabel, "growx");
         idleText.add(idleDesc, "growx");
         idleRow.add(idleText, "growx");
-        notifyIdleSpinner.setPreferredSize(new Dimension(72, 28));
+        notifyIdleSpinner.setPreferredSize(new Dimension(px(72), px(28)));
         idleRow.add(notifyIdleSpinner);
         master.add(idleRow, "growx");
         panel.add(master, "growx");
@@ -766,12 +777,12 @@ public class RiftHelperMainView extends JFrame {
         JPanel panel = section("Info", "about");
 
         Card about = new Card("insets 8 8 12 8, gap 16", "[]16[grow,fill]", "[]");
-        ImageIcon big = kindredMark(64);
+        ImageIcon big = kindredMark(px(64));
         about.add(big != null ? new JLabel(big) : new JLabel(), "aligny top");
         JPanel textCol = new JPanel(new MigLayout("insets 0, wrap 1, gap 4", "[grow,fill]"));
         textCol.setOpaque(false);
         JLabel name = new JLabel("Rift Helper");
-        name.setFont(fTitle.deriveFont(20f));
+        name.setFont(fTitle.deriveFont(fpt(20f)));
         name.setForeground(Theme.TEXT);
         JLabel blurb = new JLabel("<html>Automates queue, champ select, and lobby actions through the League Client (LCU) API. No injection, no memory reads.</html>");
         blurb.setFont(fSub);
@@ -855,7 +866,7 @@ public class RiftHelperMainView extends JFrame {
         b.setFont(fBody);
         b.setFocusPainted(false);
         b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        b.setBorder(BorderFactory.createEmptyBorder(7, 13, 7, 13));
+        b.setBorder(BorderFactory.createEmptyBorder(px(7), px(13), px(7), px(13)));
         Color fg;
         Color bg;
         Color line;
@@ -893,8 +904,8 @@ public class RiftHelperMainView extends JFrame {
         b.putClientProperty("JComponent.roundRect", true);
         b.putClientProperty("JButton.borderColor", line);
         if (glyph != null) {
-            b.setIcon(Icons.of(glyph, 15, fg));
-            b.setIconTextGap(text == null || text.isEmpty() ? 0 : 7);
+            b.setIcon(Icons.of(glyph, px(15), fg));
+            b.setIconTextGap(text == null || text.isEmpty() ? 0 : px(7));
         }
     }
 
@@ -903,12 +914,12 @@ public class RiftHelperMainView extends JFrame {
         b.setFont(fBody);
         b.setFocusPainted(false);
         b.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        b.setBorder(BorderFactory.createEmptyBorder(6, 12, 6, 12));
+        b.setBorder(BorderFactory.createEmptyBorder(px(6), px(12), px(6), px(12)));
         b.setContentAreaFilled(true);
         b.setOpaque(true);
         b.setBackground(Theme.SURFACE_0);
         b.setForeground(Theme.TEXT_DIM);
-        b.setIconTextGap(6);
+        b.setIconTextGap(px(6));
         b.putClientProperty("JComponent.roundRect", true);
     }
 
@@ -920,7 +931,7 @@ public class RiftHelperMainView extends JFrame {
             boolean on = i == index;
             laneButtons[i].setBackground(on ? Theme.ACCENT_SOFT : Theme.SURFACE_0);
             laneButtons[i].setForeground(on ? Theme.ACCENT_TEXT : Theme.TEXT_DIM);
-            laneButtons[i].setIcon(Icons.of(glyphs[i], 14, on ? Theme.ACCENT_TEXT : Theme.TEXT_DIM));
+            laneButtons[i].setIcon(Icons.of(glyphs[i], px(14), on ? Theme.ACCENT_TEXT : Theme.TEXT_DIM));
         }
         laneCards.show(lanePanel, laneNames[index]);
     }
@@ -1339,9 +1350,9 @@ public class RiftHelperMainView extends JFrame {
             setRolloverEnabled(true);
             setHorizontalAlignment(SwingConstants.LEFT);
             setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-            setBorder(BorderFactory.createEmptyBorder(9, 12, 9, 11));
-            setIconTextGap(11);
-            setIcon(Icons.of(glyph, 17, Theme.TEXT_DIM));
+            setBorder(BorderFactory.createEmptyBorder(px(9), px(12), px(9), px(11)));
+            setIconTextGap(px(11));
+            setIcon(Icons.of(glyph, px(17), Theme.TEXT_DIM));
         }
 
         @Override

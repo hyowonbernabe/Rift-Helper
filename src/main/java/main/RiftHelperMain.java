@@ -7,6 +7,8 @@ import model.SSLBypass;
 import view.RiftHelperMainView;
 
 import javax.swing.*;
+import java.awt.Dimension;
+import java.awt.Toolkit;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 
@@ -15,6 +17,7 @@ public class RiftHelperMain {
     }
 
     public static void main(String[] args) {
+        setupUiScale();
         FlatDarkLaf.setup();
         SSLBypass.disableSSLVerification();
 
@@ -31,6 +34,23 @@ public class RiftHelperMain {
         new RiftHelperMain(riftHelperMainView, riftHelperMainController);
 
         checkDisconnect();
+    }
+
+    // The window is a fixed 16:9 box at 35% of the display; scale the whole UI to match so it looks
+    // right at that size and grows naturally on bigger screens. FlatLaf's uiScale scales fonts,
+    // MigLayout gaps, and component insets globally; the view scales its hand-set fonts/icons/dims
+    // by the same factor (UIScale.getUserScaleFactor). Must be set before FlatLaf initializes.
+    // Reference: 1080p => 0.75, 1440p => 1.0, 2160p => 1.5.
+    private static void setupUiScale() {
+        try {
+            Dimension res = Toolkit.getDefaultToolkit().getScreenSize();
+            double ratio = 16.0 / 9.0;
+            double boxH = (res.width / (double) res.height >= ratio) ? res.height : res.width / ratio;
+            double scale = Math.max(0.6, Math.min(boxH / 1440.0, 2.0));
+            System.setProperty("flatlaf.uiScale", String.format(java.util.Locale.US, "%.3f", scale));
+        } catch (Throwable t) {
+            // Leave the default scale if the display can't be queried.
+        }
     }
 
     private static void checkDisconnect() {

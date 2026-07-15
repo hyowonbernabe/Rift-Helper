@@ -1,5 +1,7 @@
 package view;
 
+import com.formdev.flatlaf.util.UIScale;
+
 import javax.swing.AbstractAction;
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -37,7 +39,7 @@ public class ToggleSwitch extends JComponent {
         setOpaque(false);
         setFocusable(true);
         setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        Dimension d = new Dimension(42, 24);
+        Dimension d = new Dimension(UIScale.scale(42), UIScale.scale(24));
         setPreferredSize(d);
         setMinimumSize(d);
         setMaximumSize(d);
@@ -87,8 +89,9 @@ public class ToggleSwitch extends JComponent {
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
         boolean on = isOn();
-        int trackW = 40;
-        int trackH = 22;
+        int trackW = UIScale.scale(40);
+        int trackH = UIScale.scale(22);
+        int inset = UIScale.scale(3);
         int x = (getWidth() - trackW) / 2;
         int y = (getHeight() - trackH) / 2;
 
@@ -98,16 +101,16 @@ public class ToggleSwitch extends JComponent {
         g2.setStroke(new BasicStroke(1.4f));
         g2.drawRoundRect(x, y, trackW, trackH, trackH, trackH);
 
-        int knob = trackH - 6;
-        int kx = on ? x + trackW - knob - 3 : x + 3;
-        int ky = y + 3;
+        int knob = trackH - inset * 2;
+        int kx = on ? x + trackW - knob - inset : x + inset;
+        int ky = y + inset;
         g2.setColor(on ? Theme.ACCENT : Theme.TEXT_FAINT);
         g2.fillOval(kx, ky, knob, knob);
 
         if (isFocusOwner()) {
             g2.setColor(on ? Theme.ACCENT : Theme.TEXT_DIM);
             g2.setStroke(new BasicStroke(1f));
-            g2.drawRoundRect(x - 3, y - 3, trackW + 6, trackH + 6, trackH, trackH);
+            g2.drawRoundRect(x - inset, y - inset, trackW + inset * 2, trackH + inset * 2, trackH, trackH);
         }
         g2.dispose();
     }

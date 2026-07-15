@@ -16,6 +16,7 @@ import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import com.formdev.flatlaf.util.UIScale;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
@@ -44,7 +45,9 @@ import java.util.Locale;
 public class ChampionPicker extends JComponent {
     /** First entry in the dropdown; selecting it clears the pick. */
     public static final String NONE = "None";
-    private static final int ICON = 22;
+    private static final int ICON = UIScale.scale(22);
+    private static final int ROW_H = UIScale.scale(30);
+    private static final int LIST_ICON = UIScale.scale(24);
 
     private final List<String> items = new ArrayList<>();
     private String selected;
@@ -64,10 +67,10 @@ public class ChampionPicker extends JComponent {
         if (base != null) {
             setFont(base);
         }
-        Dimension pref = new Dimension(180, 30);
+        Dimension pref = new Dimension(UIScale.scale(180), ROW_H);
         setPreferredSize(pref);
-        setMinimumSize(new Dimension(130, 30));
-        setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
+        setMinimumSize(new Dimension(UIScale.scale(130), ROW_H));
+        setMaximumSize(new Dimension(Integer.MAX_VALUE, ROW_H));
 
         addMouseListener(new MouseAdapter() {
             @Override
@@ -119,7 +122,7 @@ public class ChampionPicker extends JComponent {
         }
         search.setText("");
         filter("");
-        popup.setPopupSize(Math.max(getWidth(), 230), 300);
+        popup.setPopupSize(Math.max(getWidth(), UIScale.scale(230)), UIScale.scale(300));
         popup.show(this, 0, getHeight() + 2);
         SwingUtilities.invokeLater(() -> search.requestFocusInWindow());
     }
@@ -129,7 +132,7 @@ public class ChampionPicker extends JComponent {
         list = new JList<>(model);
         list.setCellRenderer(new ChampionRenderer());
         list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        list.setFixedCellHeight(30);
+        list.setFixedCellHeight(ROW_H);
         list.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -279,7 +282,7 @@ public class ChampionPicker extends JComponent {
         ChampionRenderer() {
             super(new BorderLayout(8, 0));
             setBorder(BorderFactory.createEmptyBorder(3, 8, 3, 8));
-            icon.setPreferredSize(new Dimension(24, 24));
+            icon.setPreferredSize(new Dimension(LIST_ICON, LIST_ICON));
             add(icon, BorderLayout.WEST);
             add(text, BorderLayout.CENTER);
             setOpaque(true);
@@ -296,10 +299,10 @@ public class ChampionPicker extends JComponent {
                 return this;
             }
             text.setForeground(selected ? Theme.ON_ACCENT : Theme.TEXT);
-            ImageIcon cached = ChampionIcons.cached(value, 24);
+            ImageIcon cached = ChampionIcons.cached(value, LIST_ICON);
             icon.setIcon(cached);
             if (cached == null) {
-                ChampionIcons.ensure(value, 24, jList);
+                ChampionIcons.ensure(value, LIST_ICON, jList);
             }
             return this;
         }
