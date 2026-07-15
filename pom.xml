@@ -6,7 +6,7 @@
 
     <groupId>com.rifthelper</groupId>
     <artifactId>rift-helper</artifactId>
-    <version>1.3.2</version>
+    <version>1.4.0</version>
 
     <repositories>
         <repository>
@@ -64,6 +64,32 @@
             <version>4.5.14</version>
         </dependency>
 
+        <!-- MigLayout (Swing) - grid layout for consistent alignment/spacing -->
+        <dependency>
+            <groupId>com.miglayout</groupId>
+            <artifactId>miglayout-swing</artifactId>
+            <version>11.4.2</version>
+        </dependency>
+
+        <!-- Ikonli - scalable, recolorable vector icons (FontAwesome pack) -->
+        <dependency>
+            <groupId>org.kordamp.ikonli</groupId>
+            <artifactId>ikonli-swing</artifactId>
+            <version>12.3.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.kordamp.ikonli</groupId>
+            <artifactId>ikonli-fontawesome5-pack</artifactId>
+            <version>12.3.1</version>
+        </dependency>
+
+        <!-- JNA - plain window minimize of the League client for Auto Minimize (DND) -->
+        <dependency>
+            <groupId>net.java.dev.jna</groupId>
+            <artifactId>jna-platform</artifactId>
+            <version>5.14.0</version>
+        </dependency>
+
     </dependencies>
 
     <build>
@@ -84,6 +110,10 @@
                                                      "org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <mainClass>main.RiftHelperMain</mainClass>
                                 </transformer>
+                                <!-- Merge META-INF/services so Ikonli's ServiceLoader-based icon
+                                     resolvers survive shading (otherwise 'Cannot resolve fas-*'). -->
+                                <transformer implementation=
+                                                     "org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                             </transformers>
                         </configuration>
                     </execution>

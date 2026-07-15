@@ -62,6 +62,21 @@ public class PreferenceManager {
     private static final String PREF_SYSTEM_TRAY = "systemTray";
     private static final String PREF_AUTO_LOCK_LANE_CHOICE = "autoLockLaneChoice";
     private static final String PREF_AUTO_CHECK_UPDATE = "autoCheckUpdate";
+    private static final String PREF_AUTO_HONOR = "autoHonor";
+    private static final String PREF_AUTO_SKIP_SCREENS = "autoSkipScreens";
+    private static final String PREF_GROUP_AUTO_QUEUE = "groupAutoQueue";
+    private static final String PREF_SOLO_AUTO_QUEUE = "soloAutoQueue";
+    private static final String PREF_AUTO_MINIMIZE = "autoMinimize";
+
+    private static final String[] TOP_KEYS = {PREF_AUTO_LOCK_TOP_PRIORITY_1, PREF_AUTO_LOCK_TOP_PRIORITY_2, PREF_AUTO_LOCK_TOP_PRIORITY_3, PREF_AUTO_LOCK_TOP_PRIORITY_4, PREF_AUTO_LOCK_TOP_PRIORITY_5};
+    private static final String[] JUNGLE_KEYS = {PREF_AUTO_LOCK_JUNGLE_PRIORITY_1, PREF_AUTO_LOCK_JUNGLE_PRIORITY_2, PREF_AUTO_LOCK_JUNGLE_PRIORITY_3, PREF_AUTO_LOCK_JUNGLE_PRIORITY_4, PREF_AUTO_LOCK_JUNGLE_PRIORITY_5};
+    private static final String[] MID_KEYS = {PREF_AUTO_LOCK_MID_PRIORITY_1, PREF_AUTO_LOCK_MID_PRIORITY_2, PREF_AUTO_LOCK_MID_PRIORITY_3, PREF_AUTO_LOCK_MID_PRIORITY_4, PREF_AUTO_LOCK_MID_PRIORITY_5};
+    private static final String[] BOT_KEYS = {PREF_AUTO_LOCK_BOT_PRIORITY_1, PREF_AUTO_LOCK_BOT_PRIORITY_2, PREF_AUTO_LOCK_BOT_PRIORITY_3, PREF_AUTO_LOCK_BOT_PRIORITY_4, PREF_AUTO_LOCK_BOT_PRIORITY_5};
+    private static final String[] SUPPORT_KEYS = {PREF_AUTO_LOCK_SUPPORT_PRIORITY_1, PREF_AUTO_LOCK_SUPPORT_PRIORITY_2, PREF_AUTO_LOCK_SUPPORT_PRIORITY_3, PREF_AUTO_LOCK_SUPPORT_PRIORITY_4, PREF_AUTO_LOCK_SUPPORT_PRIORITY_5};
+    private static final String[] BAN_KEYS = {PREF_AUTO_BAN_PRIORITY_1, PREF_AUTO_BAN_PRIORITY_2, PREF_AUTO_BAN_PRIORITY_3, PREF_AUTO_BAN_PRIORITY_4, PREF_AUTO_BAN_PRIORITY_5};
+    private static final String[] ARENA_LOCK_KEYS = {PREF_AUTO_LOCK_ARENA_PRIORITY_1, PREF_AUTO_LOCK_ARENA_PRIORITY_2, PREF_AUTO_LOCK_ARENA_PRIORITY_3, PREF_AUTO_LOCK_ARENA_PRIORITY_4, PREF_AUTO_LOCK_ARENA_PRIORITY_5};
+    private static final String[] ARENA_BAN_KEYS = {PREF_AUTO_BAN_ARENA_PRIORITY_1, PREF_AUTO_BAN_ARENA_PRIORITY_2, PREF_AUTO_BAN_ARENA_PRIORITY_3, PREF_AUTO_BAN_ARENA_PRIORITY_4, PREF_AUTO_BAN_ARENA_PRIORITY_5};
+    private static final String[] SWAP_KEYS = {PREF_AUTO_SWAP_PRIORITY_1, PREF_AUTO_SWAP_PRIORITY_2, PREF_AUTO_SWAP_PRIORITY_3, PREF_AUTO_SWAP_PRIORITY_4, PREF_AUTO_SWAP_PRIORITY_5, PREF_AUTO_SWAP_PRIORITY_6, PREF_AUTO_SWAP_PRIORITY_7, PREF_AUTO_SWAP_PRIORITY_8, PREF_AUTO_SWAP_PRIORITY_9, PREF_AUTO_SWAP_PRIORITY_10};
 
     private static Preferences prefs;
 
@@ -69,286 +84,100 @@ public class PreferenceManager {
         prefs = Preferences.userNodeForPackage(PreferenceManager.class);
     }
 
+    // Persist each slot; remove the key when the value is null/empty so cleared picks don't linger.
+    private static void putList(String[] keys, String[] values) {
+        for (int i = 0; i < keys.length; i++) {
+            String v = (values != null && i < values.length) ? values[i] : null;
+            if (v != null && !v.isEmpty()) {
+                prefs.put(keys[i], v);
+            } else {
+                prefs.remove(keys[i]);
+            }
+        }
+    }
+
+    private static String[] getList(String[] keys) {
+        String[] out = new String[keys.length];
+        for (int i = 0; i < keys.length; i++) {
+            out[i] = prefs.get(keys[i], null);
+        }
+        return out;
+    }
+
     public static void setAutoLockTopPriority(String[] priority) {
-        if (priority[0] != null && !priority[0].isEmpty()) {
-            prefs.put(PREF_AUTO_LOCK_TOP_PRIORITY_1, priority[0]);
-        }
-        if (priority[1] != null && !priority[1].isEmpty()) {
-            prefs.put(PREF_AUTO_LOCK_TOP_PRIORITY_2, priority[1]);
-        }
-        if (priority[2] != null && !priority[2].isEmpty()) {
-            prefs.put(PREF_AUTO_LOCK_TOP_PRIORITY_3, priority[2]);
-        }
-        if (priority[3] != null && !priority[3].isEmpty()) {
-            prefs.put(PREF_AUTO_LOCK_TOP_PRIORITY_4, priority[3]);
-        }
-        if (priority[4] != null && !priority[4].isEmpty()) {
-            prefs.put(PREF_AUTO_LOCK_TOP_PRIORITY_5, priority[4]);
-        }
+        putList(TOP_KEYS, priority);
     }
 
     public static void setAutoLockJunglePriority(String[] priority) {
-        if (priority[0] != null && !priority[0].isEmpty()) {
-            prefs.put(PREF_AUTO_LOCK_JUNGLE_PRIORITY_1, priority[0]);
-        }
-        if (priority[1] != null && !priority[1].isEmpty()) {
-            prefs.put(PREF_AUTO_LOCK_JUNGLE_PRIORITY_2, priority[1]);
-        }
-        if (priority[2] != null && !priority[2].isEmpty()) {
-            prefs.put(PREF_AUTO_LOCK_JUNGLE_PRIORITY_3, priority[2]);
-        }
-        if (priority[3] != null && !priority[3].isEmpty()) {
-            prefs.put(PREF_AUTO_LOCK_JUNGLE_PRIORITY_4, priority[3]);
-        }
-        if (priority[4] != null && !priority[4].isEmpty()) {
-            prefs.put(PREF_AUTO_LOCK_JUNGLE_PRIORITY_5, priority[4]);
-        }
+        putList(JUNGLE_KEYS, priority);
     }
 
     public static void setAutoLockMidPriority(String[] priority) {
-        if (priority[0] != null && !priority[0].isEmpty()) {
-            prefs.put(PREF_AUTO_LOCK_MID_PRIORITY_1, priority[0]);
-        }
-        if (priority[1] != null && !priority[1].isEmpty()) {
-            prefs.put(PREF_AUTO_LOCK_MID_PRIORITY_2, priority[1]);
-        }
-        if (priority[2] != null && !priority[2].isEmpty()) {
-            prefs.put(PREF_AUTO_LOCK_MID_PRIORITY_3, priority[2]);
-        }
-        if (priority[3] != null && !priority[3].isEmpty()) {
-            prefs.put(PREF_AUTO_LOCK_MID_PRIORITY_4, priority[3]);
-        }
-        if (priority[4] != null && !priority[4].isEmpty()) {
-            prefs.put(PREF_AUTO_LOCK_MID_PRIORITY_5, priority[4]);
-        }
+        putList(MID_KEYS, priority);
     }
 
     public static void setAutoLockBotPriority(String[] priority) {
-        if (priority[0] != null && !priority[0].isEmpty()) {
-            prefs.put(PREF_AUTO_LOCK_BOT_PRIORITY_1, priority[0]);
-        }
-        if (priority[1] != null && !priority[1].isEmpty()) {
-            prefs.put(PREF_AUTO_LOCK_BOT_PRIORITY_2, priority[1]);
-        }
-        if (priority[2] != null && !priority[2].isEmpty()) {
-            prefs.put(PREF_AUTO_LOCK_BOT_PRIORITY_3, priority[2]);
-        }
-        if (priority[3] != null && !priority[3].isEmpty()) {
-            prefs.put(PREF_AUTO_LOCK_BOT_PRIORITY_4, priority[3]);
-        }
-        if (priority[4] != null && !priority[4].isEmpty()) {
-            prefs.put(PREF_AUTO_LOCK_BOT_PRIORITY_5, priority[4]);
-        }
+        putList(BOT_KEYS, priority);
     }
 
     public static void setAutoLockSupportPriority(String[] priority) {
-        if (priority[0] != null && !priority[0].isEmpty()) {
-            prefs.put(PREF_AUTO_LOCK_SUPPORT_PRIORITY_1, priority[0]);
-        }
-        if (priority[1] != null && !priority[1].isEmpty()) {
-            prefs.put(PREF_AUTO_LOCK_SUPPORT_PRIORITY_2, priority[1]);
-        }
-        if (priority[2] != null && !priority[2].isEmpty()) {
-            prefs.put(PREF_AUTO_LOCK_SUPPORT_PRIORITY_3, priority[2]);
-        }
-        if (priority[3] != null && !priority[3].isEmpty()) {
-            prefs.put(PREF_AUTO_LOCK_SUPPORT_PRIORITY_4, priority[3]);
-        }
-        if (priority[4] != null && !priority[4].isEmpty()) {
-            prefs.put(PREF_AUTO_LOCK_SUPPORT_PRIORITY_5, priority[4]);
-        }
+        putList(SUPPORT_KEYS, priority);
     }
 
     public static String[] getAutoSwapTopPriority() {
-        return new String[]{
-                prefs.get(PREF_AUTO_LOCK_TOP_PRIORITY_1, null),
-                prefs.get(PREF_AUTO_LOCK_TOP_PRIORITY_2, null),
-                prefs.get(PREF_AUTO_LOCK_TOP_PRIORITY_3, null),
-                prefs.get(PREF_AUTO_LOCK_TOP_PRIORITY_4, null),
-                prefs.get(PREF_AUTO_LOCK_TOP_PRIORITY_5, null),
-        };
+        return getList(TOP_KEYS);
     }
 
     public static String[] getAutoSwapJunglePriority() {
-        return new String[]{
-                prefs.get(PREF_AUTO_LOCK_JUNGLE_PRIORITY_1, null),
-                prefs.get(PREF_AUTO_LOCK_JUNGLE_PRIORITY_2, null),
-                prefs.get(PREF_AUTO_LOCK_JUNGLE_PRIORITY_3, null),
-                prefs.get(PREF_AUTO_LOCK_JUNGLE_PRIORITY_4, null),
-                prefs.get(PREF_AUTO_LOCK_JUNGLE_PRIORITY_5, null),
-        };
-    }
-
-    public static String[] getAutoLockMidPriority() {
-        return new String[]{
-                prefs.get(PREF_AUTO_LOCK_MID_PRIORITY_1, null),
-                prefs.get(PREF_AUTO_LOCK_MID_PRIORITY_2, null),
-                prefs.get(PREF_AUTO_LOCK_MID_PRIORITY_3, null),
-                prefs.get(PREF_AUTO_LOCK_MID_PRIORITY_4, null),
-                prefs.get(PREF_AUTO_LOCK_MID_PRIORITY_5, null),
-        };
-    }
-
-    public static String[] getAutoLockBotPriority() {
-        return new String[]{
-                prefs.get(PREF_AUTO_LOCK_BOT_PRIORITY_1, null),
-                prefs.get(PREF_AUTO_LOCK_BOT_PRIORITY_2, null),
-                prefs.get(PREF_AUTO_LOCK_BOT_PRIORITY_3, null),
-                prefs.get(PREF_AUTO_LOCK_BOT_PRIORITY_4, null),
-                prefs.get(PREF_AUTO_LOCK_BOT_PRIORITY_5, null),
-        };
-    }
-
-    public static String[] getAutoLockSupportPriority() {
-        return new String[]{
-                prefs.get(PREF_AUTO_LOCK_SUPPORT_PRIORITY_1, null),
-                prefs.get(PREF_AUTO_LOCK_SUPPORT_PRIORITY_2, null),
-                prefs.get(PREF_AUTO_LOCK_SUPPORT_PRIORITY_3, null),
-                prefs.get(PREF_AUTO_LOCK_SUPPORT_PRIORITY_4, null),
-                prefs.get(PREF_AUTO_LOCK_SUPPORT_PRIORITY_5, null),
-        };
+        return getList(JUNGLE_KEYS);
     }
 
     public static String[] getAutoLockJunglePriority() {
-        return new String[]{
-                prefs.get(PREF_AUTO_LOCK_JUNGLE_PRIORITY_1, null),
-                prefs.get(PREF_AUTO_LOCK_JUNGLE_PRIORITY_2, null),
-                prefs.get(PREF_AUTO_LOCK_JUNGLE_PRIORITY_3, null),
-                prefs.get(PREF_AUTO_LOCK_JUNGLE_PRIORITY_4, null),
-                prefs.get(PREF_AUTO_LOCK_JUNGLE_PRIORITY_5, null),
-        };
+        return getList(JUNGLE_KEYS);
+    }
+
+    public static String[] getAutoLockMidPriority() {
+        return getList(MID_KEYS);
+    }
+
+    public static String[] getAutoLockBotPriority() {
+        return getList(BOT_KEYS);
+    }
+
+    public static String[] getAutoLockSupportPriority() {
+        return getList(SUPPORT_KEYS);
     }
 
     public static void setAutoBanPriority(String[] priority) {
-        if (priority[0] != null && !priority[0].isEmpty()) {
-            prefs.put(PREF_AUTO_BAN_PRIORITY_1, priority[0]);
-        }
-        if (priority[1] != null && !priority[1].isEmpty()) {
-            prefs.put(PREF_AUTO_BAN_PRIORITY_2, priority[1]);
-        }
-        if (priority[2] != null && !priority[2].isEmpty()) {
-            prefs.put(PREF_AUTO_BAN_PRIORITY_3, priority[2]);
-        }
-        if (priority[3] != null && !priority[3].isEmpty()) {
-            prefs.put(PREF_AUTO_BAN_PRIORITY_4, priority[3]);
-        }
-        if (priority[4] != null && !priority[4].isEmpty()) {
-            prefs.put(PREF_AUTO_BAN_PRIORITY_5, priority[4]);
-        }
+        putList(BAN_KEYS, priority);
     }
 
     public static String[] getAutoBanPriority() {
-        return new String[]{
-                prefs.get(PREF_AUTO_BAN_PRIORITY_1, null),
-                prefs.get(PREF_AUTO_BAN_PRIORITY_2, null),
-                prefs.get(PREF_AUTO_BAN_PRIORITY_3, null),
-                prefs.get(PREF_AUTO_BAN_PRIORITY_4, null),
-                prefs.get(PREF_AUTO_BAN_PRIORITY_5, null),
-        };
+        return getList(BAN_KEYS);
     }
 
     public static void setAutoLockArenaPriority(String[] priority) {
-        if (priority[0] != null && !priority[0].isEmpty()) {
-            prefs.put(PREF_AUTO_LOCK_ARENA_PRIORITY_1, priority[0]);
-        }
-        if (priority[1] != null && !priority[1].isEmpty()) {
-            prefs.put(PREF_AUTO_LOCK_ARENA_PRIORITY_2, priority[1]);
-        }
-        if (priority[2] != null && !priority[2].isEmpty()) {
-            prefs.put(PREF_AUTO_LOCK_ARENA_PRIORITY_3, priority[2]);
-        }
-        if (priority[3] != null && !priority[3].isEmpty()) {
-            prefs.put(PREF_AUTO_LOCK_ARENA_PRIORITY_4, priority[3]);
-        }
-        if (priority[4] != null && !priority[4].isEmpty()) {
-            prefs.put(PREF_AUTO_LOCK_ARENA_PRIORITY_5, priority[4]);
-        }
+        putList(ARENA_LOCK_KEYS, priority);
     }
 
     public static String[] getAutoLockArenaPriority() {
-        return new String[]{
-                prefs.get(PREF_AUTO_LOCK_ARENA_PRIORITY_1, null),
-                prefs.get(PREF_AUTO_LOCK_ARENA_PRIORITY_2, null),
-                prefs.get(PREF_AUTO_LOCK_ARENA_PRIORITY_3, null),
-                prefs.get(PREF_AUTO_LOCK_ARENA_PRIORITY_4, null),
-                prefs.get(PREF_AUTO_LOCK_ARENA_PRIORITY_5, null),
-        };
+        return getList(ARENA_LOCK_KEYS);
     }
 
     public static void setAutoBanArenaPriority(String[] priority) {
-        if (priority[0] != null && !priority[0].isEmpty()) {
-            prefs.put(PREF_AUTO_LOCK_ARENA_PRIORITY_1, priority[0]);
-        }
-        if (priority[1] != null && !priority[1].isEmpty()) {
-            prefs.put(PREF_AUTO_LOCK_ARENA_PRIORITY_2, priority[1]);
-        }
-        if (priority[2] != null && !priority[2].isEmpty()) {
-            prefs.put(PREF_AUTO_LOCK_ARENA_PRIORITY_3, priority[2]);
-        }
-        if (priority[3] != null && !priority[3].isEmpty()) {
-            prefs.put(PREF_AUTO_LOCK_ARENA_PRIORITY_4, priority[3]);
-        }
-        if (priority[4] != null && !priority[4].isEmpty()) {
-            prefs.put(PREF_AUTO_LOCK_ARENA_PRIORITY_5, priority[4]);
-        }
+        putList(ARENA_BAN_KEYS, priority);
     }
 
     public static String[] getAutoBanArenaPriority() {
-        return new String[]{
-                prefs.get(PREF_AUTO_LOCK_ARENA_PRIORITY_1, null),
-                prefs.get(PREF_AUTO_LOCK_ARENA_PRIORITY_2, null),
-                prefs.get(PREF_AUTO_LOCK_ARENA_PRIORITY_3, null),
-                prefs.get(PREF_AUTO_LOCK_ARENA_PRIORITY_4, null),
-                prefs.get(PREF_AUTO_LOCK_ARENA_PRIORITY_5, null),
-        };
+        return getList(ARENA_BAN_KEYS);
     }
 
     public static void setAutoSwapPriority(String[] priority) {
-        if (priority[0] != null && !priority[0].isEmpty()) {
-            prefs.put(PREF_AUTO_SWAP_PRIORITY_1, priority[0]);
-        }
-        if (priority[1] != null && !priority[1].isEmpty()) {
-            prefs.put(PREF_AUTO_SWAP_PRIORITY_2, priority[1]);
-        }
-        if (priority[2] != null && !priority[2].isEmpty()) {
-            prefs.put(PREF_AUTO_SWAP_PRIORITY_3, priority[2]);
-        }
-        if (priority[3] != null && !priority[3].isEmpty()) {
-            prefs.put(PREF_AUTO_SWAP_PRIORITY_4, priority[3]);
-        }
-        if (priority[4] != null && !priority[4].isEmpty()) {
-            prefs.put(PREF_AUTO_SWAP_PRIORITY_5, priority[4]);
-        }
-        if (priority[5] != null && !priority[5].isEmpty()) {
-            prefs.put(PREF_AUTO_SWAP_PRIORITY_6, priority[5]);
-        }
-        if (priority[6] != null && !priority[6].isEmpty()) {
-            prefs.put(PREF_AUTO_SWAP_PRIORITY_7, priority[6]);
-        }
-        if (priority[7] != null && !priority[7].isEmpty()) {
-            prefs.put(PREF_AUTO_SWAP_PRIORITY_8, priority[7]);
-        }
-        if (priority[8] != null && !priority[8].isEmpty()) {
-            prefs.put(PREF_AUTO_SWAP_PRIORITY_9, priority[8]);
-        }
-        if (priority[9] != null && !priority[9].isEmpty()) {
-            prefs.put(PREF_AUTO_SWAP_PRIORITY_10, priority[9]);
-        }
+        putList(SWAP_KEYS, priority);
     }
 
     public static String[] getAutoSwapPriority() {
-        return new String[]{
-                prefs.get(PREF_AUTO_SWAP_PRIORITY_1, null),
-                prefs.get(PREF_AUTO_SWAP_PRIORITY_2, null),
-                prefs.get(PREF_AUTO_SWAP_PRIORITY_3, null),
-                prefs.get(PREF_AUTO_SWAP_PRIORITY_4, null),
-                prefs.get(PREF_AUTO_SWAP_PRIORITY_5, null),
-                prefs.get(PREF_AUTO_SWAP_PRIORITY_6, null),
-                prefs.get(PREF_AUTO_SWAP_PRIORITY_7, null),
-                prefs.get(PREF_AUTO_SWAP_PRIORITY_8, null),
-                prefs.get(PREF_AUTO_SWAP_PRIORITY_9, null),
-                prefs.get(PREF_AUTO_SWAP_PRIORITY_10, null)
-        };
+        return getList(SWAP_KEYS);
     }
 
     public static void setCenterGUI(boolean value) {
@@ -403,6 +232,89 @@ public class PreferenceManager {
     public static boolean getAutoCheckUpdate() {
         return prefs.getBoolean(PREF_AUTO_CHECK_UPDATE, true);
     }
+
+    // ---- Auto game-start loop (all opt-in, default OFF) ----
+
+    private static void putBooleanFlushed(String key, boolean value) {
+        prefs.putBoolean(key, value);
+        try {
+            prefs.flush();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void setAutoHonor(boolean value) {
+        putBooleanFlushed(PREF_AUTO_HONOR, value);
+    }
+
+    public static boolean getAutoHonor() {
+        return prefs.getBoolean(PREF_AUTO_HONOR, false);
+    }
+
+    public static void setAutoSkipScreens(boolean value) {
+        putBooleanFlushed(PREF_AUTO_SKIP_SCREENS, value);
+    }
+
+    public static boolean getAutoSkipScreens() {
+        return prefs.getBoolean(PREF_AUTO_SKIP_SCREENS, false);
+    }
+
+    public static void setGroupAutoQueue(boolean value) {
+        putBooleanFlushed(PREF_GROUP_AUTO_QUEUE, value);
+    }
+
+    public static boolean getGroupAutoQueue() {
+        return prefs.getBoolean(PREF_GROUP_AUTO_QUEUE, false);
+    }
+
+    public static void setSoloAutoQueue(boolean value) {
+        putBooleanFlushed(PREF_SOLO_AUTO_QUEUE, value);
+    }
+
+    public static boolean getSoloAutoQueue() {
+        return prefs.getBoolean(PREF_SOLO_AUTO_QUEUE, false);
+    }
+
+    public static void setAutoMinimize(boolean value) {
+        putBooleanFlushed(PREF_AUTO_MINIMIZE, value);
+    }
+
+    public static boolean getAutoMinimize() {
+        return prefs.getBoolean(PREF_AUTO_MINIMIZE, false);
+    }
+
+    // ---- On/off state for the remaining auto toggles (so every choice survives a restart) ----
+
+    public static void setAutoAccept(boolean value) { putBooleanFlushed("autoAccept", value); }
+    public static boolean getAutoAccept() { return prefs.getBoolean("autoAccept", false); }
+
+    public static void setAutoDecline(boolean value) { putBooleanFlushed("autoDecline", value); }
+    public static boolean getAutoDecline() { return prefs.getBoolean("autoDecline", false); }
+
+    public static void setAutoSwap(boolean value) { putBooleanFlushed("autoSwapEnabled", value); }
+    public static boolean getAutoSwap() { return prefs.getBoolean("autoSwapEnabled", false); }
+
+    public static void setAutoReroll(boolean value) { putBooleanFlushed("autoReroll", value); }
+    public static boolean getAutoReroll() { return prefs.getBoolean("autoReroll", false); }
+
+    public static void setAutoLock(boolean value) { putBooleanFlushed("autoLockEnabled", value); }
+    public static boolean getAutoLock() { return prefs.getBoolean("autoLockEnabled", false); }
+
+    public static void setAutoBan(boolean value) { putBooleanFlushed("autoBanEnabled", value); }
+    public static boolean getAutoBan() { return prefs.getBoolean("autoBanEnabled", false); }
+
+    public static void setAutoLockArena(boolean value) { putBooleanFlushed("autoLockArenaEnabled", value); }
+    public static boolean getAutoLockArena() { return prefs.getBoolean("autoLockArenaEnabled", false); }
+
+    public static void setAutoBanArena(boolean value) { putBooleanFlushed("autoBanArenaEnabled", value); }
+    public static boolean getAutoBanArena() { return prefs.getBoolean("autoBanArenaEnabled", false); }
+
+    public static void setAutoBanCrowdFavorite(boolean value) { putBooleanFlushed("autoBanCrowdFavorite", value); }
+    public static boolean getAutoBanCrowdFavorite() { return prefs.getBoolean("autoBanCrowdFavorite", false); }
+
+    public static void setAutoBravery(boolean value) { putBooleanFlushed("autoBravery", value); }
+    public static boolean getAutoBravery() { return prefs.getBoolean("autoBravery", false); }
 
     public static void exportPreferences() {
         try {

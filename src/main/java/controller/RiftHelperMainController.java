@@ -2,6 +2,7 @@ package controller;
 
 import model.*;
 import no.stelar7.api.r4j.impl.lol.lcu.LCUSocketReader;
+import view.ChampionPicker;
 import view.FileChooserView;
 import view.RiftHelperMainView;
 
@@ -25,7 +26,6 @@ public class RiftHelperMainController {
     private volatile boolean centerGUI;
     private volatile boolean systemTray;
     private volatile boolean autoCheckUpdate;
-    private volatile boolean autoReroll;
     private volatile int autoLockLaneChoice;
     private volatile boolean autoLockRank;
     private volatile boolean autoBan;
@@ -33,6 +33,13 @@ public class RiftHelperMainController {
     private volatile boolean autoBanArena;
     private volatile boolean autoBanCrowdFavoriteArena;
     private volatile boolean autoBravery;
+    private volatile boolean autoHonor;
+    private volatile boolean autoSkipScreens;
+    private volatile boolean groupAutoQueue;
+    private volatile boolean soloAutoQueue;
+    private volatile boolean autoMinimize;
+    private volatile String lastGameflowPhase = "";
+    private volatile boolean autoQueueArmed = false;
     private List<BenchChampions> benchChampions;
     private String[] priorityChampions;
     private String[] topChampions;
@@ -112,6 +119,13 @@ public class RiftHelperMainController {
                     autoBanArena(endpointBanning, actionIdBanning);
                     autoBanCrowdFavoriteArena(endpointBanning, actionIdBanning);
                 }
+
+                // Tuck the client away right after an automated pick/ban (only when that auto action
+                // is actually on, so a manual pick is never minimized out from under the user).
+                if ((isInProgressPicking && (autoLockRank || autoLockArena || autoBravery))
+                        || (isInProgressBanning && (autoBan || autoBanArena || autoBanCrowdFavoriteArena))) {
+                    dndMinimize();
+                }
             }
 
             if (session.isAllowRerolling()) {
@@ -128,9 +142,21 @@ public class RiftHelperMainController {
                     return;
                 }
 
-                autoReroll(rerollsRemaining);
                 autoSwap();
                 nameButtons(buttons);
+            }
+        });
+
+        // Auto game-start loop: driven by gameflow-phase transitions (honor -> skip screens) plus
+        // lobby-membership changes (re-check auto-queue when friends return). Always subscribed;
+        // the toggles gate the actions, not the subscription.
+        socketReader.subscribe("OnJsonApiEvent_lol-gameflow_v1_gameflow-phase", eventData -> {
+            handleGameflowPhase(parseGameflowPhase(eventData));
+        });
+
+        socketReader.subscribe("OnJsonApiEvent_lol-lobby_v2_lobby", eventData -> {
+            if ("Lobby".equals(lastGameflowPhase)) {
+                evaluateAutoQueue();
             }
         });
 
@@ -255,6 +281,7 @@ public class RiftHelperMainController {
 
         this.riftHelperMainView.addAutoSwapEnableListener(e -> {
             autoSwap = true;
+            PreferenceManager.setAutoSwap(true);
             System.out.println("Auto Swap Turned On: " + autoSwap);
 
             SwingUtilities.invokeLater(() -> {
@@ -266,6 +293,7 @@ public class RiftHelperMainController {
         this.riftHelperMainView.addAutoSwapDisableListener(e -> {
             autoSwap = false;
             priority = 1;
+            PreferenceManager.setAutoSwap(false);
             System.out.println("Auto Swap Turned Off: " + autoSwap);
 
             SwingUtilities.invokeLater(() -> {
@@ -348,26 +376,6 @@ public class RiftHelperMainController {
             });
 
             PreferenceManager.setCenterGUI(centerGUI);
-        });
-
-        this.riftHelperMainView.addAutoRerollEnableListener(e -> {
-            autoReroll = true;
-            System.out.println("Auto Reroll Turned On: " + autoReroll);
-
-            SwingUtilities.invokeLater(() -> {
-                riftHelperMainView.buttonAutoRerollEnable.setEnabled(false);
-                riftHelperMainView.buttonAutoRerollDisable.setEnabled(true);
-            });
-        });
-
-        this.riftHelperMainView.addAutoRerollDisableListener(e -> {
-            autoReroll = false;
-            System.out.println("Auto Reroll Turned Off: " + autoReroll);
-
-            SwingUtilities.invokeLater(() -> {
-                riftHelperMainView.buttonAutoRerollEnable.setEnabled(true);
-                riftHelperMainView.buttonAutoRerollDisable.setEnabled(false);
-            });
         });
 
         this.riftHelperMainView.addExportListener(e -> {
@@ -581,6 +589,7 @@ public class RiftHelperMainController {
 
         this.riftHelperMainView.addAutoLockEnableListener(e -> {
             autoLockRank = true;
+            PreferenceManager.setAutoLock(true);
             System.out.println("Auto Lock Turned On: " + autoLockRank);
 
             SwingUtilities.invokeLater(() -> {
@@ -591,6 +600,7 @@ public class RiftHelperMainController {
 
         this.riftHelperMainView.addAutoLockDisableListener(e -> {
             autoLockRank = false;
+            PreferenceManager.setAutoLock(false);
             System.out.println("Auto Lock Turned Off: " + autoLockRank);
 
             SwingUtilities.invokeLater(() -> {
@@ -601,6 +611,7 @@ public class RiftHelperMainController {
 
         this.riftHelperMainView.addAutoBanEnableListener(e -> {
             autoBan = true;
+            PreferenceManager.setAutoBan(true);
             System.out.println("Auto Ban Turned On: " + autoBan);
 
             SwingUtilities.invokeLater(() -> {
@@ -611,6 +622,7 @@ public class RiftHelperMainController {
 
         this.riftHelperMainView.addAutoBanDisableListener(e -> {
             autoBan = false;
+            PreferenceManager.setAutoBan(false);
             System.out.println("Auto Ban Turned Off: " + autoBan);
 
             SwingUtilities.invokeLater(() -> {
@@ -628,7 +640,7 @@ public class RiftHelperMainController {
 
             PreferenceManager.setAutoBanPriority(ban);
 
-            JOptionPane.showMessageDialog(riftHelperMainView, "Successfully saved!", "Save Success", JOptionPane.INFORMATION_MESSAGE);
+            // auto-saved on change; no confirmation dialog
         });
 
         this.riftHelperMainView.addAutoLockArenaEnableListener(e -> {
@@ -638,6 +650,7 @@ public class RiftHelperMainController {
             }
 
             autoLockArena = true;
+            PreferenceManager.setAutoLockArena(true);
             System.out.println("Auto Lock (Arena) Turned On: " + autoLockArena);
 
             SwingUtilities.invokeLater(() -> {
@@ -648,6 +661,7 @@ public class RiftHelperMainController {
 
         this.riftHelperMainView.addAutoLockArenaDisableListener(e -> {
             autoLockArena = false;
+            PreferenceManager.setAutoLockArena(false);
             System.out.println("Auto Lock (Arena) Turned Off: " + autoLockArena);
 
             SwingUtilities.invokeLater(() -> {
@@ -665,7 +679,7 @@ public class RiftHelperMainController {
 
             PreferenceManager.setAutoLockArenaPriority(champions);
 
-            JOptionPane.showMessageDialog(riftHelperMainView, "Successfully saved!", "Save Success", JOptionPane.INFORMATION_MESSAGE);
+            // auto-saved on change; no confirmation dialog
         });
 
         this.riftHelperMainView.addAutoBanArenaEnableListener(e -> {
@@ -675,6 +689,7 @@ public class RiftHelperMainController {
             }
 
             autoBanArena = true;
+            PreferenceManager.setAutoBanArena(true);
             System.out.println("Auto Ban (Arena) Turned On: " + autoBanArena);
 
             SwingUtilities.invokeLater(() -> {
@@ -685,6 +700,7 @@ public class RiftHelperMainController {
 
         this.riftHelperMainView.addAutoBanArenaDisableListener(e -> {
             autoBanArena = false;
+            PreferenceManager.setAutoBanArena(false);
             System.out.println("Auto Ban (Arena) Turned Off: " + autoBanArena);
 
             SwingUtilities.invokeLater(() -> {
@@ -702,7 +718,7 @@ public class RiftHelperMainController {
 
             PreferenceManager.setAutoBanArenaPriority(ban);
 
-            JOptionPane.showMessageDialog(riftHelperMainView, "Successfully saved!", "Save Success", JOptionPane.INFORMATION_MESSAGE);
+            // auto-saved on change; no confirmation dialog
         });
 
         this.riftHelperMainView.addAutoBanCrowdFavoriteEnableListener(e -> {
@@ -712,6 +728,7 @@ public class RiftHelperMainController {
             }
 
             autoBanCrowdFavoriteArena = true;
+            PreferenceManager.setAutoBanCrowdFavorite(true);
             System.out.println("Auto Ban Crowd Favorite (Arena) Turned On: " + autoBanCrowdFavoriteArena);
 
             SwingUtilities.invokeLater(() -> {
@@ -722,6 +739,7 @@ public class RiftHelperMainController {
 
         this.riftHelperMainView.addAutoBanCrowdFavoriteDisableListener(e -> {
             autoBanCrowdFavoriteArena = false;
+            PreferenceManager.setAutoBanCrowdFavorite(false);
             System.out.println("Auto Ban Crowd Favorite (Arena) Turned Off: " + autoBanCrowdFavoriteArena);
 
             SwingUtilities.invokeLater(() -> {
@@ -737,6 +755,7 @@ public class RiftHelperMainController {
             }
 
             autoBravery = true;
+            PreferenceManager.setAutoBravery(true);
             System.out.println("Auto Bravery (Arena) Turned On: " + autoBravery);
 
             SwingUtilities.invokeLater(() -> {
@@ -747,6 +766,7 @@ public class RiftHelperMainController {
 
         this.riftHelperMainView.addAutoBraveryArenaDisableListener(e -> {
             autoBravery = false;
+            PreferenceManager.setAutoBravery(false);
             System.out.println("Auto Bravery (Arena) Turned Off: " + autoBravery);
 
             SwingUtilities.invokeLater(() -> {
@@ -776,10 +796,147 @@ public class RiftHelperMainController {
 
             PreferenceManager.setAutoCheckUpdate(autoCheckUpdate);
         });
+
+        this.riftHelperMainView.addAutoHonorEnableListener(e -> setAutoHonor(true));
+        this.riftHelperMainView.addAutoHonorDisableListener(e -> setAutoHonor(false));
+        this.riftHelperMainView.addAutoSkipScreensEnableListener(e -> setAutoSkipScreens(true));
+        this.riftHelperMainView.addAutoSkipScreensDisableListener(e -> setAutoSkipScreens(false));
+        this.riftHelperMainView.addGroupAutoQueueEnableListener(e -> setGroupAutoQueue(true));
+        this.riftHelperMainView.addGroupAutoQueueDisableListener(e -> setGroupAutoQueue(false));
+        this.riftHelperMainView.addSoloAutoQueueEnableListener(e -> setSoloAutoQueue(true));
+        this.riftHelperMainView.addSoloAutoQueueDisableListener(e -> setSoloAutoQueue(false));
+        this.riftHelperMainView.addAutoMinimizeEnableListener(e -> setAutoMinimize(true));
+        this.riftHelperMainView.addAutoMinimizeDisableListener(e -> setAutoMinimize(false));
+
+        // Restore persisted matchmaking toggles here (they subscribe to the websocket, which needs
+        // socketReader - not available yet in loadPreferences during startProgram()).
+        if (autoAccept) {
+            autoAcceptEnable(socketReader);
+        } else if (autoDecline) {
+            autoDeclineEnable(socketReader);
+        }
+    }
+
+    // ---- Auto game-start loop ----
+
+    private void setAutoHonor(boolean on) {
+        autoHonor = on;
+        SwingUtilities.invokeLater(() -> {
+            riftHelperMainView.buttonAutoHonorEnable.setEnabled(!on);
+            riftHelperMainView.buttonAutoHonorDisable.setEnabled(on);
+        });
+        PreferenceManager.setAutoHonor(on);
+    }
+
+    private void setAutoSkipScreens(boolean on) {
+        autoSkipScreens = on;
+        SwingUtilities.invokeLater(() -> {
+            riftHelperMainView.buttonAutoSkipScreensEnable.setEnabled(!on);
+            riftHelperMainView.buttonAutoSkipScreensDisable.setEnabled(on);
+        });
+        PreferenceManager.setAutoSkipScreens(on);
+    }
+
+    private void setGroupAutoQueue(boolean on) {
+        groupAutoQueue = on;
+        SwingUtilities.invokeLater(() -> {
+            riftHelperMainView.buttonGroupAutoQueueEnable.setEnabled(!on);
+            riftHelperMainView.buttonGroupAutoQueueDisable.setEnabled(on);
+        });
+        PreferenceManager.setGroupAutoQueue(on);
+        if (on && soloAutoQueue) {
+            setSoloAutoQueue(false); // Group and Solo are mutually exclusive.
+        }
+    }
+
+    private void setSoloAutoQueue(boolean on) {
+        soloAutoQueue = on;
+        SwingUtilities.invokeLater(() -> {
+            riftHelperMainView.buttonSoloAutoQueueEnable.setEnabled(!on);
+            riftHelperMainView.buttonSoloAutoQueueDisable.setEnabled(on);
+        });
+        PreferenceManager.setSoloAutoQueue(on);
+        if (on && groupAutoQueue) {
+            setGroupAutoQueue(false); // Group and Solo are mutually exclusive.
+        }
+    }
+
+    private void setAutoMinimize(boolean on) {
+        autoMinimize = on;
+        SwingUtilities.invokeLater(() -> {
+            riftHelperMainView.buttonAutoMinimizeEnable.setEnabled(!on);
+            riftHelperMainView.buttonAutoMinimizeDisable.setEnabled(on);
+        });
+        PreferenceManager.setAutoMinimize(on);
+    }
+
+    /** Minimize the League client, but only when Auto Minimize (DND) is on. Called right after an
+     *  automated action so the client is tucked away at the exact moment it would pop up. */
+    private void dndMinimize() {
+        if (autoMinimize) {
+            ClientWindow.minimize();
+        }
+    }
+
+    private static String parseGameflowPhase(String eventData) {
+        try {
+            com.google.gson.JsonObject root = com.google.gson.JsonParser.parseString(eventData).getAsJsonObject();
+            return root.getAsJsonObject("OnJsonApiEvent_lol-gameflow_v1_gameflow-phase").get("data").getAsString();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private void handleGameflowPhase(String phase) {
+        if (phase == null || phase.equals(lastGameflowPhase)) {
+            return; // act only on transitions; the event can repeat within a phase
+        }
+        lastGameflowPhase = phase;
+        System.out.println("Gameflow phase: " + phase);
+
+        switch (phase) {
+            case "PreEndOfGame" -> {
+                if (autoHonor) {
+                    Honor.honorFriends();
+                    dndMinimize();
+                }
+                // Arena (and some modes) never emit EndOfGame; they go PreEndOfGame -> Lobby. So try
+                // Play Again here too. It returns the party to the lobby (keeps the group).
+                if (autoSkipScreens) {
+                    Lobby.playAgain();
+                }
+            }
+            case "EndOfGame" -> {
+                if (autoSkipScreens) {
+                    Lobby.playAgain();
+                }
+            }
+            case "Lobby" -> {
+                autoQueueArmed = true;
+                evaluateAutoQueue();
+            }
+            default -> autoQueueArmed = false;
+        }
+    }
+
+    // Fires at most once per Lobby entry (autoQueueArmed), and only from the Lobby phase.
+    private void evaluateAutoQueue() {
+        if (!autoQueueArmed || !(soloAutoQueue || groupAutoQueue)) {
+            return;
+        }
+        int members = Lobby.memberCount();
+        boolean go = (soloAutoQueue && members == 1) || (groupAutoQueue && members >= 2);
+        if (go) {
+            autoQueueArmed = false;
+            Lobby.startSearch();
+            dndMinimize();
+            System.out.println("Auto queue started (members=" + members + ")");
+        }
     }
 
     private void autoDeclineDisable(LCUSocketReader socketReader) {
         autoDecline = false;
+        PreferenceManager.setAutoDecline(false);
 
         SwingUtilities.invokeLater(() -> {
             riftHelperMainView.buttonAutoDeclineEnable.setEnabled(true);
@@ -796,6 +953,7 @@ public class RiftHelperMainController {
         }
 
         autoDecline = true;
+        PreferenceManager.setAutoDecline(true);
 
         SwingUtilities.invokeLater(() -> {
             riftHelperMainView.buttonAutoDeclineEnable.setEnabled(false);
@@ -814,6 +972,7 @@ public class RiftHelperMainController {
 
     private void autoAcceptDisable(LCUSocketReader socketReader) {
         autoAccept = false;
+        PreferenceManager.setAutoAccept(false);
         System.out.println("Auto Accept Turned Off: " + autoAccept);
 
         SwingUtilities.invokeLater(() -> {
@@ -831,6 +990,7 @@ public class RiftHelperMainController {
         }
 
         autoAccept = true;
+        PreferenceManager.setAutoAccept(true);
         System.out.println("Auto Accept Turned On: " + autoAccept);
 
         riftHelperMainView.buttonAutoAcceptEnable.setEnabled(false);
@@ -842,6 +1002,7 @@ public class RiftHelperMainController {
 
             if (readyCheck.getState().equals("InProgress")) {
                 LCUPost.postToClient("/lol-matchmaking/v1/ready-check/accept");
+                dndMinimize();
             }
         });
     }
@@ -1041,15 +1202,12 @@ public class RiftHelperMainController {
         PreferenceManager.setAutoLockBotPriority(bot);
         PreferenceManager.setAutoLockSupportPriority(support);
 
-        JOptionPane.showMessageDialog(riftHelperMainView, "Successfully saved!", "Save Success", JOptionPane.INFORMATION_MESSAGE);
+        // auto-saved on change; no confirmation dialog
     }
 
     private void startProgram() {
         // Initialize Variables
-        this.autoAccept = false;
-        this.autoSwap = false;
         this.priority = 10;
-        this.autoReroll = false;
 
         // Store Preferences
         this.priorityChampions = PreferenceManager.getAutoSwapPriority();
@@ -1066,7 +1224,21 @@ public class RiftHelperMainController {
         this.centerGUI = PreferenceManager.getCenterGUI();
         this.systemTray = PreferenceManager.getSystemTray();
         this.autoCheckUpdate = PreferenceManager.getAutoCheckUpdate();
+        this.autoHonor = PreferenceManager.getAutoHonor();
+        this.autoSkipScreens = PreferenceManager.getAutoSkipScreens();
+        this.groupAutoQueue = PreferenceManager.getGroupAutoQueue();
+        this.soloAutoQueue = PreferenceManager.getSoloAutoQueue();
+        this.autoMinimize = PreferenceManager.getAutoMinimize();
         this.autoLockLaneChoice = PreferenceManager.getAutoLockLaneChoice();
+        this.autoAccept = PreferenceManager.getAutoAccept();
+        this.autoDecline = PreferenceManager.getAutoDecline();
+        this.autoSwap = PreferenceManager.getAutoSwap();
+        this.autoLockRank = PreferenceManager.getAutoLock();
+        this.autoBan = PreferenceManager.getAutoBan();
+        this.autoLockArena = PreferenceManager.getAutoLockArena();
+        this.autoBanArena = PreferenceManager.getAutoBanArena();
+        this.autoBanCrowdFavoriteArena = PreferenceManager.getAutoBanCrowdFavorite();
+        this.autoBravery = PreferenceManager.getAutoBravery();
 
         loadPreferences();
     }
@@ -1168,16 +1340,33 @@ public class RiftHelperMainController {
             this.riftHelperMainView.buttonAutoCheckUpdateEnable.setEnabled(true);
             this.riftHelperMainView.buttonAutoCheckUpdateDisable.setEnabled(false);
         }
+
+        this.riftHelperMainView.buttonAutoHonorEnable.setEnabled(!autoHonor);
+        this.riftHelperMainView.buttonAutoHonorDisable.setEnabled(autoHonor);
+        this.riftHelperMainView.buttonAutoSkipScreensEnable.setEnabled(!autoSkipScreens);
+        this.riftHelperMainView.buttonAutoSkipScreensDisable.setEnabled(autoSkipScreens);
+        if (groupAutoQueue && soloAutoQueue) { // safety: the two are mutually exclusive
+            soloAutoQueue = false;
+            PreferenceManager.setSoloAutoQueue(false);
+        }
+        this.riftHelperMainView.buttonGroupAutoQueueEnable.setEnabled(!groupAutoQueue);
+        this.riftHelperMainView.buttonGroupAutoQueueDisable.setEnabled(groupAutoQueue);
+        this.riftHelperMainView.buttonSoloAutoQueueEnable.setEnabled(!soloAutoQueue);
+        this.riftHelperMainView.buttonSoloAutoQueueDisable.setEnabled(soloAutoQueue);
+        this.riftHelperMainView.buttonAutoMinimizeEnable.setEnabled(!autoMinimize);
+        this.riftHelperMainView.buttonAutoMinimizeDisable.setEnabled(autoMinimize);
+        applyToggleButtons(riftHelperMainView.buttonAutoLockEnable, riftHelperMainView.buttonAutoLockDisable, autoLockRank);
+        applyToggleButtons(riftHelperMainView.buttonAutoBanEnable, riftHelperMainView.buttonAutoBanDisable, autoBan);
+        applyToggleButtons(riftHelperMainView.buttonAutoLockArenaEnable, riftHelperMainView.buttonAutoLockArenaDisable, autoLockArena);
+        applyToggleButtons(riftHelperMainView.buttonAutoBanArenaEnable, riftHelperMainView.buttonAutoBanArenaDisable, autoBanArena);
+        applyToggleButtons(riftHelperMainView.buttonAutoBanCrowdFavoriteEnable, riftHelperMainView.buttonAutoBanCrowdFavoriteDisable, autoBanCrowdFavoriteArena);
+        applyToggleButtons(riftHelperMainView.buttonAutoBraveryArenaEnable, riftHelperMainView.buttonAutoBraveryArenaDisable, autoBravery);
+        applyToggleButtons(riftHelperMainView.buttonAutoSwapEnable, riftHelperMainView.buttonAutoSwapDisable, autoSwap);
     }
 
-    public void autoReroll(int rerollsRemaining) {
-        if (autoReroll) {
-            if (rerollsRemaining > 0) {
-                for (int i = 0; i < rerollsRemaining; i++) {
-                    LCUPost.postToClient("/lol-champ-select/v1/session/my-selection/reroll");
-                }
-            }
-        }
+    private void applyToggleButtons(javax.swing.JButton enable, javax.swing.JButton disable, boolean on) {
+        enable.setEnabled(!on);
+        disable.setEnabled(on);
     }
 
     public void nameButtons(JButton[] buttons) {
@@ -1232,13 +1421,13 @@ public class RiftHelperMainController {
 
         PreferenceManager.setAutoSwapPriority(comboBoxes);
 
-        JOptionPane.showMessageDialog(riftHelperMainView, "Successfully saved!", "Save Success", JOptionPane.INFORMATION_MESSAGE);
+        // auto-saved on change; no confirmation dialog
     }
 
     private void updateAutoSwapSlots() {
         JLabel[] labels = this.riftHelperMainView.getAutoSwapPriorityLabels();
 
-        JComboBox[] comboBoxes = this.riftHelperMainView.getAutoSwapPriorityComboBoxes();
+        ChampionPicker[] comboBoxes = this.riftHelperMainView.getAutoSwapPriorityComboBoxes();
 
         for (int i = 0; i < 10; i++) {
             if (i < autoSwapSlots) {
@@ -1247,7 +1436,7 @@ public class RiftHelperMainController {
             } else {
                 labels[i].setVisible(false);
                 comboBoxes[i].setVisible(false);
-                comboBoxes[i].setSelectedIndex(-1);
+                comboBoxes[i].clearSelection();
             }
         }
 
