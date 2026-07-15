@@ -21,6 +21,7 @@ public class RiftHelperMainController {
     private volatile boolean autoDecline;
     private volatile boolean autoSwapPriority;
     private volatile boolean autoSwapSurvey;
+    private volatile boolean benchCycling; // Troll Swap running; pauses auto-swap so they don't fight
     private volatile java.util.List<Integer> surveySwapIds = new java.util.ArrayList<>();
     private volatile int autoSwapSlots;
     private volatile int priority;
@@ -421,6 +422,10 @@ public class RiftHelperMainController {
         });
         // Manual edit of the survey list (a picker changed or a swap happened).
         this.riftHelperMainView.addSurveyListChangeListener(() -> onSurveyListEdited());
+
+        this.riftHelperMainView.addTrollSwapListener(e -> trollSwap());
+        this.riftHelperMainView.addTrollSwapDelayChangeListener(() ->
+                PreferenceManager.setTrollSwapDelayMs(this.riftHelperMainView.getTrollSwapDelayMs()));
 
         this.riftHelperMainView.addAlwaysOnTopEnableListener(e -> {
             alwaysOnTop = true;
@@ -1677,6 +1682,7 @@ public class RiftHelperMainController {
         this.riftHelperMainView.setNotifyTopic(notifyTopic);
         this.riftHelperMainView.setNotifyIdleSeconds(notifyIdleSeconds);
         this.riftHelperMainView.setUiScalePercent(PreferenceManager.getUiScalePercent());
+        this.riftHelperMainView.setTrollSwapDelayMs(PreferenceManager.getTrollSwapDelayMs());
         applyToggleButtons(riftHelperMainView.buttonNotifyEnable, riftHelperMainView.buttonNotifyDisable, notifyEnabled);
         applyToggleButtons(riftHelperMainView.buttonNotifyOnlyWhenAwayEnable, riftHelperMainView.buttonNotifyOnlyWhenAwayDisable, notifyOnlyWhenAway);
         applyToggleButtons(riftHelperMainView.buttonNotifyMatchFoundEnable, riftHelperMainView.buttonNotifyMatchFoundDisable, notifyMatchFound);
@@ -1736,7 +1742,7 @@ public class RiftHelperMainController {
      * reached so far ({@code priority}). Returns the swapped champion id, or -1.
      */
     private synchronized int tryAutoSwap(java.util.List<Integer> benchIds) {
-        if ((!autoSwapPriority && !autoSwapSurvey) || benchIds == null || benchIds.isEmpty()) {
+        if (benchCycling || (!autoSwapPriority && !autoSwapSurvey) || benchIds == null || benchIds.isEmpty()) {
             return -1;
         }
         int[] priorityIds = {
@@ -1811,6 +1817,55 @@ public class RiftHelperMainController {
             tryAutoSwap(benchIds);
         } catch (Exception e) {
             System.out.println("[SwapPoll] " + e.getMessage());
+        }
+    }
+
+    /** Troll Swap: one-shot cosmetic cycle. Swaps to each bench champion (first to last) then back
+     *  to the champion you started on. Runs on a daemon thread; pauses auto-swap while it runs so
+     *  they do not fight. Purely visual; the client's swap cooldown may drop steps at low delays. */
+    private void trollSwap() {
+        if (benchCycling) {
+            return; // already running
+        }
+        final int delayMs = riftHelperMainView.getTrollSwapDelayMs();
+        Thread t = new Thread(() -> {
+            benchCycling = true;
+            try {
+                Session s = Session.parseFromJson(LCUGet.getFromClient("/lol-champ-select/v1/session"));
+                if (s == null || !s.isAllowRerolling()) {
+                    return;
+                }
+                userCellId = s.getLocalPlayerCellId();
+                int original = localChampionId(s.getMyTeam());
+                java.util.List<Integer> bench = new java.util.ArrayList<>();
+                if (s.getBenchChampions() != null) {
+                    for (BenchChampions b : s.getBenchChampions()) {
+                        bench.add(b.getChampionId());
+                    }
+                }
+                if (original <= 0 || bench.isEmpty()) {
+                    return;
+                }
+                for (int id : bench) {
+                    LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + id);
+                    sleepQuietly(delayMs);
+                }
+                LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + original); // back to start
+            } catch (Exception e) {
+                System.out.println("[TrollSwap] " + e.getMessage());
+            } finally {
+                benchCycling = false;
+            }
+        }, "troll-swap");
+        t.setDaemon(true);
+        t.start();
+    }
+
+    private static void sleepQuietly(long ms) {
+        try {
+            Thread.sleep(ms);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
     }
 

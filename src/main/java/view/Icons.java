@@ -11,7 +11,7 @@ public final class Icons {
     public enum G {
         LOBBY, RIFT, ARAM, ARENA, LOOT, SETTINGS, INFO,
         ACCEPT, DECLINE, SWAP, REROLL, BAN, LOCK, BRAVERY,
-        PLUS, MINUS, SAVE, IMPORT, EXPORT, RESET, TRAY, PIN, UPDATE, TEST, CROWD, LANE, BELL, SURVEY,
+        PLUS, MINUS, SAVE, IMPORT, EXPORT, RESET, TRAY, PIN, UPDATE, TEST, CROWD, LANE, BELL, SURVEY, CAUTION,
         TOP, JUNGLE, MID, BOT, SUPPORT
     }
 
@@ -52,6 +52,7 @@ public final class Icons {
             case LANE -> FontAwesomeSolid.ROAD;
             case BELL -> FontAwesomeSolid.BELL;
             case SURVEY -> FontAwesomeSolid.CLIPBOARD_LIST;
+            case CAUTION -> FontAwesomeSolid.EXCLAMATION_TRIANGLE;
             case TOP -> FontAwesomeSolid.CHESS_ROOK;
             case JUNGLE -> FontAwesomeSolid.TREE;
             case MID -> FontAwesomeSolid.HAT_WIZARD;

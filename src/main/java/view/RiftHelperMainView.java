@@ -198,6 +198,9 @@ public class RiftHelperMainView extends JFrame {
     public JPanel panelQuickSwitchBench2;
     // ARAM: the champion the user currently has (icon + name), updated live from the session.
     private final JLabel aramCurrentLabel = new JLabel("None");
+    // Troll Swap (cosmetic bench cycle) button + its configurable delay.
+    public final JButton buttonTrollSwap = new JButton();
+    private final JSpinner trollSwapDelaySpinner = new JSpinner(new SpinnerNumberModel(100, 0, 5000, 50));
 
     // ARAM survey onboarding banner + Auto Swap Survey card widgets.
     private JPanel surveyBanner;
@@ -626,6 +629,27 @@ public class RiftHelperMainView extends JFrame {
         }
         bench.add(benchGrid, "growx");
         bench.add(panelQuickSwitchBench2, "growx, gaptop 6");
+
+        // Troll Swap: one-shot cosmetic cycle through the bench and back. Red + caution: ban risk.
+        bench.add(divider(), "growx, gapy 8 6");
+        JPanel trollRow = new JPanel(new MigLayout("insets 0, gap 8", "[]push[]8[]"));
+        trollRow.setOpaque(false);
+        styleButton(buttonTrollSwap, "Troll Swap", Icons.G.CAUTION, ButtonKind.DANGER);
+        buttonTrollSwap.setForeground(Theme.RED);
+        JLabel delayLbl = new JLabel("Delay (ms)");
+        delayLbl.setFont(fSub);
+        delayLbl.setForeground(Theme.TEXT_DIM);
+        trollSwapDelaySpinner.setPreferredSize(new Dimension(px(70), px(28)));
+        trollRow.add(buttonTrollSwap);
+        trollRow.add(delayLbl);
+        trollRow.add(trollSwapDelaySpinner);
+        bench.add(trollRow, "growx");
+        JLabel trollWarn = new JLabel("<html>Cosmetic prank: cycles to every bench champion and back. "
+                + "Rapid swapping is visible to everyone and can get you banned if used blatantly. Use sparingly.</html>");
+        trollWarn.setFont(fSub);
+        trollWarn.setForeground(Theme.RED);
+        bench.add(trollWarn, "growx, gaptop 4");
+
         panel.add(bench, "growx");
 
         // Auto Swap Priority (the manual 10-slot list). Keeps the existing toggle + save/add/subtract.
@@ -795,6 +819,12 @@ public class RiftHelperMainView extends JFrame {
             }
         });
     }
+
+    // ---- Troll Swap ----
+    public void addTrollSwapListener(ActionListener l) { buttonTrollSwap.addActionListener(l); }
+    public int getTrollSwapDelayMs() { return (Integer) trollSwapDelaySpinner.getValue(); }
+    public void setTrollSwapDelayMs(int ms) { trollSwapDelaySpinner.setValue(Math.max(0, Math.min(ms, 5000))); }
+    public void addTrollSwapDelayChangeListener(Runnable r) { trollSwapDelaySpinner.addChangeListener(e -> r.run()); }
 
     // ---- ARAM survey API ----
 

@@ -265,6 +265,17 @@ public class PreferenceManager {
     public static int getWindowWidth() { return prefs.getInt("windowWidth", 0); }
     public static int getWindowHeight() { return prefs.getInt("windowHeight", 0); }
 
+    // Troll Swap: delay in ms between each cosmetic bench cycle step (default 100 = 0.1s).
+    public static void setTrollSwapDelayMs(int value) {
+        prefs.putInt("trollSwapDelayMs", Math.max(0, Math.min(value, 5000)));
+        try {
+            prefs.flush();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    public static int getTrollSwapDelayMs() { return Math.max(0, Math.min(prefs.getInt("trollSwapDelayMs", 100), 5000)); }
+
     // ---- Auto game-start loop (all opt-in, default OFF) ----
 
     private static void putBooleanFlushed(String key, boolean value) {
