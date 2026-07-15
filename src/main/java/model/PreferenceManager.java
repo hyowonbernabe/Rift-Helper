@@ -342,8 +342,20 @@ public class PreferenceManager {
     public static void setNotifyChampPicked(boolean value) { putBooleanFlushed("notifyChampPicked", value); }
     public static boolean getNotifyChampPicked() { return prefs.getBoolean("notifyChampPicked", true); }
 
+    public static void setNotifyChampPickedAram(boolean value) { putBooleanFlushed("notifyChampPickedAram", value); }
+    public static boolean getNotifyChampPickedAram() { return prefs.getBoolean("notifyChampPickedAram", true); }
+
+    public static void setNotifyChampSwapAram(boolean value) { putBooleanFlushed("notifyChampSwapAram", value); }
+    public static boolean getNotifyChampSwapAram() { return prefs.getBoolean("notifyChampSwapAram", true); }
+
     public static void setNotifyChampBanned(boolean value) { putBooleanFlushed("notifyChampBanned", value); }
     public static boolean getNotifyChampBanned() { return prefs.getBoolean("notifyChampBanned", true); }
+
+    public static void setNotifyOnlyWhenAway(boolean value) { putBooleanFlushed("notifyOnlyWhenAway", value); }
+    public static boolean getNotifyOnlyWhenAway() { return prefs.getBoolean("notifyOnlyWhenAway", false); }
+
+    public static void setNotifyIdleSeconds(int value) { prefs.putInt("notifyIdleSeconds", value); try { prefs.flush(); } catch (Exception e) { e.printStackTrace(); } }
+    public static int getNotifyIdleSeconds() { return prefs.getInt("notifyIdleSeconds", 30); }
 
     public static void setNotifyHonor(boolean value) { putBooleanFlushed("notifyHonor", value); }
     public static boolean getNotifyHonor() { return prefs.getBoolean("notifyHonor", true); }

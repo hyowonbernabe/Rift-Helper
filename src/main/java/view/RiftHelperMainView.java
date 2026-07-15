@@ -14,8 +14,10 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import javax.swing.JToggleButton;
+import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 import javax.swing.event.DocumentEvent;
@@ -105,8 +107,14 @@ public class RiftHelperMainView extends JFrame {
     public final JButton buttonNotifyMatchFoundDisable = new JButton();
     public final JButton buttonNotifyChampPickedEnable = new JButton();
     public final JButton buttonNotifyChampPickedDisable = new JButton();
+    public final JButton buttonNotifyChampPickedAramEnable = new JButton();
+    public final JButton buttonNotifyChampPickedAramDisable = new JButton();
+    public final JButton buttonNotifyChampSwapAramEnable = new JButton();
+    public final JButton buttonNotifyChampSwapAramDisable = new JButton();
     public final JButton buttonNotifyChampBannedEnable = new JButton();
     public final JButton buttonNotifyChampBannedDisable = new JButton();
+    public final JButton buttonNotifyOnlyWhenAwayEnable = new JButton();
+    public final JButton buttonNotifyOnlyWhenAwayDisable = new JButton();
     public final JButton buttonNotifyHonorEnable = new JButton();
     public final JButton buttonNotifyHonorDisable = new JButton();
     public final JButton buttonNotifyReturnedToLobbyEnable = new JButton();
@@ -118,6 +126,8 @@ public class RiftHelperMainView extends JFrame {
 
     // ntfy topic name (persisted). Live-persisted via a DocumentListener, no Save button.
     private final JTextField notifyTopicField = new JTextField();
+    // Idle threshold (seconds) for the "Only notify when away" gate.
+    private final JSpinner notifyIdleSpinner = new JSpinner(new SpinnerNumberModel(30, 5, 3600, 5));
 
     // ---- Action buttons ----
     private final JButton buttonChangeResponseAccept = new JButton();
@@ -637,6 +647,25 @@ public class RiftHelperMainView extends JFrame {
         topicHelp.setFont(fSub);
         topicHelp.setForeground(Theme.TEXT_FAINT);
         master.add(topicHelp, "growx, gaptop 4");
+        master.add(divider(), "growx, gapy 6 2");
+        master.add(toggleRow("Only Notify When Away", "Hold notifications while you are using the PC or watching fullscreen video.",
+                buttonNotifyOnlyWhenAwayEnable, buttonNotifyOnlyWhenAwayDisable), "growx");
+        JPanel idleRow = new JPanel(new MigLayout("insets 6 2 6 2, gap 12, fillx", "[grow,fill][]"));
+        idleRow.setOpaque(false);
+        JPanel idleText = new JPanel(new MigLayout("insets 0, wrap 1, gap 1", "[grow,fill]"));
+        idleText.setOpaque(false);
+        JLabel idleLabel = new JLabel("Idle Threshold (seconds)");
+        idleLabel.setFont(fBody);
+        idleLabel.setForeground(Theme.TEXT);
+        JLabel idleDesc = new JLabel("How long with no keyboard or mouse before you count as away.");
+        idleDesc.setFont(fSub);
+        idleDesc.setForeground(Theme.TEXT_FAINT);
+        idleText.add(idleLabel, "growx");
+        idleText.add(idleDesc, "growx");
+        idleRow.add(idleText, "growx");
+        notifyIdleSpinner.setPreferredSize(new Dimension(72, 28));
+        idleRow.add(notifyIdleSpinner);
+        master.add(idleRow, "growx");
         panel.add(master, "growx");
 
         Card events = new Card("insets 4 6 4 6, wrap 1, fillx", "[grow,fill]", "");
@@ -644,8 +673,14 @@ public class RiftHelperMainView extends JFrame {
         events.add(toggleRow("Match Found", "When a ready-check is auto-accepted.",
                 buttonNotifyMatchFoundEnable, buttonNotifyMatchFoundDisable), "growx");
         events.add(divider(), "growx, gapy 2 2");
-        events.add(toggleRow("Champion Picked", "When a champion is auto-locked.",
+        events.add(toggleRow("Champion Picked", "When a champion is auto-locked (normal and Arena games).",
                 buttonNotifyChampPickedEnable, buttonNotifyChampPickedDisable), "growx");
+        events.add(divider(), "growx, gapy 2 2");
+        events.add(toggleRow("Champion Picked (ARAM)", "The random champion you are given in ARAM / Mayhem.",
+                buttonNotifyChampPickedAramEnable, buttonNotifyChampPickedAramDisable), "growx");
+        events.add(divider(), "growx, gapy 2 2");
+        events.add(toggleRow("Champion Swap (ARAM)", "When an auto-swap takes a champion off the bench.",
+                buttonNotifyChampSwapAramEnable, buttonNotifyChampSwapAramDisable), "growx");
         events.add(divider(), "growx, gapy 2 2");
         events.add(toggleRow("Champion Banned", "When a ban is auto-locked.",
                 buttonNotifyChampBannedEnable, buttonNotifyChampBannedDisable), "growx");
@@ -1189,8 +1224,17 @@ public class RiftHelperMainView extends JFrame {
     public void addNotifyMatchFoundDisableListener(ActionListener l) { buttonNotifyMatchFoundDisable.addActionListener(l); }
     public void addNotifyChampPickedEnableListener(ActionListener l) { buttonNotifyChampPickedEnable.addActionListener(l); }
     public void addNotifyChampPickedDisableListener(ActionListener l) { buttonNotifyChampPickedDisable.addActionListener(l); }
+    public void addNotifyChampPickedAramEnableListener(ActionListener l) { buttonNotifyChampPickedAramEnable.addActionListener(l); }
+    public void addNotifyChampPickedAramDisableListener(ActionListener l) { buttonNotifyChampPickedAramDisable.addActionListener(l); }
+    public void addNotifyChampSwapAramEnableListener(ActionListener l) { buttonNotifyChampSwapAramEnable.addActionListener(l); }
+    public void addNotifyChampSwapAramDisableListener(ActionListener l) { buttonNotifyChampSwapAramDisable.addActionListener(l); }
     public void addNotifyChampBannedEnableListener(ActionListener l) { buttonNotifyChampBannedEnable.addActionListener(l); }
     public void addNotifyChampBannedDisableListener(ActionListener l) { buttonNotifyChampBannedDisable.addActionListener(l); }
+    public void addNotifyOnlyWhenAwayEnableListener(ActionListener l) { buttonNotifyOnlyWhenAwayEnable.addActionListener(l); }
+    public void addNotifyOnlyWhenAwayDisableListener(ActionListener l) { buttonNotifyOnlyWhenAwayDisable.addActionListener(l); }
+    public int getNotifyIdleSeconds() { return (Integer) notifyIdleSpinner.getValue(); }
+    public void setNotifyIdleSeconds(int s) { notifyIdleSpinner.setValue(Math.max(5, s)); }
+    public void addNotifyIdleSecondsChangeListener(Runnable r) { notifyIdleSpinner.addChangeListener(e -> r.run()); }
     public void addNotifyHonorEnableListener(ActionListener l) { buttonNotifyHonorEnable.addActionListener(l); }
     public void addNotifyHonorDisableListener(ActionListener l) { buttonNotifyHonorDisable.addActionListener(l); }
     public void addNotifyReturnedToLobbyEnableListener(ActionListener l) { buttonNotifyReturnedToLobbyEnable.addActionListener(l); }
