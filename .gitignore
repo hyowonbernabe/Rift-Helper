@@ -35,5 +35,19 @@ bin/
 .DS_Store
 
 ### Superpowers docs (design/spec docs, not committed) ###
-docs/superpowers/.superpowers/
+docs/superpowers/
 .superpowers
+
+### IntelliJ project files ###
+.idea/
+*.iml
+
+### Maven shade byproduct (regenerated every build) ###
+dependency-reduced-pom.xml
+
+### Personal runtime prefs export ###
+rift_helper_preferences.xml
+
+### Bundled binaries (belong on GitHub Releases, not in the repo) ###
+*.exe
+*.msi
