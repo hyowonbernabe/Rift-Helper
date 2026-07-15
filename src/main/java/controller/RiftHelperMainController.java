@@ -426,6 +426,9 @@ public class RiftHelperMainController {
         this.riftHelperMainView.addTrollSwapListener(e -> trollSwap());
         this.riftHelperMainView.addTrollSwapDelayChangeListener(() ->
                 PreferenceManager.setTrollSwapDelayMs(this.riftHelperMainView.getTrollSwapDelayMs()));
+        this.riftHelperMainView.addNotifyTutorialListener(e ->
+                new view.NotifyTutorialDialog(riftHelperMainView,
+                        riftHelperMainView::getNotifyTopic, riftHelperMainView::setNotifyTopic).open());
 
         this.riftHelperMainView.addAlwaysOnTopEnableListener(e -> {
             alwaysOnTop = true;

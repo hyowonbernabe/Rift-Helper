@@ -201,6 +201,8 @@ public class RiftHelperMainView extends JFrame {
     // Troll Swap (cosmetic bench cycle) button + its configurable delay.
     public final JButton buttonTrollSwap = new JButton();
     private final JSpinner trollSwapDelaySpinner = new JSpinner(new SpinnerNumberModel(100, 0, 5000, 50));
+    // Notify setup tutorial button.
+    public final JButton buttonNotifyTutorial = new JButton();
 
     // ARAM survey onboarding banner + Auto Swap Survey card widgets.
     private JPanel surveyBanner;
@@ -825,6 +827,7 @@ public class RiftHelperMainView extends JFrame {
     public int getTrollSwapDelayMs() { return (Integer) trollSwapDelaySpinner.getValue(); }
     public void setTrollSwapDelayMs(int ms) { trollSwapDelaySpinner.setValue(Math.max(0, Math.min(ms, 5000))); }
     public void addTrollSwapDelayChangeListener(Runnable r) { trollSwapDelaySpinner.addChangeListener(e -> r.run()); }
+    public void addNotifyTutorialListener(ActionListener l) { buttonNotifyTutorial.addActionListener(l); }
 
     // ---- ARAM survey API ----
 
@@ -987,6 +990,17 @@ public class RiftHelperMainView extends JFrame {
 
     private JPanel buildNotifications() {
         JPanel panel = section("Notify", "phone alerts via ntfy.sh");
+
+        // Tutorial callout at the top - most users have never used ntfy.
+        Card intro = new Card("insets 8 10 8 10, fillx", "[grow,fill][]", "");
+        JLabel introTxt = new JLabel("<html><b>New to phone alerts?</b> This walks you through the ntfy setup "
+                + "and sends a test to your phone.</html>");
+        introTxt.setFont(fSub);
+        introTxt.setForeground(Theme.TEXT_DIM);
+        styleButton(buttonNotifyTutorial, "How to set up", Icons.G.HELP, ButtonKind.PRIMARY);
+        intro.add(introTxt, "growx");
+        intro.add(buttonNotifyTutorial);
+        panel.add(intro, "growx");
 
         Card master = new Card("insets 4 6 8 6, wrap 1, fillx", "[grow,fill]", "");
         master.add(toggleRow("Enable Notifications", "Master switch for all phone notifications.",
