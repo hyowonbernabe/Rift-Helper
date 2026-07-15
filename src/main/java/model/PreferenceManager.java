@@ -316,6 +316,47 @@ public class PreferenceManager {
     public static void setAutoBravery(boolean value) { putBooleanFlushed("autoBravery", value); }
     public static boolean getAutoBravery() { return prefs.getBoolean("autoBravery", false); }
 
+    // ---- Phone notifications (ntfy.sh). Master defaults OFF; events default ON so once the user
+    //      turns the master on and sets a topic, notifications just work. ----
+
+    public static void setNotifyEnabled(boolean value) { putBooleanFlushed("notifyEnabled", value); }
+    public static boolean getNotifyEnabled() { return prefs.getBoolean("notifyEnabled", false); }
+
+    public static void setNotifyTopic(String value) {
+        if (value == null || value.isBlank()) {
+            prefs.remove("notifyTopic");
+        } else {
+            prefs.put("notifyTopic", value.trim());
+        }
+        try {
+            prefs.flush();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    public static String getNotifyTopic() { return prefs.get("notifyTopic", ""); }
+
+    public static void setNotifyMatchFound(boolean value) { putBooleanFlushed("notifyMatchFound", value); }
+    public static boolean getNotifyMatchFound() { return prefs.getBoolean("notifyMatchFound", true); }
+
+    public static void setNotifyChampPicked(boolean value) { putBooleanFlushed("notifyChampPicked", value); }
+    public static boolean getNotifyChampPicked() { return prefs.getBoolean("notifyChampPicked", true); }
+
+    public static void setNotifyChampBanned(boolean value) { putBooleanFlushed("notifyChampBanned", value); }
+    public static boolean getNotifyChampBanned() { return prefs.getBoolean("notifyChampBanned", true); }
+
+    public static void setNotifyHonor(boolean value) { putBooleanFlushed("notifyHonor", value); }
+    public static boolean getNotifyHonor() { return prefs.getBoolean("notifyHonor", true); }
+
+    public static void setNotifyReturnedToLobby(boolean value) { putBooleanFlushed("notifyReturnedToLobby", value); }
+    public static boolean getNotifyReturnedToLobby() { return prefs.getBoolean("notifyReturnedToLobby", true); }
+
+    public static void setNotifyAutoQueue(boolean value) { putBooleanFlushed("notifyAutoQueue", value); }
+    public static boolean getNotifyAutoQueue() { return prefs.getBoolean("notifyAutoQueue", true); }
+
+    public static void setNotifyGameStarting(boolean value) { putBooleanFlushed("notifyGameStarting", value); }
+    public static boolean getNotifyGameStarting() { return prefs.getBoolean("notifyGameStarting", true); }
+
     public static void exportPreferences() {
         try {
             String currentDir = CurrentDirectory.getCurrentDirectory();

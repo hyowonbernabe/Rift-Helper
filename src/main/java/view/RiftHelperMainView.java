@@ -14,9 +14,12 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JTextField;
 import javax.swing.JToggleButton;
 import javax.swing.SwingConstants;
 import javax.swing.UIManager;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.awt.CardLayout;
 import java.awt.Color;
 import java.awt.Cursor;
@@ -96,6 +99,25 @@ public class RiftHelperMainView extends JFrame {
     public final JButton buttonSoloAutoQueueDisable = new JButton();
     public final JButton buttonAutoMinimizeEnable = new JButton();
     public final JButton buttonAutoMinimizeDisable = new JButton();
+    public final JButton buttonNotifyEnable = new JButton();
+    public final JButton buttonNotifyDisable = new JButton();
+    public final JButton buttonNotifyMatchFoundEnable = new JButton();
+    public final JButton buttonNotifyMatchFoundDisable = new JButton();
+    public final JButton buttonNotifyChampPickedEnable = new JButton();
+    public final JButton buttonNotifyChampPickedDisable = new JButton();
+    public final JButton buttonNotifyChampBannedEnable = new JButton();
+    public final JButton buttonNotifyChampBannedDisable = new JButton();
+    public final JButton buttonNotifyHonorEnable = new JButton();
+    public final JButton buttonNotifyHonorDisable = new JButton();
+    public final JButton buttonNotifyReturnedToLobbyEnable = new JButton();
+    public final JButton buttonNotifyReturnedToLobbyDisable = new JButton();
+    public final JButton buttonNotifyAutoQueueEnable = new JButton();
+    public final JButton buttonNotifyAutoQueueDisable = new JButton();
+    public final JButton buttonNotifyGameStartingEnable = new JButton();
+    public final JButton buttonNotifyGameStartingDisable = new JButton();
+
+    // ntfy topic name (persisted). Live-persisted via a DocumentListener, no Save button.
+    private final JTextField notifyTopicField = new JTextField();
 
     // ---- Action buttons ----
     private final JButton buttonChangeResponseAccept = new JButton();
@@ -269,6 +291,7 @@ public class RiftHelperMainView extends JFrame {
         rail.add(navButton("ARAM", Icons.G.ARAM, "aram", false), "growx");
         rail.add(navButton("Arena", Icons.G.ARENA, "arena", false), "growx");
         rail.add(navButton("Loot", Icons.G.LOOT, "loot", false), "growx");
+        rail.add(navButton("Notifications", Icons.G.BELL, "notifications", false), "growx");
         rail.add(Box.createGlue(), "growy, push");
         rail.add(navButton("Settings", Icons.G.SETTINGS, "settings", false), "growx");
         rail.add(navButton("Info", Icons.G.INFO, "info", false), "growx");
@@ -317,6 +340,7 @@ public class RiftHelperMainView extends JFrame {
         content.add(buildAram(), "aram");
         content.add(buildArena(), "arena");
         content.add(buildLoot(), "loot");
+        content.add(buildNotifications(), "notifications");
         content.add(buildSettings(), "settings");
         content.add(buildInfo(), "info");
     }
@@ -590,6 +614,59 @@ public class RiftHelperMainView extends JFrame {
         sbtns.add(buttonDisenchantSkinsHard);
         skins.add(sbtns);
         panel.add(skins, "growx");
+        return panel;
+    }
+
+    // ---- Notifications ----
+
+    private JPanel buildNotifications() {
+        JPanel panel = section("Notifications", "phone alerts via ntfy.sh");
+
+        Card master = new Card("insets 4 6 8 6, wrap 1, fillx", "[grow,fill]", "");
+        master.add(toggleRow("Enable Notifications", "Master switch for all phone notifications.",
+                buttonNotifyEnable, buttonNotifyDisable), "growx");
+        master.add(divider(), "growx, gapy 2 2");
+        JLabel topicLabel = new JLabel("ntfy Topic");
+        topicLabel.setFont(fBody);
+        topicLabel.setForeground(Theme.TEXT);
+        master.add(topicLabel, "gaptop 6");
+        notifyTopicField.setFont(fBody);
+        master.add(notifyTopicField, "growx, gaptop 2");
+        JLabel topicHelp = new JLabel("<html>Install the ntfy app on your phone and subscribe to this exact topic. "
+                + "Pick something unique and hard to guess (anyone with the name can read your alerts).</html>");
+        topicHelp.setFont(fSub);
+        topicHelp.setForeground(Theme.TEXT_FAINT);
+        master.add(topicHelp, "growx, gaptop 4");
+        panel.add(master, "growx");
+
+        Card events = new Card("insets 4 6 4 6, wrap 1, fillx", "[grow,fill]", "");
+        events.add(cardTitle("Events", Icons.G.BELL), "gapbottom 6");
+        events.add(toggleRow("Match Found", "When a ready-check is auto-accepted.",
+                buttonNotifyMatchFoundEnable, buttonNotifyMatchFoundDisable), "growx");
+        events.add(divider(), "growx, gapy 2 2");
+        events.add(toggleRow("Champion Picked", "When a champion is auto-locked.",
+                buttonNotifyChampPickedEnable, buttonNotifyChampPickedDisable), "growx");
+        events.add(divider(), "growx, gapy 2 2");
+        events.add(toggleRow("Champion Banned", "When a ban is auto-locked.",
+                buttonNotifyChampBannedEnable, buttonNotifyChampBannedDisable), "growx");
+        events.add(divider(), "growx, gapy 2 2");
+        events.add(toggleRow("Honor Cast", "When friends are auto-honored after a game.",
+                buttonNotifyHonorEnable, buttonNotifyHonorDisable), "growx");
+        events.add(divider(), "growx, gapy 2 2");
+        events.add(toggleRow("Returned to Lobby", "When the post-game screens are auto-skipped.",
+                buttonNotifyReturnedToLobbyEnable, buttonNotifyReturnedToLobbyDisable), "growx");
+        events.add(divider(), "growx, gapy 2 2");
+        events.add(toggleRow("Queue Started", "When auto-queue starts a match search.",
+                buttonNotifyAutoQueueEnable, buttonNotifyAutoQueueDisable), "growx");
+        events.add(divider(), "growx, gapy 2 2");
+        events.add(toggleRow("Game Starting", "When the game loads (In Progress).",
+                buttonNotifyGameStartingEnable, buttonNotifyGameStartingDisable), "growx");
+        panel.add(events, "growx");
+
+        JLabel note = new JLabel("The master switch and a topic must both be set for any notification to send.");
+        note.setFont(fSub);
+        note.setForeground(Theme.TEXT_FAINT);
+        panel.add(note, "gapx 4");
         return panel;
     }
 
@@ -1094,6 +1171,34 @@ public class RiftHelperMainView extends JFrame {
     public void addSoloAutoQueueDisableListener(ActionListener l) { buttonSoloAutoQueueDisable.addActionListener(l); }
     public void addAutoMinimizeEnableListener(ActionListener l) { buttonAutoMinimizeEnable.addActionListener(l); }
     public void addAutoMinimizeDisableListener(ActionListener l) { buttonAutoMinimizeDisable.addActionListener(l); }
+
+    // ---- Notifications ----
+    public String getNotifyTopic() { return notifyTopicField.getText().trim(); }
+    public void setNotifyTopic(String s) { notifyTopicField.setText(s == null ? "" : s); }
+    /** Runs r on any edit to the topic field (auto-save, no Save button). */
+    public void addNotifyTopicChangeListener(Runnable r) {
+        notifyTopicField.getDocument().addDocumentListener(new DocumentListener() {
+            public void insertUpdate(DocumentEvent e) { r.run(); }
+            public void removeUpdate(DocumentEvent e) { r.run(); }
+            public void changedUpdate(DocumentEvent e) { r.run(); }
+        });
+    }
+    public void addNotifyEnableListener(ActionListener l) { buttonNotifyEnable.addActionListener(l); }
+    public void addNotifyDisableListener(ActionListener l) { buttonNotifyDisable.addActionListener(l); }
+    public void addNotifyMatchFoundEnableListener(ActionListener l) { buttonNotifyMatchFoundEnable.addActionListener(l); }
+    public void addNotifyMatchFoundDisableListener(ActionListener l) { buttonNotifyMatchFoundDisable.addActionListener(l); }
+    public void addNotifyChampPickedEnableListener(ActionListener l) { buttonNotifyChampPickedEnable.addActionListener(l); }
+    public void addNotifyChampPickedDisableListener(ActionListener l) { buttonNotifyChampPickedDisable.addActionListener(l); }
+    public void addNotifyChampBannedEnableListener(ActionListener l) { buttonNotifyChampBannedEnable.addActionListener(l); }
+    public void addNotifyChampBannedDisableListener(ActionListener l) { buttonNotifyChampBannedDisable.addActionListener(l); }
+    public void addNotifyHonorEnableListener(ActionListener l) { buttonNotifyHonorEnable.addActionListener(l); }
+    public void addNotifyHonorDisableListener(ActionListener l) { buttonNotifyHonorDisable.addActionListener(l); }
+    public void addNotifyReturnedToLobbyEnableListener(ActionListener l) { buttonNotifyReturnedToLobbyEnable.addActionListener(l); }
+    public void addNotifyReturnedToLobbyDisableListener(ActionListener l) { buttonNotifyReturnedToLobbyDisable.addActionListener(l); }
+    public void addNotifyAutoQueueEnableListener(ActionListener l) { buttonNotifyAutoQueueEnable.addActionListener(l); }
+    public void addNotifyAutoQueueDisableListener(ActionListener l) { buttonNotifyAutoQueueDisable.addActionListener(l); }
+    public void addNotifyGameStartingEnableListener(ActionListener l) { buttonNotifyGameStartingEnable.addActionListener(l); }
+    public void addNotifyGameStartingDisableListener(ActionListener l) { buttonNotifyGameStartingDisable.addActionListener(l); }
     public void addAutoBanCrowdFavoriteEnableListener(ActionListener l) { buttonAutoBanCrowdFavoriteEnable.addActionListener(l); }
     public void addAutoBanCrowdFavoriteDisableListener(ActionListener l) { buttonAutoBanCrowdFavoriteDisable.addActionListener(l); }
     public void addExportListener(ActionListener l) { buttonExport.addActionListener(l); }

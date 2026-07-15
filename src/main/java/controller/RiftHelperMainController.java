@@ -38,8 +38,27 @@ public class RiftHelperMainController {
     private volatile boolean groupAutoQueue;
     private volatile boolean soloAutoQueue;
     private volatile boolean autoMinimize;
+    private volatile boolean notifyEnabled;
+    private volatile String notifyTopic = "";
+    private volatile boolean notifyMatchFound;
+    private volatile boolean notifyChampPicked;
+    private volatile boolean notifyChampBanned;
+    private volatile boolean notifyHonor;
+    private volatile boolean notifyReturnedToLobby;
+    private volatile boolean notifyAutoQueue;
+    private volatile boolean notifyGameStarting;
     private volatile String lastGameflowPhase = "";
     private volatile boolean autoQueueArmed = false;
+    // Notification dedup: champ-select session events repeat while an action is in progress, so fire
+    // the pick/ban notification only once per champ select. Reset on ChampSelect entry.
+    private volatile boolean notifiedPick = false;
+    private volatile boolean notifiedBan = false;
+    // Play Again is called in both PreEndOfGame and EndOfGame; notify "returned to lobby" once per
+    // game. Reset when a new game starts (InProgress).
+    private volatile boolean notifiedReturnToLobby = false;
+    // Ready-check search events repeat for ~12s; notify "match found" once per search. Reset on
+    // Matchmaking entry (re-arms for the next queue, and for a re-search after a decline).
+    private volatile boolean notifiedMatchFound = false;
     private List<BenchChampions> benchChampions;
     private String[] priorityChampions;
     private String[] topChampions;
@@ -125,6 +144,19 @@ public class RiftHelperMainController {
                 if ((isInProgressPicking && (autoLockRank || autoLockArena || autoBravery))
                         || (isInProgressBanning && (autoBan || autoBanArena || autoBanCrowdFavoriteArena))) {
                     dndMinimize();
+                }
+
+                // One notification per champ select for the pick and for the ban (session events
+                // repeat while the action is in progress; notifiedPick/notifiedBan dedupe).
+                if (isInProgressPicking && (autoLockRank || autoLockArena || autoBravery) && !notifiedPick) {
+                    notifiedPick = true;
+                    String forLane = (assignedPosition == null || assignedPosition.isBlank())
+                            ? "" : " for " + assignedPosition;
+                    notify(notifyChampPicked, "Champion Picked", "Locked in your champion" + forLane + ".", 3, "white_check_mark");
+                }
+                if (isInProgressBanning && (autoBan || autoBanArena || autoBanCrowdFavoriteArena) && !notifiedBan) {
+                    notifiedBan = true;
+                    notify(notifyChampBanned, "Champion Banned", "Locked in your ban.", 3, "no_entry");
                 }
             }
 
@@ -808,6 +840,27 @@ public class RiftHelperMainController {
         this.riftHelperMainView.addAutoMinimizeEnableListener(e -> setAutoMinimize(true));
         this.riftHelperMainView.addAutoMinimizeDisableListener(e -> setAutoMinimize(false));
 
+        this.riftHelperMainView.addNotifyEnableListener(e -> setNotifyEnabled(true));
+        this.riftHelperMainView.addNotifyDisableListener(e -> setNotifyEnabled(false));
+        this.riftHelperMainView.addNotifyMatchFoundEnableListener(e -> setNotifyMatchFound(true));
+        this.riftHelperMainView.addNotifyMatchFoundDisableListener(e -> setNotifyMatchFound(false));
+        this.riftHelperMainView.addNotifyChampPickedEnableListener(e -> setNotifyChampPicked(true));
+        this.riftHelperMainView.addNotifyChampPickedDisableListener(e -> setNotifyChampPicked(false));
+        this.riftHelperMainView.addNotifyChampBannedEnableListener(e -> setNotifyChampBanned(true));
+        this.riftHelperMainView.addNotifyChampBannedDisableListener(e -> setNotifyChampBanned(false));
+        this.riftHelperMainView.addNotifyHonorEnableListener(e -> setNotifyHonor(true));
+        this.riftHelperMainView.addNotifyHonorDisableListener(e -> setNotifyHonor(false));
+        this.riftHelperMainView.addNotifyReturnedToLobbyEnableListener(e -> setNotifyReturnedToLobby(true));
+        this.riftHelperMainView.addNotifyReturnedToLobbyDisableListener(e -> setNotifyReturnedToLobby(false));
+        this.riftHelperMainView.addNotifyAutoQueueEnableListener(e -> setNotifyAutoQueue(true));
+        this.riftHelperMainView.addNotifyAutoQueueDisableListener(e -> setNotifyAutoQueue(false));
+        this.riftHelperMainView.addNotifyGameStartingEnableListener(e -> setNotifyGameStarting(true));
+        this.riftHelperMainView.addNotifyGameStartingDisableListener(e -> setNotifyGameStarting(false));
+        this.riftHelperMainView.addNotifyTopicChangeListener(() -> {
+            notifyTopic = this.riftHelperMainView.getNotifyTopic();
+            PreferenceManager.setNotifyTopic(notifyTopic);
+        });
+
         // Restore persisted matchmaking toggles here (they subscribe to the websocket, which needs
         // socketReader - not available yet in loadPreferences during startProgram()).
         if (autoAccept) {
@@ -870,6 +923,70 @@ public class RiftHelperMainController {
         PreferenceManager.setAutoMinimize(on);
     }
 
+    private void setNotifyEnabled(boolean on) {
+        notifyEnabled = on;
+        applyNotifyButtons(riftHelperMainView.buttonNotifyEnable, riftHelperMainView.buttonNotifyDisable, on);
+        PreferenceManager.setNotifyEnabled(on);
+    }
+
+    private void setNotifyMatchFound(boolean on) {
+        notifyMatchFound = on;
+        applyNotifyButtons(riftHelperMainView.buttonNotifyMatchFoundEnable, riftHelperMainView.buttonNotifyMatchFoundDisable, on);
+        PreferenceManager.setNotifyMatchFound(on);
+    }
+
+    private void setNotifyChampPicked(boolean on) {
+        notifyChampPicked = on;
+        applyNotifyButtons(riftHelperMainView.buttonNotifyChampPickedEnable, riftHelperMainView.buttonNotifyChampPickedDisable, on);
+        PreferenceManager.setNotifyChampPicked(on);
+    }
+
+    private void setNotifyChampBanned(boolean on) {
+        notifyChampBanned = on;
+        applyNotifyButtons(riftHelperMainView.buttonNotifyChampBannedEnable, riftHelperMainView.buttonNotifyChampBannedDisable, on);
+        PreferenceManager.setNotifyChampBanned(on);
+    }
+
+    private void setNotifyHonor(boolean on) {
+        notifyHonor = on;
+        applyNotifyButtons(riftHelperMainView.buttonNotifyHonorEnable, riftHelperMainView.buttonNotifyHonorDisable, on);
+        PreferenceManager.setNotifyHonor(on);
+    }
+
+    private void setNotifyReturnedToLobby(boolean on) {
+        notifyReturnedToLobby = on;
+        applyNotifyButtons(riftHelperMainView.buttonNotifyReturnedToLobbyEnable, riftHelperMainView.buttonNotifyReturnedToLobbyDisable, on);
+        PreferenceManager.setNotifyReturnedToLobby(on);
+    }
+
+    private void setNotifyAutoQueue(boolean on) {
+        notifyAutoQueue = on;
+        applyNotifyButtons(riftHelperMainView.buttonNotifyAutoQueueEnable, riftHelperMainView.buttonNotifyAutoQueueDisable, on);
+        PreferenceManager.setNotifyAutoQueue(on);
+    }
+
+    private void setNotifyGameStarting(boolean on) {
+        notifyGameStarting = on;
+        applyNotifyButtons(riftHelperMainView.buttonNotifyGameStartingEnable, riftHelperMainView.buttonNotifyGameStartingDisable, on);
+        PreferenceManager.setNotifyGameStarting(on);
+    }
+
+    private void applyNotifyButtons(JButton enable, JButton disable, boolean on) {
+        SwingUtilities.invokeLater(() -> {
+            enable.setEnabled(!on);
+            disable.setEnabled(on);
+        });
+    }
+
+    /** Publish one ntfy notification, gated by the master switch, the per-event toggle, and a topic.
+     *  Runs off-thread inside {@link Ntfy}, so it never stalls the socket event handlers. */
+    private void notify(boolean eventEnabled, String title, String message, int priority, String tags) {
+        if (!notifyEnabled || !eventEnabled) {
+            return;
+        }
+        Ntfy.publish(notifyTopic, title, message, priority, tags);
+    }
+
     /** Minimize the League client, but only when Auto Minimize (DND) is on. Called right after an
      *  automated action so the client is tucked away at the exact moment it would pop up. */
     private void dndMinimize() {
@@ -895,20 +1012,40 @@ public class RiftHelperMainController {
         System.out.println("Gameflow phase: " + phase);
 
         switch (phase) {
+            case "ChampSelect" -> {
+                autoQueueArmed = false;
+                notifiedPick = false;
+                notifiedBan = false;
+            }
+            case "Matchmaking" -> {
+                autoQueueArmed = false;
+                notifiedMatchFound = false;
+            }
+            case "InProgress" -> {
+                autoQueueArmed = false;
+                notifiedReturnToLobby = false;
+                notify(notifyGameStarting, "Game Starting", "Loading into the game.", 4, "rocket");
+            }
             case "PreEndOfGame" -> {
                 if (autoHonor) {
-                    Honor.honorFriends();
+                    int honored = Honor.honorFriends();
                     dndMinimize();
+                    if (honored > 0) {
+                        notify(notifyHonor, "Honor Cast",
+                                "Honored " + honored + (honored == 1 ? " friend." : " friends."), 2, "handshake");
+                    }
                 }
                 // Arena (and some modes) never emit EndOfGame; they go PreEndOfGame -> Lobby. So try
                 // Play Again here too. It returns the party to the lobby (keeps the group).
                 if (autoSkipScreens) {
                     Lobby.playAgain();
+                    notifyReturnedToLobbyOnce();
                 }
             }
             case "EndOfGame" -> {
                 if (autoSkipScreens) {
                     Lobby.playAgain();
+                    notifyReturnedToLobbyOnce();
                 }
             }
             case "Lobby" -> {
@@ -917,6 +1054,16 @@ public class RiftHelperMainController {
             }
             default -> autoQueueArmed = false;
         }
+    }
+
+    // Notify "returned to lobby" at most once per game (Play Again runs in both PreEndOfGame and
+    // EndOfGame). Reset on the next InProgress.
+    private void notifyReturnedToLobbyOnce() {
+        if (notifiedReturnToLobby) {
+            return;
+        }
+        notifiedReturnToLobby = true;
+        notify(notifyReturnedToLobby, "Back in Lobby", "Returned to the lobby after the game.", 2, "arrows_counterclockwise");
     }
 
     // Fires at most once per Lobby entry (autoQueueArmed), and only from the Lobby phase.
@@ -930,6 +1077,8 @@ public class RiftHelperMainController {
             autoQueueArmed = false;
             Lobby.startSearch();
             dndMinimize();
+            String mode = soloAutoQueue ? "solo" : "group (" + members + " members)";
+            notify(notifyAutoQueue, "Queue Started", "Started searching for a match: " + mode + ".", 3, "mag");
             System.out.println("Auto queue started (members=" + members + ")");
         }
     }
@@ -1003,6 +1152,10 @@ public class RiftHelperMainController {
             if (readyCheck.getState().equals("InProgress")) {
                 LCUPost.postToClient("/lol-matchmaking/v1/ready-check/accept");
                 dndMinimize();
+                if (!notifiedMatchFound) {
+                    notifiedMatchFound = true;
+                    notify(notifyMatchFound, "Match Found", "Ready check accepted.", 4, "video_game");
+                }
             }
         });
     }
@@ -1229,6 +1382,15 @@ public class RiftHelperMainController {
         this.groupAutoQueue = PreferenceManager.getGroupAutoQueue();
         this.soloAutoQueue = PreferenceManager.getSoloAutoQueue();
         this.autoMinimize = PreferenceManager.getAutoMinimize();
+        this.notifyEnabled = PreferenceManager.getNotifyEnabled();
+        this.notifyTopic = PreferenceManager.getNotifyTopic();
+        this.notifyMatchFound = PreferenceManager.getNotifyMatchFound();
+        this.notifyChampPicked = PreferenceManager.getNotifyChampPicked();
+        this.notifyChampBanned = PreferenceManager.getNotifyChampBanned();
+        this.notifyHonor = PreferenceManager.getNotifyHonor();
+        this.notifyReturnedToLobby = PreferenceManager.getNotifyReturnedToLobby();
+        this.notifyAutoQueue = PreferenceManager.getNotifyAutoQueue();
+        this.notifyGameStarting = PreferenceManager.getNotifyGameStarting();
         this.autoLockLaneChoice = PreferenceManager.getAutoLockLaneChoice();
         this.autoAccept = PreferenceManager.getAutoAccept();
         this.autoDecline = PreferenceManager.getAutoDecline();
@@ -1355,6 +1517,15 @@ public class RiftHelperMainController {
         this.riftHelperMainView.buttonSoloAutoQueueDisable.setEnabled(soloAutoQueue);
         this.riftHelperMainView.buttonAutoMinimizeEnable.setEnabled(!autoMinimize);
         this.riftHelperMainView.buttonAutoMinimizeDisable.setEnabled(autoMinimize);
+        this.riftHelperMainView.setNotifyTopic(notifyTopic);
+        applyToggleButtons(riftHelperMainView.buttonNotifyEnable, riftHelperMainView.buttonNotifyDisable, notifyEnabled);
+        applyToggleButtons(riftHelperMainView.buttonNotifyMatchFoundEnable, riftHelperMainView.buttonNotifyMatchFoundDisable, notifyMatchFound);
+        applyToggleButtons(riftHelperMainView.buttonNotifyChampPickedEnable, riftHelperMainView.buttonNotifyChampPickedDisable, notifyChampPicked);
+        applyToggleButtons(riftHelperMainView.buttonNotifyChampBannedEnable, riftHelperMainView.buttonNotifyChampBannedDisable, notifyChampBanned);
+        applyToggleButtons(riftHelperMainView.buttonNotifyHonorEnable, riftHelperMainView.buttonNotifyHonorDisable, notifyHonor);
+        applyToggleButtons(riftHelperMainView.buttonNotifyReturnedToLobbyEnable, riftHelperMainView.buttonNotifyReturnedToLobbyDisable, notifyReturnedToLobby);
+        applyToggleButtons(riftHelperMainView.buttonNotifyAutoQueueEnable, riftHelperMainView.buttonNotifyAutoQueueDisable, notifyAutoQueue);
+        applyToggleButtons(riftHelperMainView.buttonNotifyGameStartingEnable, riftHelperMainView.buttonNotifyGameStartingDisable, notifyGameStarting);
         applyToggleButtons(riftHelperMainView.buttonAutoLockEnable, riftHelperMainView.buttonAutoLockDisable, autoLockRank);
         applyToggleButtons(riftHelperMainView.buttonAutoBanEnable, riftHelperMainView.buttonAutoBanDisable, autoBan);
         applyToggleButtons(riftHelperMainView.buttonAutoLockArenaEnable, riftHelperMainView.buttonAutoLockArenaDisable, autoLockArena);
