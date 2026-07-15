@@ -69,6 +69,10 @@ public class RiftHelperMainView extends JFrame {
     private final CardLayout cards = new CardLayout();
     private final JPanel content = new JPanel(cards);
     private final ButtonGroup navGroup = new ButtonGroup();
+    // Kept for sizing: the window width is fit to the ARAM bench (the widest must-not-wrap element).
+    private JPanel railPanel;
+    private JPanel statusStrip;
+    private JPanel aramSection;
 
     // ---- Enable/Disable buttons: never shown, kept so the controller wiring is unchanged. ----
     public final JButton buttonAutoAcceptEnable = new JButton();
@@ -304,26 +308,16 @@ public class RiftHelperMainView extends JFrame {
         rail.setBackground(Theme.RAIL);
         rail.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, Theme.LINE));
 
-        JPanel brand = new JPanel(new MigLayout("insets 4 6 10 6, gap 8", "[]8[]"));
-        brand.setOpaque(false);
-        ImageIcon markIcon = kindredMark(px(22));
-        JLabel mark = markIcon != null ? new JLabel(markIcon) : new JLabel();
-        JLabel name = new JLabel("Rift Helper");
-        name.setFont(fTitle);
-        name.setForeground(Theme.TEXT);
-        brand.add(mark);
-        brand.add(name);
-        rail.add(brand, "growx");
-
         rail.add(navButton("Lobby", Icons.G.LOBBY, "lobby", true), "growx");
-        rail.add(navButton("Summoner's Rift", Icons.G.RIFT, "rift", false), "growx");
+        rail.add(navButton("Rift", Icons.G.RIFT, "rift", false), "growx");
         rail.add(navButton("ARAM", Icons.G.ARAM, "aram", false), "growx");
         rail.add(navButton("Arena", Icons.G.ARENA, "arena", false), "growx");
         rail.add(navButton("Loot", Icons.G.LOOT, "loot", false), "growx");
-        rail.add(navButton("Notifications", Icons.G.BELL, "notifications", false), "growx");
+        rail.add(navButton("Notify", Icons.G.BELL, "notifications", false), "growx");
         rail.add(Box.createGlue(), "growy, push");
         rail.add(navButton("Settings", Icons.G.SETTINGS, "settings", false), "growx");
         rail.add(navButton("Info", Icons.G.INFO, "info", false), "growx");
+        this.railPanel = rail;
         return rail;
     }
 
@@ -339,6 +333,7 @@ public class RiftHelperMainView extends JFrame {
         JPanel strip = new JPanel(new MigLayout("insets 8 16 8 16, gap 14", "[]14[]14[]push[]", "[]"));
         strip.setBackground(Theme.SURFACE_1);
         strip.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, Theme.LINE));
+        this.statusStrip = strip;
 
         JLabel connected = new JLabel("Connected");
         connected.setIcon(dotIcon(Theme.GREEN, px(9)));
@@ -366,7 +361,8 @@ public class RiftHelperMainView extends JFrame {
     private void buildPanels() {
         content.add(scrollWrap(buildLobby()), "lobby");
         content.add(scrollWrap(buildRift()), "rift");
-        content.add(scrollWrap(buildAram()), "aram");
+        aramSection = buildAram();
+        content.add(scrollWrap(aramSection), "aram");
         content.add(scrollWrap(buildArena()), "arena");
         content.add(scrollWrap(buildLoot()), "loot");
         content.add(scrollWrap(buildNotifications()), "notifications");
@@ -516,7 +512,7 @@ public class RiftHelperMainView extends JFrame {
     // ---- Summoner's Rift ----
 
     private JPanel buildRift() {
-        JPanel panel = section("Summoner's Rift", "ranked and draft pick / ban priorities");
+        JPanel panel = section("Rift", "ranked and draft pick / ban priorities");
 
         Card lock = new Card("insets 4 6 8 6, wrap 1, fillx", "[grow,fill]", "");
         lock.add(cardHeaderWithToggle("Auto Lock", Icons.G.LOCK, buttonAutoLockEnable, buttonAutoLockDisable), "growx, gapbottom 8");
@@ -669,7 +665,7 @@ public class RiftHelperMainView extends JFrame {
     // ---- Notifications ----
 
     private JPanel buildNotifications() {
-        JPanel panel = section("Notifications", "phone alerts via ntfy.sh");
+        JPanel panel = section("Notify", "phone alerts via ntfy.sh");
 
         Card master = new Card("insets 4 6 8 6, wrap 1, fillx", "[grow,fill]", "");
         master.add(toggleRow("Enable Notifications", "Master switch for all phone notifications.",
@@ -1291,11 +1287,20 @@ public class RiftHelperMainView extends JFrame {
     public void pack() {
         super.pack();
         Rectangle screen = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
-        Dimension pref = getSize();
-        // Compact ceiling (scaled with the UI scale); sections taller/wider than this scroll inside
-        // their own pane rather than growing the window. Long text wraps to this width.
-        int w = Math.min(Math.min(pref.width, px(560)), screen.width);
-        int h = Math.min(Math.min(pref.height, px(640)), screen.height);
+        Dimension cpPref = getContentPane().getPreferredSize();
+        int chromeW = getWidth() - cpPref.width;   // window decoration (border) width
+        int chromeH = getHeight() - cpPref.height;
+
+        // Width is fit to the ARAM Quick Switch Bench - the widest element that must not wrap. Every
+        // other section is single-column and narrower; long text wraps to this width.
+        int railW = railPanel != null ? railPanel.getPreferredSize().width : 0;
+        int statusW = statusStrip != null ? statusStrip.getPreferredSize().width : 0;
+        int aramW = aramSection != null ? aramSection.getPreferredSize().width : 0;
+        int mainW = Math.max(statusW, px(16) * 2 + aramW);   // content pane inner width
+        int w = Math.min(railW + mainW + chromeW, screen.width);
+
+        // Height stays compact; taller sections scroll inside their own pane.
+        int h = Math.min(Math.min(cpPref.height + chromeH, px(640)), screen.height);
         setSize(w, h);
     }
 
