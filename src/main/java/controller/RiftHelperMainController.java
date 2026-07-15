@@ -2,6 +2,7 @@ package controller;
 
 import model.*;
 import no.stelar7.api.r4j.impl.lol.lcu.LCUSocketReader;
+import view.ChampionPicker;
 import view.FileChooserView;
 import view.RiftHelperMainView;
 
@@ -628,7 +629,7 @@ public class RiftHelperMainController {
 
             PreferenceManager.setAutoBanPriority(ban);
 
-            JOptionPane.showMessageDialog(riftHelperMainView, "Successfully saved!", "Save Success", JOptionPane.INFORMATION_MESSAGE);
+            // auto-saved on change; no confirmation dialog
         });
 
         this.riftHelperMainView.addAutoLockArenaEnableListener(e -> {
@@ -665,7 +666,7 @@ public class RiftHelperMainController {
 
             PreferenceManager.setAutoLockArenaPriority(champions);
 
-            JOptionPane.showMessageDialog(riftHelperMainView, "Successfully saved!", "Save Success", JOptionPane.INFORMATION_MESSAGE);
+            // auto-saved on change; no confirmation dialog
         });
 
         this.riftHelperMainView.addAutoBanArenaEnableListener(e -> {
@@ -702,7 +703,7 @@ public class RiftHelperMainController {
 
             PreferenceManager.setAutoBanArenaPriority(ban);
 
-            JOptionPane.showMessageDialog(riftHelperMainView, "Successfully saved!", "Save Success", JOptionPane.INFORMATION_MESSAGE);
+            // auto-saved on change; no confirmation dialog
         });
 
         this.riftHelperMainView.addAutoBanCrowdFavoriteEnableListener(e -> {
@@ -1041,7 +1042,7 @@ public class RiftHelperMainController {
         PreferenceManager.setAutoLockBotPriority(bot);
         PreferenceManager.setAutoLockSupportPriority(support);
 
-        JOptionPane.showMessageDialog(riftHelperMainView, "Successfully saved!", "Save Success", JOptionPane.INFORMATION_MESSAGE);
+        // auto-saved on change; no confirmation dialog
     }
 
     private void startProgram() {
@@ -1232,13 +1233,13 @@ public class RiftHelperMainController {
 
         PreferenceManager.setAutoSwapPriority(comboBoxes);
 
-        JOptionPane.showMessageDialog(riftHelperMainView, "Successfully saved!", "Save Success", JOptionPane.INFORMATION_MESSAGE);
+        // auto-saved on change; no confirmation dialog
     }
 
     private void updateAutoSwapSlots() {
         JLabel[] labels = this.riftHelperMainView.getAutoSwapPriorityLabels();
 
-        JComboBox[] comboBoxes = this.riftHelperMainView.getAutoSwapPriorityComboBoxes();
+        ChampionPicker[] comboBoxes = this.riftHelperMainView.getAutoSwapPriorityComboBoxes();
 
         for (int i = 0; i < 10; i++) {
             if (i < autoSwapSlots) {
@@ -1247,7 +1248,7 @@ public class RiftHelperMainController {
             } else {
                 labels[i].setVisible(false);
                 comboBoxes[i].setVisible(false);
-                comboBoxes[i].setSelectedIndex(-1);
+                comboBoxes[i].clearSelection();
             }
         }
 
