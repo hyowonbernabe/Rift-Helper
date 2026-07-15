@@ -19,7 +19,9 @@ public class RiftHelperMainController {
     private RiftHelperMainView riftHelperMainView;
     private volatile boolean autoAccept;
     private volatile boolean autoDecline;
-    private volatile boolean autoSwap;
+    private volatile boolean autoSwapPriority;
+    private volatile boolean autoSwapSurvey;
+    private volatile java.util.List<Integer> surveySwapIds = new java.util.ArrayList<>();
     private volatile int autoSwapSlots;
     private volatile int priority;
     private volatile boolean alwaysOnTop;
@@ -193,19 +195,22 @@ public class RiftHelperMainController {
                     for (JButton button : buttons) {
                         button.setText(null);
                     }
-                    priority = 10;
+                    priority = Integer.MAX_VALUE;
                     this.riftHelperMainView.panelQuickSwitchBench2.setVisible(false);
+                    this.riftHelperMainView.setAramCurrentChampion(null);
                     return;
                 }
 
+                // Show the champion the user currently has, live.
+                int myChampId = localChampionId(myTeam);
+                String myChampName = myChampId > 0 ? DDragonParser.getChampionName(myChampId) : null;
+                SwingUtilities.invokeLater(() -> this.riftHelperMainView.setAramCurrentChampion(myChampName));
+
                 // Notify the random champion the user was assigned (once per ARAM/Mayhem champ select).
-                if (!notifiedAramPick) {
-                    int myChampId = localChampionId(myTeam);
-                    if (myChampId > 0) {
-                        notifiedAramPick = true;
-                        notify(notifyChampPickedAram, "Champion Picked (ARAM)",
-                                "Your random champion: " + DDragonParser.getChampionName(myChampId) + ".", 3, "snowflake");
-                    }
+                if (!notifiedAramPick && myChampId > 0) {
+                    notifiedAramPick = true;
+                    notify(notifyChampPickedAram, "Champion Picked (ARAM)",
+                            "Your random champion: " + myChampName + ".", 3, "snowflake");
                 }
 
                 int swappedId = autoSwap();
@@ -349,28 +354,74 @@ public class RiftHelperMainController {
             autoDeclineDisable(socketReader);
         });
 
+        // Auto Swap Priority toggle (existing manual 10-slot list).
         this.riftHelperMainView.addAutoSwapEnableListener(e -> {
-            autoSwap = true;
-            PreferenceManager.setAutoSwap(true);
-            System.out.println("Auto Swap Turned On: " + autoSwap);
-
+            autoSwapPriority = true;
+            PreferenceManager.setAutoSwapPriorityEnabled(true);
             SwingUtilities.invokeLater(() -> {
                 riftHelperMainView.buttonAutoSwapEnable.setEnabled(false);
                 riftHelperMainView.buttonAutoSwapDisable.setEnabled(true);
             });
         });
-
         this.riftHelperMainView.addAutoSwapDisableListener(e -> {
-            autoSwap = false;
-            priority = 1;
-            PreferenceManager.setAutoSwap(false);
-            System.out.println("Auto Swap Turned Off: " + autoSwap);
-
+            autoSwapPriority = false;
+            PreferenceManager.setAutoSwapPriorityEnabled(false);
             SwingUtilities.invokeLater(() -> {
                 riftHelperMainView.buttonAutoSwapEnable.setEnabled(true);
                 riftHelperMainView.buttonAutoSwapDisable.setEnabled(false);
             });
         });
+
+        // Auto Swap Survey toggle (survey-generated ranking).
+        this.riftHelperMainView.addAutoSwapSurveyEnableListener(e -> {
+            autoSwapSurvey = true;
+            PreferenceManager.setAutoSwapSurveyEnabled(true);
+            SwingUtilities.invokeLater(() -> {
+                riftHelperMainView.buttonAutoSwapSurveyEnable.setEnabled(false);
+                riftHelperMainView.buttonAutoSwapSurveyDisable.setEnabled(true);
+            });
+        });
+        this.riftHelperMainView.addAutoSwapSurveyDisableListener(e -> {
+            autoSwapSurvey = false;
+            PreferenceManager.setAutoSwapSurveyEnabled(false);
+            SwingUtilities.invokeLater(() -> {
+                riftHelperMainView.buttonAutoSwapSurveyEnable.setEnabled(true);
+                riftHelperMainView.buttonAutoSwapSurveyDisable.setEnabled(false);
+            });
+        });
+
+        // Survey lifecycle buttons.
+        this.riftHelperMainView.addSurveyStartListener(e -> openSurvey());
+        this.riftHelperMainView.addSurveyRefineListener(e -> openSurvey());
+        this.riftHelperMainView.addSurveyRedoListener(e -> {
+            int r = JOptionPane.showConfirmDialog(riftHelperMainView,
+                    "Completely redo your survey? This clears your current ranking.\n"
+                            + "Revert to Original will still restore your last completed version.",
+                    "Redo Survey", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+            if (r == JOptionPane.YES_OPTION) {
+                AramSurveyStore.deleteForRedo();
+                openSurvey();
+            }
+        });
+        this.riftHelperMainView.addSurveyRevertListener(e -> {
+            int r = JOptionPane.showConfirmDialog(riftHelperMainView,
+                    "Revert your survey to the original version? This discards later changes.",
+                    "Revert to Original", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+            if (r == JOptionPane.YES_OPTION) {
+                AramSurveyData current = AramSurveyStore.load();
+                AramSurveyStore.pushUndo(current);
+                AramSurveyStore.save(AramSurveyStore.originalData());
+                refreshSurveySwapIds();
+                refreshAramTab();
+            }
+        });
+        this.riftHelperMainView.addSurveyUndoListener(e -> {
+            AramSurveyStore.undo(AramSurveyStore.load());
+            refreshSurveySwapIds();
+            refreshAramTab();
+        });
+        // Manual edit of the survey list (a picker changed or a swap happened).
+        this.riftHelperMainView.addSurveyListChangeListener(() -> onSurveyListEdited());
 
         this.riftHelperMainView.addAlwaysOnTopEnableListener(e -> {
             alwaysOnTop = true;
@@ -1128,6 +1179,7 @@ public class RiftHelperMainController {
             }
             case "Lobby" -> {
                 autoQueueArmed = true;
+                dndMinimize(); // minimize the moment a lobby is created (DND)
                 evaluateAutoQueue();
             }
             default -> autoQueueArmed = false;
@@ -1450,8 +1502,8 @@ public class RiftHelperMainController {
     }
 
     private void startProgram() {
-        // Initialize Variables
-        this.priority = 10;
+        // Initialize Variables (priority = best auto-swap rank reached this champ select; high = none yet)
+        this.priority = Integer.MAX_VALUE;
 
         // Store Preferences
         this.priorityChampions = PreferenceManager.getAutoSwapPriority();
@@ -1489,7 +1541,8 @@ public class RiftHelperMainController {
         this.autoLockLaneChoice = PreferenceManager.getAutoLockLaneChoice();
         this.autoAccept = PreferenceManager.getAutoAccept();
         this.autoDecline = PreferenceManager.getAutoDecline();
-        this.autoSwap = PreferenceManager.getAutoSwap();
+        this.autoSwapPriority = PreferenceManager.getAutoSwapPriorityEnabled();
+        this.autoSwapSurvey = PreferenceManager.getAutoSwapSurveyEnabled();
         this.autoLockRank = PreferenceManager.getAutoLock();
         this.autoBan = PreferenceManager.getAutoBan();
         this.autoLockArena = PreferenceManager.getAutoLockArena();
@@ -1497,7 +1550,10 @@ public class RiftHelperMainController {
         this.autoBanCrowdFavoriteArena = PreferenceManager.getAutoBanCrowdFavorite();
         this.autoBravery = PreferenceManager.getAutoBravery();
 
+        refreshSurveySwapIds();
+
         loadPreferences();
+        refreshAramTab();
     }
 
     private void showTop() {
@@ -1632,7 +1688,8 @@ public class RiftHelperMainController {
         applyToggleButtons(riftHelperMainView.buttonAutoBanArenaEnable, riftHelperMainView.buttonAutoBanArenaDisable, autoBanArena);
         applyToggleButtons(riftHelperMainView.buttonAutoBanCrowdFavoriteEnable, riftHelperMainView.buttonAutoBanCrowdFavoriteDisable, autoBanCrowdFavoriteArena);
         applyToggleButtons(riftHelperMainView.buttonAutoBraveryArenaEnable, riftHelperMainView.buttonAutoBraveryArenaDisable, autoBravery);
-        applyToggleButtons(riftHelperMainView.buttonAutoSwapEnable, riftHelperMainView.buttonAutoSwapDisable, autoSwap);
+        applyToggleButtons(riftHelperMainView.buttonAutoSwapEnable, riftHelperMainView.buttonAutoSwapDisable, autoSwapPriority);
+        applyToggleButtons(riftHelperMainView.buttonAutoSwapSurveyEnable, riftHelperMainView.buttonAutoSwapSurveyDisable, autoSwapSurvey);
     }
 
     private void applyToggleButtons(javax.swing.JButton enable, javax.swing.JButton disable, boolean on) {
@@ -1653,34 +1710,99 @@ public class RiftHelperMainController {
         }
     }
 
-    /** Returns the champion id swapped in from the bench, or -1 if no swap happened. */
+    /** Returns the champion id swapped in from the bench, or -1 if no swap happened. Combines the
+     *  manual Priority list (first) and the survey-generated list (second), no dedup, and swaps to
+     *  the highest-ranked available bench champion that improves on the best rank reached so far. */
     public int autoSwap() {
-        if (autoSwap) {
-            int[] autoSwapChampIdPriority = {
-                DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxAutoSwapPriority1()),
-                DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxAutoSwapPriority2()),
-                DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxAutoSwapPriority3()),
-                DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxAutoSwapPriority4()),
-                DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxAutoSwapPriority5()),
-                DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxAutoSwapPriority6()),
-                DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxAutoSwapPriority7()),
-                DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxAutoSwapPriority8()),
-                DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxAutoSwapPriority9()),
-                DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxAutoSwapPriority10())
-            };
-
-            for (int i = 0; i < autoSwapChampIdPriority.length; i++) {
-                for (int j = 0; j < benchChampions.size(); j++) {
-                    if ((benchChampions.get(j).getChampionId() == autoSwapChampIdPriority[i]) && priority > i) {
-                        if (LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + autoSwapChampIdPriority[j]) == 204) {
-                            priority = i;
-                            return autoSwapChampIdPriority[j];
-                        }
-                    }
-                }
-            }
+        if (!autoSwapPriority && !autoSwapSurvey) {
+            return -1;
+        }
+        int[] priorityIds = {
+            DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxAutoSwapPriority1()),
+            DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxAutoSwapPriority2()),
+            DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxAutoSwapPriority3()),
+            DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxAutoSwapPriority4()),
+            DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxAutoSwapPriority5()),
+            DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxAutoSwapPriority6()),
+            DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxAutoSwapPriority7()),
+            DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxAutoSwapPriority8()),
+            DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxAutoSwapPriority9()),
+            DDragonParser.getChampionId(this.riftHelperMainView.getComboBoxAutoSwapPriority10())
+        };
+        java.util.List<Integer> order = AutoSwapPlanner.buildOrder(
+                autoSwapPriority ? priorityIds : new int[0],
+                autoSwapSurvey ? surveySwapIds : java.util.List.of());
+        java.util.List<Integer> benchIds = new java.util.ArrayList<>();
+        for (BenchChampions b : benchChampions) {
+            benchIds.add(b.getChampionId());
+        }
+        int[] out = {priority};
+        int target = AutoSwapPlanner.pickBenchTarget(order, benchIds, priority, out);
+        if (target > 0 && LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + target) == 204) {
+            priority = out[0];
+            return target;
         }
         return -1;
+    }
+
+    /** Load the survey's swap order (flatOrder) into champion ids for auto-swap. */
+    private void refreshSurveySwapIds() {
+        AramSurveyData d = AramSurveyStore.load();
+        java.util.List<Integer> ids = new java.util.ArrayList<>();
+        for (String name : surveyListNames(d)) {
+            int id = DDragonParser.getChampionId(name);
+            if (id > 0) {
+                ids.add(id);
+            }
+        }
+        surveySwapIds = ids;
+    }
+
+    /** The ordered survey champion names for swapping/display (flatOrder, synced to current tiers). */
+    private java.util.List<String> surveyListNames(AramSurveyData d) {
+        d.syncFlatOrder();
+        return new java.util.ArrayList<>(d.flatOrder);
+    }
+
+    /** Open (start / resume / refine) the survey dialog; refresh everything when it closes. */
+    private void openSurvey() {
+        new view.SurveyDialog(riftHelperMainView, () -> {
+            AramSurveyData d = AramSurveyStore.load();
+            d.syncFlatOrder();
+            AramSurveyStore.save(d);
+            refreshSurveySwapIds();
+            refreshAramTab();
+        }).openResume();
+    }
+
+    /** The user reordered/swapped/edited the Survey list in the ARAM tab. */
+    private void onSurveyListEdited() {
+        AramSurveyData d = AramSurveyStore.load();
+        AramSurveyStore.pushUndo(d);
+        AramSurveyData edited = d.deepCopy();
+        edited.flatOrder = new java.util.ArrayList<>(java.util.Arrays.asList(riftHelperMainView.getSurveyList()));
+        AramSurveyStore.save(edited);
+        refreshSurveySwapIds();
+        refreshAramTab();
+    }
+
+    /** Recompute onboarding state, metric, survey list, and revert/undo enablement. */
+    private void refreshAramTab() {
+        AramSurveyData d = AramSurveyStore.load();
+        int total = DDragonParser.championPoolSize();
+        int decided = d.decidedCount();
+        String state = !AramSurveyStore.exists() ? "none"
+                : (total > 0 && decided >= total ? "done" : "partial");
+        java.util.List<String> names = surveyListNames(d);
+        boolean revert = AramSurveyStore.isModifiedFromOriginal(d);
+        boolean undo = AramSurveyStore.canUndo();
+        SwingUtilities.invokeLater(() -> {
+            riftHelperMainView.setSurveyOnboarding(state, decided, total);
+            riftHelperMainView.setSurveyMetric(decided, total);
+            riftHelperMainView.setSurveyList(names.toArray(new String[0]));
+            riftHelperMainView.setSurveyRevertVisible(revert);
+            riftHelperMainView.setSurveyUndoEnabled(undo);
+        });
     }
 
     /** The local player's assigned champion id from myTeam (0 if not present yet). */

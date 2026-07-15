@@ -325,10 +325,6 @@ public class PreferenceManager {
     public static void setAutoSwapSurveyEnabled(boolean value) { putBooleanFlushed("autoSwapSurveyEnabled", value); }
     public static boolean getAutoSwapSurveyEnabled() { return prefs.getBoolean("autoSwapSurveyEnabled", false); }
 
-    // TEMP back-compat: keep the controller compiling until it moves to the new names (Task 2.2).
-    public static void setAutoSwap(boolean value) { setAutoSwapPriorityEnabled(value); }
-    public static boolean getAutoSwap() { return getAutoSwapPriorityEnabled(); }
-
     public static void setAutoReroll(boolean value) { putBooleanFlushed("autoReroll", value); }
     public static boolean getAutoReroll() { return prefs.getBoolean("autoReroll", false); }
 
