@@ -201,6 +201,7 @@ public class RiftHelperMainView extends JFrame {
     // Troll Swap (cosmetic bench cycle) button + its configurable delay.
     public final JButton buttonTrollSwap = new JButton();
     private final JSpinner trollSwapDelaySpinner = new JSpinner(new SpinnerNumberModel(100, 0, 5000, 50));
+    private final JSpinner trollSwapLoopsSpinner = new JSpinner(new SpinnerNumberModel(3, 1, 20, 1));
     // Notify setup tutorial button.
     public final JButton buttonNotifyTutorial = new JButton();
     // Hide/Show the League client UX (kill-ux / launch-ux).
@@ -637,15 +638,21 @@ public class RiftHelperMainView extends JFrame {
 
         // Troll Swap: one-shot cosmetic cycle through the bench and back. Red + caution: ban risk.
         bench.add(divider(), "growx, gapy 8 6");
-        JPanel trollRow = new JPanel(new MigLayout("insets 0, gap 8", "[]push[]8[]"));
+        JPanel trollRow = new JPanel(new MigLayout("insets 0, gap 6", "[]push[]4[]8[]4[]"));
         trollRow.setOpaque(false);
         styleButton(buttonTrollSwap, "Troll Swap", Icons.G.CAUTION, ButtonKind.DANGER);
         buttonTrollSwap.setForeground(Theme.RED);
+        JLabel loopsLbl = new JLabel("Loops");
+        loopsLbl.setFont(fSub);
+        loopsLbl.setForeground(Theme.TEXT_DIM);
         JLabel delayLbl = new JLabel("Delay (ms)");
         delayLbl.setFont(fSub);
         delayLbl.setForeground(Theme.TEXT_DIM);
+        trollSwapLoopsSpinner.setPreferredSize(new Dimension(px(56), px(28)));
         trollSwapDelaySpinner.setPreferredSize(new Dimension(px(70), px(28)));
         trollRow.add(buttonTrollSwap);
+        trollRow.add(loopsLbl);
+        trollRow.add(trollSwapLoopsSpinner);
         trollRow.add(delayLbl);
         trollRow.add(trollSwapDelaySpinner);
         bench.add(trollRow, "growx");
@@ -830,6 +837,9 @@ public class RiftHelperMainView extends JFrame {
     public int getTrollSwapDelayMs() { return (Integer) trollSwapDelaySpinner.getValue(); }
     public void setTrollSwapDelayMs(int ms) { trollSwapDelaySpinner.setValue(Math.max(0, Math.min(ms, 5000))); }
     public void addTrollSwapDelayChangeListener(Runnable r) { trollSwapDelaySpinner.addChangeListener(e -> r.run()); }
+    public int getTrollSwapLoops() { return (Integer) trollSwapLoopsSpinner.getValue(); }
+    public void setTrollSwapLoops(int n) { trollSwapLoopsSpinner.setValue(Math.max(1, Math.min(n, 20))); }
+    public void addTrollSwapLoopsChangeListener(Runnable r) { trollSwapLoopsSpinner.addChangeListener(e -> r.run()); }
     public void addNotifyTutorialListener(ActionListener l) { buttonNotifyTutorial.addActionListener(l); }
     public void addHideClientListener(ActionListener l) { buttonHideClient.addActionListener(l); }
     public void addShowClientListener(ActionListener l) { buttonShowClient.addActionListener(l); }

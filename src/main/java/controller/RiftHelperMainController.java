@@ -426,6 +426,8 @@ public class RiftHelperMainController {
         this.riftHelperMainView.addTrollSwapListener(e -> trollSwap());
         this.riftHelperMainView.addTrollSwapDelayChangeListener(() ->
                 PreferenceManager.setTrollSwapDelayMs(this.riftHelperMainView.getTrollSwapDelayMs()));
+        this.riftHelperMainView.addTrollSwapLoopsChangeListener(() ->
+                PreferenceManager.setTrollSwapLoops(this.riftHelperMainView.getTrollSwapLoops()));
         this.riftHelperMainView.addNotifyTutorialListener(e ->
                 new view.NotifyTutorialDialog(riftHelperMainView,
                         riftHelperMainView::getNotifyTopic, riftHelperMainView::setNotifyTopic).open());
@@ -1693,6 +1695,7 @@ public class RiftHelperMainController {
         this.riftHelperMainView.setNotifyIdleSeconds(notifyIdleSeconds);
         this.riftHelperMainView.setUiScalePercent(PreferenceManager.getUiScalePercent());
         this.riftHelperMainView.setTrollSwapDelayMs(PreferenceManager.getTrollSwapDelayMs());
+        this.riftHelperMainView.setTrollSwapLoops(PreferenceManager.getTrollSwapLoops());
         applyToggleButtons(riftHelperMainView.buttonNotifyEnable, riftHelperMainView.buttonNotifyDisable, notifyEnabled);
         applyToggleButtons(riftHelperMainView.buttonNotifyOnlyWhenAwayEnable, riftHelperMainView.buttonNotifyOnlyWhenAwayDisable, notifyOnlyWhenAway);
         applyToggleButtons(riftHelperMainView.buttonNotifyMatchFoundEnable, riftHelperMainView.buttonNotifyMatchFoundDisable, notifyMatchFound);
@@ -1830,14 +1833,15 @@ public class RiftHelperMainController {
         }
     }
 
-    /** Troll Swap: one-shot cosmetic cycle. Swaps to each bench champion (first to last) then back
-     *  to the champion you started on. Runs on a daemon thread; pauses auto-swap while it runs so
-     *  they do not fight. Purely visual; the client's swap cooldown may drop steps at low delays. */
+    /** Troll Swap: cosmetic cycle. Swaps to each bench champion (first to last), repeated `loops`
+     *  times, then back to the champion you started on. Runs on a daemon thread; pauses auto-swap
+     *  while it runs so they do not fight. Uses the same REST swap the bench buttons use. */
     private void trollSwap() {
         if (benchCycling) {
             return; // already running
         }
         final int delayMs = riftHelperMainView.getTrollSwapDelayMs();
+        final int loops = riftHelperMainView.getTrollSwapLoops();
         Thread t = new Thread(() -> {
             benchCycling = true;
             try {
@@ -1856,9 +1860,11 @@ public class RiftHelperMainController {
                 if (original <= 0 || bench.isEmpty()) {
                     return;
                 }
-                for (int id : bench) {
-                    LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + id);
-                    sleepQuietly(delayMs);
+                for (int loop = 0; loop < loops; loop++) {
+                    for (int id : bench) {
+                        LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + id);
+                        sleepQuietly(delayMs);
+                    }
                 }
                 LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + original); // back to start
             } catch (Exception e) {

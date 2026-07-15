@@ -276,6 +276,16 @@ public class PreferenceManager {
     }
     public static int getTrollSwapDelayMs() { return Math.max(0, Math.min(prefs.getInt("trollSwapDelayMs", 100), 5000)); }
 
+    public static void setTrollSwapLoops(int value) {
+        prefs.putInt("trollSwapLoops", Math.max(1, Math.min(value, 20)));
+        try {
+            prefs.flush();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    public static int getTrollSwapLoops() { return Math.max(1, Math.min(prefs.getInt("trollSwapLoops", 3), 20)); }
+
     // ---- Auto game-start loop (all opt-in, default OFF) ----
 
     private static void putBooleanFlushed(String key, boolean value) {
