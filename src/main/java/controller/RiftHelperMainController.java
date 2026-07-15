@@ -896,6 +896,12 @@ public class RiftHelperMainController {
             notifyIdleSeconds = this.riftHelperMainView.getNotifyIdleSeconds();
             PreferenceManager.setNotifyIdleSeconds(notifyIdleSeconds);
         });
+        this.riftHelperMainView.addUiScaleChangeListener(() ->
+                PreferenceManager.setUiScalePercent(this.riftHelperMainView.getUiScalePercent()));
+        this.riftHelperMainView.addUiScaleApplyListener(e -> {
+            PreferenceManager.setUiScalePercent(this.riftHelperMainView.getUiScalePercent());
+            main.RiftHelperMain.restart();
+        });
         this.riftHelperMainView.addNotifyHonorEnableListener(e -> setNotifyHonor(true));
         this.riftHelperMainView.addNotifyHonorDisableListener(e -> setNotifyHonor(false));
         this.riftHelperMainView.addNotifyReturnedToLobbyEnableListener(e -> setNotifyReturnedToLobby(true));
@@ -1608,6 +1614,7 @@ public class RiftHelperMainController {
         this.riftHelperMainView.buttonAutoMinimizeDisable.setEnabled(autoMinimize);
         this.riftHelperMainView.setNotifyTopic(notifyTopic);
         this.riftHelperMainView.setNotifyIdleSeconds(notifyIdleSeconds);
+        this.riftHelperMainView.setUiScalePercent(PreferenceManager.getUiScalePercent());
         applyToggleButtons(riftHelperMainView.buttonNotifyEnable, riftHelperMainView.buttonNotifyDisable, notifyEnabled);
         applyToggleButtons(riftHelperMainView.buttonNotifyOnlyWhenAwayEnable, riftHelperMainView.buttonNotifyOnlyWhenAwayDisable, notifyOnlyWhenAway);
         applyToggleButtons(riftHelperMainView.buttonNotifyMatchFoundEnable, riftHelperMainView.buttonNotifyMatchFoundDisable, notifyMatchFound);

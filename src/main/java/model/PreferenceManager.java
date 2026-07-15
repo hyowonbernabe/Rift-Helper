@@ -233,6 +233,23 @@ public class PreferenceManager {
         return prefs.getBoolean(PREF_AUTO_CHECK_UPDATE, true);
     }
 
+    // UI scale as a percent (applied globally via flatlaf.uiScale at startup). Change this constant
+    // to rebase the out-of-box default; users override it in Settings.
+    private static final int DEFAULT_UI_SCALE_PERCENT = 75;
+
+    public static void setUiScalePercent(int value) {
+        prefs.putInt("uiScalePercent", Math.max(50, Math.min(value, 200)));
+        try {
+            prefs.flush();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static int getUiScalePercent() {
+        return Math.max(50, Math.min(prefs.getInt("uiScalePercent", DEFAULT_UI_SCALE_PERCENT), 200));
+    }
+
     // ---- Auto game-start loop (all opt-in, default OFF) ----
 
     private static void putBooleanFlushed(String key, boolean value) {

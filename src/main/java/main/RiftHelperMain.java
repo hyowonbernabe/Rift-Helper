@@ -3,12 +3,11 @@ package main;
 import com.formdev.flatlaf.FlatDarkLaf;
 import controller.RiftHelperMainController;
 import model.LCUAuth;
+import model.PreferenceManager;
 import model.SSLBypass;
 import view.RiftHelperMainView;
 
 import javax.swing.*;
-import java.awt.Dimension;
-import java.awt.Toolkit;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 
@@ -36,20 +35,46 @@ public class RiftHelperMain {
         checkDisconnect();
     }
 
-    // The window is a fixed 16:9 box at 35% of the display; scale the whole UI to match so it looks
-    // right at that size and grows naturally on bigger screens. FlatLaf's uiScale scales fonts,
-    // MigLayout gaps, and component insets globally; the view scales its hand-set fonts/icons/dims
-    // by the same factor (UIScale.getUserScaleFactor). Must be set before FlatLaf initializes.
-    // Reference: 1080p => 0.75, 1440p => 1.0, 2160p => 1.5.
+    // Scale the whole UI by the user-configured factor (Settings > UI Scale, persisted). FlatLaf's
+    // uiScale scales fonts, MigLayout gaps, and component insets globally; the view scales its
+    // hand-set fonts/icons/dims by the same factor (UIScale.getUserScaleFactor). Must be set before
+    // FlatLaf initializes, which is why changing the setting needs a restart.
     private static void setupUiScale() {
         try {
-            Dimension res = Toolkit.getDefaultToolkit().getScreenSize();
-            double ratio = 16.0 / 9.0;
-            double boxH = (res.width / (double) res.height >= ratio) ? res.height : res.width / ratio;
-            double scale = Math.max(0.6, Math.min(boxH / 1440.0, 2.0));
+            double scale = PreferenceManager.getUiScalePercent() / 100.0;
             System.setProperty("flatlaf.uiScale", String.format(java.util.Locale.US, "%.3f", scale));
         } catch (Throwable t) {
-            // Leave the default scale if the display can't be queried.
+            // Leave the default scale if the preference can't be read.
+        }
+    }
+
+    /** Relaunch the app in a fresh process so a new UI scale takes effect immediately. The scale is
+     *  read once at startup (before FlatLaf initializes) and baked into the components, so applying
+     *  a change means starting over. Works both for `java -jar` (dev) and the jpackage exe. */
+    public static void restart() {
+        try {
+            ProcessHandle.Info info = ProcessHandle.current().info();
+            String cmd = info.command().orElse(null);
+            if (cmd == null) {
+                return;
+            }
+            java.util.List<String> command = new java.util.ArrayList<>();
+            command.add(cmd);
+            String lc = cmd.toLowerCase();
+            if (lc.endsWith("java.exe") || lc.endsWith("javaw.exe") || lc.endsWith("java")) {
+                // Dev launch: re-run this jar.
+                String jar = new java.io.File(RiftHelperMain.class.getProtectionDomain()
+                        .getCodeSource().getLocation().toURI()).getPath();
+                command.add("-jar");
+                command.add(jar);
+            } else {
+                // Packaged exe launcher: relaunch it with its original arguments.
+                info.arguments().ifPresent(args -> java.util.Collections.addAll(command, args));
+            }
+            new ProcessBuilder(command).start();
+            System.exit(0);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 

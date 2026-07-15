@@ -134,6 +134,8 @@ public class RiftHelperMainView extends JFrame {
     private final JTextField notifyTopicField = new JTextField();
     // Idle threshold (seconds) for the "Only notify when away" gate.
     private final JSpinner notifyIdleSpinner = new JSpinner(new SpinnerNumberModel(30, 5, 3600, 5));
+    // UI scale (percent). Persisted; applied at startup, so a change needs a restart.
+    private final JSpinner uiScaleSpinner = new JSpinner(new SpinnerNumberModel(75, 50, 200, 5));
 
     // ---- Action buttons ----
     private final JButton buttonChangeResponseAccept = new JButton();
@@ -145,6 +147,7 @@ public class RiftHelperMainView extends JFrame {
     private final JButton buttonAutoBanSave = new JButton();
     private final JButton buttonAutoLockArenaSave = new JButton();
     private final JButton buttonAutoBanArenaSave = new JButton();
+    private final JButton buttonUiScaleApply = new JButton();
     private final JButton buttonImport = new JButton();
     private final JButton buttonExport = new JButton();
     private final JButton buttonReset = new JButton();
@@ -439,6 +442,27 @@ public class RiftHelperMainView extends JFrame {
         return row;
     }
 
+    /** A row like {@link #toggleRow} but with an arbitrary control (e.g. a spinner) on the right. */
+    private JPanel spinnerRow(String label, String desc, javax.swing.JComponent field) {
+        JPanel row = new JPanel(new MigLayout("insets 6 2 6 2, gap 12, fillx", "[grow,fill][]"));
+        row.setOpaque(false);
+        JPanel textCol = new JPanel(new MigLayout("insets 0, wrap 1, gap 1", "[grow,fill]"));
+        textCol.setOpaque(false);
+        JLabel l = new JLabel(label);
+        l.setFont(fBody);
+        l.setForeground(Theme.TEXT);
+        textCol.add(l, "growx");
+        if (desc != null) {
+            JLabel d = new JLabel(desc);
+            d.setFont(fSub);
+            d.setForeground(Theme.TEXT_FAINT);
+            textCol.add(d, "growx");
+        }
+        row.add(textCol, "growx");
+        row.add(field);
+        return row;
+    }
+
     private JPanel divider() {
         JPanel line = new JPanel();
         line.setBackground(Theme.LINE_SOFT);
@@ -679,22 +703,9 @@ public class RiftHelperMainView extends JFrame {
         master.add(divider(), "growx, gapy 6 2");
         master.add(toggleRow("Only Notify When Away", "Hold notifications while you are using the PC or watching fullscreen video.",
                 buttonNotifyOnlyWhenAwayEnable, buttonNotifyOnlyWhenAwayDisable), "growx");
-        JPanel idleRow = new JPanel(new MigLayout("insets 6 2 6 2, gap 12, fillx", "[grow,fill][]"));
-        idleRow.setOpaque(false);
-        JPanel idleText = new JPanel(new MigLayout("insets 0, wrap 1, gap 1", "[grow,fill]"));
-        idleText.setOpaque(false);
-        JLabel idleLabel = new JLabel("Idle Threshold (seconds)");
-        idleLabel.setFont(fBody);
-        idleLabel.setForeground(Theme.TEXT);
-        JLabel idleDesc = new JLabel("How long with no keyboard or mouse before you count as away.");
-        idleDesc.setFont(fSub);
-        idleDesc.setForeground(Theme.TEXT_FAINT);
-        idleText.add(idleLabel, "growx");
-        idleText.add(idleDesc, "growx");
-        idleRow.add(idleText, "growx");
         notifyIdleSpinner.setPreferredSize(new Dimension(px(72), px(28)));
-        idleRow.add(notifyIdleSpinner);
-        master.add(idleRow, "growx");
+        master.add(spinnerRow("Idle Threshold (seconds)",
+                "How long with no keyboard or mouse before you count as away.", notifyIdleSpinner), "growx");
         panel.add(master, "growx");
 
         Card events = new Card("insets 4 6 4 6, wrap 1, fillx", "[grow,fill]", "");
@@ -748,6 +759,14 @@ public class RiftHelperMainView extends JFrame {
         window.add(toggleRow("Center GUI on Update", null, buttonCenterGUIEnable, buttonCenterGUIDisable), "growx");
         window.add(toggleRow("System Tray", null, buttonSystemTrayEnable, buttonSystemTrayDisable), "growx");
         window.add(toggleRow("Auto Check for Updates", null, buttonAutoCheckUpdateEnable, buttonAutoCheckUpdateDisable), "growx");
+        window.add(divider(), "growx, gapy 2 2");
+        uiScaleSpinner.setPreferredSize(new Dimension(px(72), px(28)));
+        JPanel scaleControls = new JPanel(new MigLayout("insets 0, gap 6", "[]6[]"));
+        scaleControls.setOpaque(false);
+        scaleControls.add(uiScaleSpinner);
+        styleButton(buttonUiScaleApply, "Apply", null, ButtonKind.PRIMARY);
+        scaleControls.add(buttonUiScaleApply);
+        window.add(spinnerRow("UI Scale (%)", "Size of everything in the app. Apply restarts to take effect.", scaleControls), "growx");
         cols.add(window, "grow");
 
         Card prefs = new Card("insets 4 6 8 6, wrap 1, fillx", "[grow,fill]", "");
@@ -1264,6 +1283,10 @@ public class RiftHelperMainView extends JFrame {
     public int getNotifyIdleSeconds() { return (Integer) notifyIdleSpinner.getValue(); }
     public void setNotifyIdleSeconds(int s) { notifyIdleSpinner.setValue(Math.max(5, s)); }
     public void addNotifyIdleSecondsChangeListener(Runnable r) { notifyIdleSpinner.addChangeListener(e -> r.run()); }
+    public int getUiScalePercent() { return (Integer) uiScaleSpinner.getValue(); }
+    public void setUiScalePercent(int p) { uiScaleSpinner.setValue(Math.max(50, Math.min(p, 200))); }
+    public void addUiScaleChangeListener(Runnable r) { uiScaleSpinner.addChangeListener(e -> r.run()); }
+    public void addUiScaleApplyListener(ActionListener l) { buttonUiScaleApply.addActionListener(l); }
     public void addNotifyHonorEnableListener(ActionListener l) { buttonNotifyHonorEnable.addActionListener(l); }
     public void addNotifyHonorDisableListener(ActionListener l) { buttonNotifyHonorDisable.addActionListener(l); }
     public void addNotifyReturnedToLobbyEnableListener(ActionListener l) { buttonNotifyReturnedToLobbyEnable.addActionListener(l); }
