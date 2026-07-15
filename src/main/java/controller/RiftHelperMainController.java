@@ -52,7 +52,9 @@ public class RiftHelperMainController {
 
         startProgram();
 
-        LCUSocketReader socketReader = new LCUSocketReader();
+        // Pass our own CIM-derived token+port so R4J uses them directly instead of its no-arg
+        // constructor, which shells out to WMIC (removed on Win11 24H2+) and would fail.
+        LCUSocketReader socketReader = new LCUSocketReader(LCUAuth.token, LCUAuth.port);
         socketReader.connect();
 
         System.out.println("Connected to Client: " + socketReader.isConnected());
