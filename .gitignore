@@ -33,3 +33,6 @@ bin/
 
 ### Mac OS ###
 .DS_Store
+
+### Superpowers docs (design/spec docs, not committed) ###
+docs/superpowers/

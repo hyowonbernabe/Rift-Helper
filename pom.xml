@@ -6,7 +6,7 @@
 
     <groupId>com.rifthelper</groupId>
     <artifactId>rift-helper</artifactId>
-    <version>1.3.2</version>
+    <version>1.4.0</version>
 
     <repositories>
         <repository>
@@ -81,6 +81,13 @@
             <groupId>org.kordamp.ikonli</groupId>
             <artifactId>ikonli-fontawesome5-pack</artifactId>
             <version>12.3.1</version>
+        </dependency>
+
+        <!-- JNA - plain window minimize of the League client for Auto Minimize (DND) -->
+        <dependency>
+            <groupId>net.java.dev.jna</groupId>
+            <artifactId>jna-platform</artifactId>
+            <version>5.14.0</version>
         </dependency>
 
     </dependencies>

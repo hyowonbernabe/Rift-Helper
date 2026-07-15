@@ -70,8 +70,6 @@ public class RiftHelperMainView extends JFrame {
     public final JButton buttonAutoBanDisable = new JButton();
     public final JButton buttonAutoSwapEnable = new JButton();
     public final JButton buttonAutoSwapDisable = new JButton();
-    public final JButton buttonAutoRerollEnable = new JButton();
-    public final JButton buttonAutoRerollDisable = new JButton();
     public final JButton buttonAlwaysOnTopEnable = new JButton();
     public final JButton buttonAlwaysOnTopDisable = new JButton();
     public final JButton buttonCenterGUIEnable = new JButton();
@@ -88,6 +86,16 @@ public class RiftHelperMainView extends JFrame {
     public final JButton buttonAutoBraveryArenaDisable = new JButton();
     public final JButton buttonSystemTrayEnable = new JButton();
     public final JButton buttonSystemTrayDisable = new JButton();
+    public final JButton buttonAutoHonorEnable = new JButton();
+    public final JButton buttonAutoHonorDisable = new JButton();
+    public final JButton buttonAutoSkipScreensEnable = new JButton();
+    public final JButton buttonAutoSkipScreensDisable = new JButton();
+    public final JButton buttonGroupAutoQueueEnable = new JButton();
+    public final JButton buttonGroupAutoQueueDisable = new JButton();
+    public final JButton buttonSoloAutoQueueEnable = new JButton();
+    public final JButton buttonSoloAutoQueueDisable = new JButton();
+    public final JButton buttonAutoMinimizeEnable = new JButton();
+    public final JButton buttonAutoMinimizeDisable = new JButton();
 
     // ---- Action buttons ----
     private final JButton buttonChangeResponseAccept = new JButton();
@@ -188,7 +196,6 @@ public class RiftHelperMainView extends JFrame {
         buttonAutoLockDisable.setEnabled(false);
         buttonAutoBanDisable.setEnabled(false);
         buttonAutoSwapDisable.setEnabled(false);
-        buttonAutoRerollDisable.setEnabled(false);
         buttonAutoBraveryArenaDisable.setEnabled(false);
         buttonAutoLockArenaDisable.setEnabled(false);
         buttonAutoBanArenaDisable.setEnabled(false);
@@ -394,6 +401,29 @@ public class RiftHelperMainView extends JFrame {
         note.setFont(fSub);
         note.setForeground(Theme.TEXT_FAINT);
         panel.add(note, "gapx 4");
+
+        Card loop = new Card("insets 4 6 4 6, wrap 1, fillx", "[grow,fill]", "");
+        loop.add(cardTitle("Auto Game Loop", Icons.G.UPDATE), "gapbottom 6");
+        loop.add(toggleRow("Auto Minimize (DND)", "Minimize the client after each automated action. Bring it up any time.",
+                buttonAutoMinimizeEnable, buttonAutoMinimizeDisable), "growx");
+        loop.add(divider(), "growx, gapy 2 2");
+        loop.add(toggleRow("Auto Honor", "Honor your friends in the post-game lobby (up to 4).",
+                buttonAutoHonorEnable, buttonAutoHonorDisable), "growx");
+        loop.add(divider(), "growx, gapy 2 2");
+        loop.add(toggleRow("Auto Skip Progression and Scoreboard", "Return to the lobby immediately after a game.",
+                buttonAutoSkipScreensEnable, buttonAutoSkipScreensDisable), "growx");
+        loop.add(divider(), "growx, gapy 2 2");
+        loop.add(toggleRow("Group Auto Queue", "Auto Find Match when 2 or more are in the lobby.",
+                buttonGroupAutoQueueEnable, buttonGroupAutoQueueDisable), "growx");
+        loop.add(divider(), "growx, gapy 2 2");
+        loop.add(toggleRow("Solo Auto Queue", "Auto Find Match when you are alone. Warning: loops games unattended.",
+                buttonSoloAutoQueueEnable, buttonSoloAutoQueueDisable), "growx");
+        panel.add(loop, "growx, gaptop 6");
+
+        JLabel loopNote = new JLabel("Group and Solo Auto Queue are mutually exclusive.");
+        loopNote.setFont(fSub);
+        loopNote.setForeground(Theme.TEXT_FAINT);
+        panel.add(loopNote, "gapx 4");
         return panel;
     }
 
@@ -445,13 +475,13 @@ public class RiftHelperMainView extends JFrame {
     // ---- ARAM ----
 
     private JPanel buildAram() {
-        JPanel panel = section("ARAM", "bench swaps and rerolls");
+        JPanel panel = section("ARAM", "bench swaps");
 
         JPanel cols = new JPanel(new MigLayout("insets 0, gap 12, fillx", "[grow,fill]12[grow,fill]", "[top]"));
         cols.setOpaque(false);
 
         Card swapCard = new Card("insets 4 6 8 6, wrap 1, fillx", "[grow,fill]", "");
-        swapCard.add(cardTitle("Auto Swap", Icons.G.SWAP), "gapbottom 10");
+        swapCard.add(cardHeaderWithToggle("Auto Swap", Icons.G.SWAP, buttonAutoSwapEnable, buttonAutoSwapDisable), "gapbottom 10");
         JPanel swapGrid = new JPanel(new MigLayout("insets 0, wrap 2, gapy 6", "[18!]8[grow,fill]"));
         swapGrid.setOpaque(false);
         for (int i = 0; i < swap.length; i++) {
@@ -470,11 +500,7 @@ public class RiftHelperMainView extends JFrame {
         cols.add(swapCard, "grow");
 
         Card right = new Card("insets 4 6 8 6, wrap 1, fillx", "[grow,fill]", "");
-        right.add(cardHeaderWithToggle("Auto Reroll", Icons.G.REROLL, buttonAutoRerollEnable, buttonAutoRerollDisable), "growx, gapbottom 12");
-        JLabel qs = new JLabel("QUICK SWITCH  -  BENCH");
-        qs.setFont(fEyebrow);
-        qs.setForeground(Theme.TEXT_FAINT);
-        right.add(qs, "gapbottom 8");
+        right.add(cardTitle("Quick Switch Bench", Icons.G.SWAP), "growx, gapbottom 12");
         JPanel benchGrid = new JPanel(new MigLayout("insets 0, wrap 5, gap 7", "[grow,fill]", ""));
         benchGrid.setOpaque(false);
         panelQuickSwitchBench2 = new JPanel(new MigLayout("insets 0, wrap 5, gap 7", "[grow,fill]", ""));
@@ -1031,8 +1057,6 @@ public class RiftHelperMainView extends JFrame {
     public void addAlwaysOnTopDisableListener(ActionListener l) { buttonAlwaysOnTopDisable.addActionListener(l); }
     public void addCenterGUIEnableListener(ActionListener l) { buttonCenterGUIEnable.addActionListener(l); }
     public void addCenterGUIDisableListener(ActionListener l) { buttonCenterGUIDisable.addActionListener(l); }
-    public void addAutoRerollEnableListener(ActionListener l) { buttonAutoRerollEnable.addActionListener(l); }
-    public void addAutoRerollDisableListener(ActionListener l) { buttonAutoRerollDisable.addActionListener(l); }
     public void addAutoDisenchantChampionsSafeListener(ActionListener l) { buttonDisenchantChampionsSafe.addActionListener(l); }
     public void addAutoDisenchantChampionsHardListener(ActionListener l) { buttonDisenchantChampionsHard.addActionListener(l); }
     public void addAutoDisenchantSkinsSafeListener(ActionListener l) { buttonDisenchantSkinsSafe.addActionListener(l); }
@@ -1060,6 +1084,16 @@ public class RiftHelperMainView extends JFrame {
     public void addSystemTrayDisableListener(ActionListener l) { buttonSystemTrayDisable.addActionListener(l); }
     public void addAutoCheckUpdateEnableListener(ActionListener l) { buttonAutoCheckUpdateEnable.addActionListener(l); }
     public void addAutoCheckUpdateDisableListener(ActionListener l) { buttonAutoCheckUpdateDisable.addActionListener(l); }
+    public void addAutoHonorEnableListener(ActionListener l) { buttonAutoHonorEnable.addActionListener(l); }
+    public void addAutoHonorDisableListener(ActionListener l) { buttonAutoHonorDisable.addActionListener(l); }
+    public void addAutoSkipScreensEnableListener(ActionListener l) { buttonAutoSkipScreensEnable.addActionListener(l); }
+    public void addAutoSkipScreensDisableListener(ActionListener l) { buttonAutoSkipScreensDisable.addActionListener(l); }
+    public void addGroupAutoQueueEnableListener(ActionListener l) { buttonGroupAutoQueueEnable.addActionListener(l); }
+    public void addGroupAutoQueueDisableListener(ActionListener l) { buttonGroupAutoQueueDisable.addActionListener(l); }
+    public void addSoloAutoQueueEnableListener(ActionListener l) { buttonSoloAutoQueueEnable.addActionListener(l); }
+    public void addSoloAutoQueueDisableListener(ActionListener l) { buttonSoloAutoQueueDisable.addActionListener(l); }
+    public void addAutoMinimizeEnableListener(ActionListener l) { buttonAutoMinimizeEnable.addActionListener(l); }
+    public void addAutoMinimizeDisableListener(ActionListener l) { buttonAutoMinimizeDisable.addActionListener(l); }
     public void addAutoBanCrowdFavoriteEnableListener(ActionListener l) { buttonAutoBanCrowdFavoriteEnable.addActionListener(l); }
     public void addAutoBanCrowdFavoriteDisableListener(ActionListener l) { buttonAutoBanCrowdFavoriteDisable.addActionListener(l); }
     public void addExportListener(ActionListener l) { buttonExport.addActionListener(l); }

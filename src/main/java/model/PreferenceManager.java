@@ -62,6 +62,11 @@ public class PreferenceManager {
     private static final String PREF_SYSTEM_TRAY = "systemTray";
     private static final String PREF_AUTO_LOCK_LANE_CHOICE = "autoLockLaneChoice";
     private static final String PREF_AUTO_CHECK_UPDATE = "autoCheckUpdate";
+    private static final String PREF_AUTO_HONOR = "autoHonor";
+    private static final String PREF_AUTO_SKIP_SCREENS = "autoSkipScreens";
+    private static final String PREF_GROUP_AUTO_QUEUE = "groupAutoQueue";
+    private static final String PREF_SOLO_AUTO_QUEUE = "soloAutoQueue";
+    private static final String PREF_AUTO_MINIMIZE = "autoMinimize";
 
     private static final String[] TOP_KEYS = {PREF_AUTO_LOCK_TOP_PRIORITY_1, PREF_AUTO_LOCK_TOP_PRIORITY_2, PREF_AUTO_LOCK_TOP_PRIORITY_3, PREF_AUTO_LOCK_TOP_PRIORITY_4, PREF_AUTO_LOCK_TOP_PRIORITY_5};
     private static final String[] JUNGLE_KEYS = {PREF_AUTO_LOCK_JUNGLE_PRIORITY_1, PREF_AUTO_LOCK_JUNGLE_PRIORITY_2, PREF_AUTO_LOCK_JUNGLE_PRIORITY_3, PREF_AUTO_LOCK_JUNGLE_PRIORITY_4, PREF_AUTO_LOCK_JUNGLE_PRIORITY_5};
@@ -227,6 +232,89 @@ public class PreferenceManager {
     public static boolean getAutoCheckUpdate() {
         return prefs.getBoolean(PREF_AUTO_CHECK_UPDATE, true);
     }
+
+    // ---- Auto game-start loop (all opt-in, default OFF) ----
+
+    private static void putBooleanFlushed(String key, boolean value) {
+        prefs.putBoolean(key, value);
+        try {
+            prefs.flush();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void setAutoHonor(boolean value) {
+        putBooleanFlushed(PREF_AUTO_HONOR, value);
+    }
+
+    public static boolean getAutoHonor() {
+        return prefs.getBoolean(PREF_AUTO_HONOR, false);
+    }
+
+    public static void setAutoSkipScreens(boolean value) {
+        putBooleanFlushed(PREF_AUTO_SKIP_SCREENS, value);
+    }
+
+    public static boolean getAutoSkipScreens() {
+        return prefs.getBoolean(PREF_AUTO_SKIP_SCREENS, false);
+    }
+
+    public static void setGroupAutoQueue(boolean value) {
+        putBooleanFlushed(PREF_GROUP_AUTO_QUEUE, value);
+    }
+
+    public static boolean getGroupAutoQueue() {
+        return prefs.getBoolean(PREF_GROUP_AUTO_QUEUE, false);
+    }
+
+    public static void setSoloAutoQueue(boolean value) {
+        putBooleanFlushed(PREF_SOLO_AUTO_QUEUE, value);
+    }
+
+    public static boolean getSoloAutoQueue() {
+        return prefs.getBoolean(PREF_SOLO_AUTO_QUEUE, false);
+    }
+
+    public static void setAutoMinimize(boolean value) {
+        putBooleanFlushed(PREF_AUTO_MINIMIZE, value);
+    }
+
+    public static boolean getAutoMinimize() {
+        return prefs.getBoolean(PREF_AUTO_MINIMIZE, false);
+    }
+
+    // ---- On/off state for the remaining auto toggles (so every choice survives a restart) ----
+
+    public static void setAutoAccept(boolean value) { putBooleanFlushed("autoAccept", value); }
+    public static boolean getAutoAccept() { return prefs.getBoolean("autoAccept", false); }
+
+    public static void setAutoDecline(boolean value) { putBooleanFlushed("autoDecline", value); }
+    public static boolean getAutoDecline() { return prefs.getBoolean("autoDecline", false); }
+
+    public static void setAutoSwap(boolean value) { putBooleanFlushed("autoSwapEnabled", value); }
+    public static boolean getAutoSwap() { return prefs.getBoolean("autoSwapEnabled", false); }
+
+    public static void setAutoReroll(boolean value) { putBooleanFlushed("autoReroll", value); }
+    public static boolean getAutoReroll() { return prefs.getBoolean("autoReroll", false); }
+
+    public static void setAutoLock(boolean value) { putBooleanFlushed("autoLockEnabled", value); }
+    public static boolean getAutoLock() { return prefs.getBoolean("autoLockEnabled", false); }
+
+    public static void setAutoBan(boolean value) { putBooleanFlushed("autoBanEnabled", value); }
+    public static boolean getAutoBan() { return prefs.getBoolean("autoBanEnabled", false); }
+
+    public static void setAutoLockArena(boolean value) { putBooleanFlushed("autoLockArenaEnabled", value); }
+    public static boolean getAutoLockArena() { return prefs.getBoolean("autoLockArenaEnabled", false); }
+
+    public static void setAutoBanArena(boolean value) { putBooleanFlushed("autoBanArenaEnabled", value); }
+    public static boolean getAutoBanArena() { return prefs.getBoolean("autoBanArenaEnabled", false); }
+
+    public static void setAutoBanCrowdFavorite(boolean value) { putBooleanFlushed("autoBanCrowdFavorite", value); }
+    public static boolean getAutoBanCrowdFavorite() { return prefs.getBoolean("autoBanCrowdFavorite", false); }
+
+    public static void setAutoBravery(boolean value) { putBooleanFlushed("autoBravery", value); }
+    public static boolean getAutoBravery() { return prefs.getBoolean("autoBravery", false); }
 
     public static void exportPreferences() {
         try {
