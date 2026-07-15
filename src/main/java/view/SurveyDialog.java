@@ -1,6 +1,7 @@
 package view;
 
 import com.formdev.flatlaf.util.UIScale;
+import model.AramSeeder;
 import model.AramSurveyData;
 import model.AramSurveyStore;
 import model.DDragonParser;
@@ -43,7 +44,11 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.SynchronousQueue;
 
 /**
@@ -75,6 +80,12 @@ public class SurveyDialog extends JDialog {
     private final Runnable onClose;
     private final AramSurveyData data;
     private final List<String> roster;
+
+    // Frozen tier-tap sequence (data.seedOrder reconciled with the live roster) and the play-history
+    // context used for per-champion badges. Written by the seeding worker, read on the EDT.
+    private volatile List<String> order = new ArrayList<>();
+    private volatile Map<String, AramSeeder.ChampInfo> infos;
+    private volatile boolean seeding;
 
     private final Font baseFont;
     private final Font fBody;
@@ -147,7 +158,7 @@ public class SurveyDialog extends JDialog {
 
     // ------------------------------------------------------------------ public API
 
-    /** Open the dialog, resuming at the correct screen for the saved state. Modal; blocks. */
+    /** Open the dialog. Always lands on the intro screen first; a single click seeds and resumes. */
     public void openResume() {
         try {
             if (roster.isEmpty()) {
@@ -155,9 +166,52 @@ public class SurveyDialog extends JDialog {
                 setVisible(true);
                 return;
             }
+            showIntro();
+        } catch (Exception e) {
+            System.out.println("[Survey] openResume failed: " + e.getMessage());
+            showRosterError();
+        }
+        setVisible(true);
+    }
+
+    /**
+     * Leave the intro. Seeding (mastery / match-history fetch, and on a fresh survey the frozen
+     * order) runs on a worker so the visible window stays responsive, then routes on the EDT.
+     */
+    private void beginAfterIntro() {
+        if (seeding) {
+            return;
+        }
+        seeding = true;
+        hint("Preparing your champions...");
+        Thread t = new Thread(() -> {
+            try {
+                prepareSeeding();
+            } catch (Exception e) {
+                System.out.println("[Survey] seeding failed: " + e.getMessage());
+            } finally {
+                SwingUtilities.invokeLater(() -> {
+                    seeding = false;
+                    routeAfterIntro();
+                });
+            }
+        }, "aram-survey-seed");
+        t.setDaemon(true);
+        t.start();
+    }
+
+    /** Resume at the correct screen for the saved state, using the (now-prepared) seeded order. */
+    private void routeAfterIntro() {
+        if (closed) {
+            return;
+        }
+        try {
+            if (order.isEmpty()) {
+                showRosterError();
+                return;
+            }
             int firstUndecided = nextUndecidedFrom(0);
-            boolean tieringComplete = firstUndecided >= roster.size();
-            if (!tieringComplete) {
+            if (firstUndecided < order.size()) {
                 idx = firstUndecided;
                 showTierTap();
             } else {
@@ -170,10 +224,65 @@ public class SurveyDialog extends JDialog {
                 }
             }
         } catch (Exception e) {
-            System.out.println("[Survey] openResume failed: " + e.getMessage());
+            System.out.println("[Survey] routeAfterIntro failed: " + e.getMessage());
             showRosterError();
         }
-        setVisible(true);
+    }
+
+    /**
+     * Fetch play-history context and, on a fresh survey, compute the frozen champion order. Safe to
+     * run off the EDT: only file / network I/O, no Swing calls. On resume the saved
+     * {@code data.seedOrder} is reused as-is; the fetch then only feeds badges.
+     */
+    private void prepareSeeding() {
+        Map<String, AramSeeder.ChampInfo> fetched;
+        try {
+            fetched = AramSeeder.fetch(); // empty map on failure, never throws
+        } catch (Exception e) {
+            System.out.println("[Survey] seeder fetch failed: " + e.getMessage());
+            fetched = new HashMap<>();
+        }
+        infos = (fetched == null) ? new HashMap<>() : fetched;
+
+        if (data.seedOrder == null || data.seedOrder.isEmpty()) {
+            List<String> seeded;
+            try {
+                seeded = AramSeeder.seededOrder(infos, roster);
+            } catch (Exception e) {
+                System.out.println("[Survey] seeded order failed: " + e.getMessage());
+                seeded = null;
+            }
+            data.seedOrder = new ArrayList<>((seeded == null || seeded.isEmpty()) ? roster : seeded);
+            persistQuietly();
+        }
+        order = buildOrder();
+    }
+
+    /** Frozen seed order intersected with the live roster, then any brand-new champions appended. */
+    private List<String> buildOrder() {
+        List<String> built = new ArrayList<>();
+        Set<String> rosterSet = new LinkedHashSet<>(roster);
+        List<String> seed = (data.seedOrder == null) ? new ArrayList<>() : data.seedOrder;
+        for (String n : seed) {
+            if (rosterSet.contains(n) && !built.contains(n)) {
+                built.add(n);
+            }
+        }
+        for (String n : roster) {
+            if (!built.contains(n)) {
+                built.add(n);
+            }
+        }
+        return built;
+    }
+
+    /** File save with no Swing side effects (safe off the EDT, unlike {@link #safeSave()}). */
+    private void persistQuietly() {
+        try {
+            AramSurveyStore.save(data);
+        } catch (Exception e) {
+            System.out.println("[Survey] save failed: " + e.getMessage());
+        }
     }
 
     // ------------------------------------------------------------------ shell / chrome
@@ -264,17 +373,69 @@ public class SurveyDialog extends JDialog {
         }
     }
 
+    // ------------------------------------------------------------------ intro
+
+    private void showIntro() {
+        mode = Mode.NONE;
+        hint("");
+        setProgress(0);
+        boolean resuming = data.decidedCount() > 0;
+
+        JPanel outer = column();
+
+        JPanel card = new JPanel(new MigLayout("insets 24, wrap 1, gap 8", "[grow,center]"));
+        card.setOpaque(true);
+        card.setBackground(Theme.SURFACE_2);
+        card.setBorder(cardBorder(Theme.LINE));
+
+        JLabel emoji = makeLabel("🧭", baseFont.deriveFont(fpt(34f)), Theme.TEXT); // compass
+        emoji.setHorizontalAlignment(SwingConstants.CENTER);
+        card.add(emoji, "align center");
+
+        JLabel title = makeLabel("How this survey is ordered",
+                baseFont.deriveFont(Font.BOLD, fpt(18f)), Theme.TEXT);
+        title.setHorizontalAlignment(SwingConstants.CENTER);
+        card.add(title, "align center");
+
+        JLabel body = makeLabel("<html><div style='text-align:center'>Champions are ordered by how "
+                + "much you play them - your mastery and recent games (ARAM, ARAM Mayhem, and "
+                + "Summoner's Rift). Most-played first. You choose every tier yourself.</div></html>",
+                fBody, Theme.TEXT_DIM);
+        body.setHorizontalAlignment(SwingConstants.CENTER);
+        card.add(body, "align center, growx, wmax " + px(420));
+
+        JLabel exLabel = makeLabel("Each champion shows quick context, for example:",
+                fSub, Theme.TEXT_FAINT);
+        exLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        card.add(exLabel, "align center, gaptop " + px(6));
+
+        JPanel examples = new JPanel(new MigLayout("insets 0, gap 6, wrap 2", ""));
+        examples.setOpaque(false);
+        examples.add(badgeChip("Mastery 7 - 452,180"));
+        examples.add(badgeChip("Best: A+"));
+        examples.add(badgeChip("ARAM 8 - Mayhem 2 - SR 1"));
+        examples.add(badgeChip("last played 2d ago"));
+        card.add(examples, "align center");
+
+        JButton start = button(resuming ? "Continue" : "Start", Kind.PRIMARY);
+        start.addActionListener(e -> beginAfterIntro());
+        card.add(start, "align center, gaptop " + px(8));
+
+        outer.add(card, "align center, growx, wmax " + px(520));
+        showScreen(outer);
+    }
+
     // ------------------------------------------------------------------ phase 1: tier tap
 
     private void showTierTap() {
         mode = Mode.TIER;
         hint("Keys:   1 Main    2 Like    3 Fine    4 Never    Backspace Undo");
-        if (idx < 0 || idx >= roster.size()) {
+        if (idx < 0 || idx >= order.size()) {
             beginStages();
             return;
         }
-        String name = roster.get(idx);
-        int total = roster.size();
+        String name = order.get(idx);
+        int total = order.size();
         setProgress((int) Math.round(data.decidedCount() / (double) total * 45));
 
         JPanel p = column();
@@ -293,9 +454,16 @@ public class SurveyDialog extends JDialog {
         loadIcon(champIcon, name, px(108));
         p.add(champIcon, "align center");
 
+        JPanel nameBlock = new JPanel(new MigLayout("insets 0, wrap 1, gap 4", "[grow,center]"));
+        nameBlock.setOpaque(false);
         JLabel champName = makeLabel(name, baseFont.deriveFont(Font.BOLD, fpt(20f)), Theme.TEXT);
         champName.setHorizontalAlignment(SwingConstants.CENTER);
-        p.add(champName, "align center, gapbottom " + px(4));
+        nameBlock.add(champName, "align center");
+        JComponent badges = badgesFor(name);
+        if (badges.getComponentCount() > 0) {
+            nameBlock.add(badges, "align center, gaptop " + px(2));
+        }
+        p.add(nameBlock, "align center, gapbottom " + px(4));
 
         JPanel tiers = new JPanel(new MigLayout("insets 0, gap 10", "[grow,fill]10[grow,fill]10[grow,fill]10[grow,fill]"));
         tiers.setOpaque(false);
@@ -327,15 +495,15 @@ public class SurveyDialog extends JDialog {
     }
 
     private void chooseTier(String key) {
-        if (idx < 0 || idx >= roster.size()) {
+        if (idx < 0 || idx >= order.size()) {
             return;
         }
-        String name = roster.get(idx);
+        String name = order.get(idx);
         data.tiers.put(name, key);
         tierHistory.push(idx);
         safeSave();
         idx = nextUndecidedFrom(idx + 1);
-        if (idx >= roster.size()) {
+        if (idx >= order.size()) {
             beginStages();
         } else {
             showTierTap();
@@ -347,8 +515,8 @@ public class SurveyDialog extends JDialog {
             return;
         }
         int prev = tierHistory.pop();
-        if (prev >= 0 && prev < roster.size()) {
-            data.tiers.remove(roster.get(prev));
+        if (prev >= 0 && prev < order.size()) {
+            data.tiers.remove(order.get(prev));
         }
         idx = prev;
         safeSave();
@@ -356,12 +524,12 @@ public class SurveyDialog extends JDialog {
     }
 
     private int nextUndecidedFrom(int from) {
-        for (int i = Math.max(0, from); i < roster.size(); i++) {
-            if (!data.tiers.containsKey(roster.get(i))) {
+        for (int i = Math.max(0, from); i < order.size(); i++) {
+            if (!data.tiers.containsKey(order.get(i))) {
                 return i;
             }
         }
-        return roster.size();
+        return order.size();
     }
 
     // ------------------------------------------------------------------ phase 2: staged ranking
@@ -926,6 +1094,60 @@ public class SurveyDialog extends JDialog {
         return l;
     }
 
+    /**
+     * Muted context badges for a champion, built from the fetched play history. Returns an empty
+     * panel when there is no data for {@code name} (or seeding produced nothing), so callers can
+     * skip adding it.
+     */
+    private JComponent badgesFor(String name) {
+        JPanel wrap = new JPanel(new MigLayout("insets 0, gap 6, wrap 3", ""));
+        wrap.setOpaque(false);
+        Map<String, AramSeeder.ChampInfo> map = infos;
+        AramSeeder.ChampInfo info = (map == null) ? null : map.get(name);
+        if (info == null) {
+            return wrap;
+        }
+        if (info.masteryLevel > 0 || info.masteryPoints > 0) {
+            wrap.add(badgeChip("Mastery " + info.masteryLevel + " - "
+                    + String.format("%,d", info.masteryPoints)));
+        }
+        if (info.highestGrade != null && !info.highestGrade.isBlank()) {
+            wrap.add(badgeChip("Best: " + info.highestGrade));
+        }
+        List<String> games = new ArrayList<>();
+        if (info.aramGames > 0) {
+            games.add("ARAM " + info.aramGames);
+        }
+        if (info.mayhemGames > 0) {
+            games.add("Mayhem " + info.mayhemGames);
+        }
+        if (info.srGames > 0) {
+            games.add("SR " + info.srGames);
+        }
+        if (!games.isEmpty()) {
+            wrap.add(badgeChip(String.join(" - ", games)));
+        }
+        if (info.recentWins > 0 || info.recentLosses > 0) {
+            wrap.add(badgeChip("recent " + info.recentWins + "W " + info.recentLosses + "L"));
+        }
+        if (info.lastPlayMillis > 0) {
+            wrap.add(badgeChip("last played " + relativeAge(info.lastPlayMillis)));
+        }
+        return wrap;
+    }
+
+    private JLabel badgeChip(String text) {
+        JLabel l = new JLabel(text);
+        l.setFont(baseFont.deriveFont(Font.PLAIN, fpt(11f)));
+        l.setForeground(Theme.TEXT_FAINT);
+        l.setOpaque(true);
+        l.setBackground(Theme.SURFACE_2);
+        l.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(Theme.LINE),
+                BorderFactory.createEmptyBorder(px(3), px(9), px(3), px(9))));
+        return l;
+    }
+
     private Border cardBorder(Color line) {
         return BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(line),
@@ -1013,6 +1235,31 @@ public class SurveyDialog extends JDialog {
             }
         }
         return -1;
+    }
+
+    /** Compact relative age of a past epoch-millis timestamp, e.g. "3d ago". */
+    private static String relativeAge(long millis) {
+        long diff = System.currentTimeMillis() - millis;
+        if (diff < 0) {
+            diff = 0;
+        }
+        long minutes = diff / 60_000L;
+        if (minutes < 60) {
+            return Math.max(1, minutes) + "m ago";
+        }
+        long hours = minutes / 60;
+        if (hours < 24) {
+            return hours + "h ago";
+        }
+        long days = hours / 24;
+        if (days < 30) {
+            return days + "d ago";
+        }
+        long months = days / 30;
+        if (months < 12) {
+            return months + "mo ago";
+        }
+        return (days / 365) + "y ago";
     }
 
     // ------------------------------------------------------------------ loading helpers

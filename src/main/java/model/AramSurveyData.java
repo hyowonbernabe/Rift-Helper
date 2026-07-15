@@ -17,6 +17,7 @@ public class AramSurveyData {
     public Map<String, String> comparisons = new LinkedHashMap<>();       // "a|b" (sorted) -> winner or "TIE"
     public Map<String, Boolean> stageDone = new LinkedHashMap<>();        // tier -> ranked?
     public List<String> flatOrder = new ArrayList<>();                   // authoritative swap order (editable)
+    public List<String> seedOrder = new ArrayList<>();                   // frozen survey display order (from AramSeeder)
     public long completedAt = 0L;
 
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -48,6 +49,9 @@ public class AramSurveyData {
         }
         if (d.flatOrder == null) {
             d.flatOrder = new ArrayList<>();
+        }
+        if (d.seedOrder == null) {
+            d.seedOrder = new ArrayList<>();
         }
         return d;
     }
