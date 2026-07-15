@@ -25,7 +25,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.Locale;
 
 public class UpdateChecker {
-    private static final String CURRENT_VERSION = "1.5.0";
+    private static final String CURRENT_VERSION = "1.6.0";
     private static final String VERSION_URL = "https://raw.githubusercontent.com/hyowonbernabe/Rift-Helper/main/version.json";
     private static final String RELEASES_PAGE = "https://github.com/hyowonbernabe/Rift-Helper/releases";
     private static final String LATEST_RELEASE_API = "https://api.github.com/repos/hyowonbernabe/Rift-Helper/releases/latest";
