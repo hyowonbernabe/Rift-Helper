@@ -1581,7 +1581,9 @@ public class RiftHelperMainView extends JFrame {
         // other section is single-column and narrower; long text wraps to this width.
         int railW = railPanel != null ? railPanel.getPreferredSize().width : 0;
         int statusW = statusStrip != null ? statusStrip.getPreferredSize().width : 0;
-        int aramW = aramSection != null ? aramSection.getPreferredSize().width : 0;
+        // Cap the ARAM content width so a long label (e.g. the onboarding banner) wraps instead of
+        // stretching the window; the bench (~5 buttons) still fits comfortably under this.
+        int aramW = Math.min(aramSection != null ? aramSection.getPreferredSize().width : 0, px(360));
         int mainW = Math.max(statusW, px(16) * 2 + aramW);   // content pane inner width
         int w = Math.min(railW + mainW + chromeW, screen.width);
 
