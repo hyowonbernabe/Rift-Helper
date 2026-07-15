@@ -3,6 +3,7 @@ package view;
 import com.formdev.flatlaf.util.UIScale;
 import model.DDragonParser;
 import model.LCUAuth;
+import model.PreferenceManager;
 import net.miginfocom.swing.MigLayout;
 
 import javax.imageio.ImageIO;
@@ -36,6 +37,9 @@ import java.awt.GraphicsEnvironment;
 import java.awt.Image;
 import java.awt.LayoutManager;
 import java.awt.Rectangle;
+import java.awt.Toolkit;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.MenuItem;
 import java.awt.PopupMenu;
 import java.awt.RenderingHints;
@@ -73,6 +77,7 @@ public class RiftHelperMainView extends JFrame {
     private JPanel railPanel;
     private JPanel statusStrip;
     private JPanel aramSection;
+    private Dimension lastProgrammaticSize; // to tell our own setSize apart from a user drag
 
     // ---- Enable/Disable buttons: never shown, kept so the controller wiring is unchanged. ----
     public final JButton buttonAutoAcceptEnable = new JButton();
@@ -85,6 +90,8 @@ public class RiftHelperMainView extends JFrame {
     public final JButton buttonAutoBanDisable = new JButton();
     public final JButton buttonAutoSwapEnable = new JButton();
     public final JButton buttonAutoSwapDisable = new JButton();
+    public final JButton buttonAutoSwapSurveyEnable = new JButton();
+    public final JButton buttonAutoSwapSurveyDisable = new JButton();
     public final JButton buttonAlwaysOnTopEnable = new JButton();
     public final JButton buttonAlwaysOnTopDisable = new JButton();
     public final JButton buttonCenterGUIEnable = new JButton();
@@ -147,6 +154,12 @@ public class RiftHelperMainView extends JFrame {
     private final JButton buttonAutoSwapSave = new JButton();
     private final JButton buttonAutoSwapAdd = new JButton();
     private final JButton buttonAutoSwapSubtract = new JButton();
+    // ARAM survey (onboarding + Auto Swap Survey card).
+    private final JButton buttonSurveyStart = new JButton();
+    private final JButton buttonSurveyRefine = new JButton();
+    private final JButton buttonSurveyRedo = new JButton();
+    private final JButton buttonSurveyRevert = new JButton();
+    private final JButton buttonSurveyUndo = new JButton();
     private final JButton buttonAutoLockSave = new JButton();
     private final JButton buttonAutoBanSave = new JButton();
     private final JButton buttonAutoLockArenaSave = new JButton();
@@ -183,6 +196,26 @@ public class RiftHelperMainView extends JFrame {
     // ---- Bench ----
     private final ChampionButton[] bench = new ChampionButton[10];
     public JPanel panelQuickSwitchBench2;
+    // ARAM: the champion the user currently has (icon + name), updated live from the session.
+    private final JLabel aramCurrentLabel = new JLabel("None");
+    // Troll Swap (cosmetic bench cycle) button + its configurable delay.
+    public final JButton buttonTrollSwap = new JButton();
+    private final JSpinner trollSwapDelaySpinner = new JSpinner(new SpinnerNumberModel(100, 0, 5000, 50));
+    private final JSpinner trollSwapLoopsSpinner = new JSpinner(new SpinnerNumberModel(3, 1, 20, 1));
+    // Notify setup tutorial button.
+    public final JButton buttonNotifyTutorial = new JButton();
+    // Hide/Show the League client UX (kill-ux / launch-ux).
+    public final JButton buttonHideClient = new JButton();
+    public final JButton buttonShowClient = new JButton();
+
+    // ARAM survey onboarding banner + Auto Swap Survey card widgets.
+    private JPanel surveyBanner;
+    private JLabel surveyBannerText;
+    private final JLabel surveyMetric = new JLabel();
+    private JPanel surveyListPanel;
+    private ChampionPicker[] surveyPickers;
+    private JPanel[] surveyRows;
+    private Runnable surveyListChangeListener;
 
     // Lane card switching.
     private final CardLayout laneCards = new CardLayout();
@@ -241,6 +274,7 @@ public class RiftHelperMainView extends JFrame {
         buttonAutoLockDisable.setEnabled(false);
         buttonAutoBanDisable.setEnabled(false);
         buttonAutoSwapDisable.setEnabled(false);
+        buttonAutoSwapSurveyDisable.setEnabled(false);
         buttonAutoBraveryArenaDisable.setEnabled(false);
         buttonAutoLockArenaDisable.setEnabled(false);
         buttonAutoBanArenaDisable.setEnabled(false);
@@ -263,9 +297,25 @@ public class RiftHelperMainView extends JFrame {
         autoSave(buttonAutoBanArenaSave, arenaBan);
         autoSave(buttonAutoSwapSave, swap);
 
+        // Persist the user's manual resize; always reused (and never auto-recomputed) afterwards.
+        addComponentListener(new ComponentAdapter() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                if (!isShowing()) {
+                    return;
+                }
+                Dimension cur = getSize();
+                if (cur.equals(lastProgrammaticSize)) {
+                    return; // our own setSize, not a user drag
+                }
+                lastProgrammaticSize = cur;
+                PreferenceManager.setWindowSize(cur.width, cur.height);
+            }
+        });
+
         selectLane(0);
-        pack();
         setMinimumSize(new Dimension(px(420), px(300)));
+        pack();
         setLocationRelativeTo(null);
         setVisible(false);
     }
@@ -518,17 +568,17 @@ public class RiftHelperMainView extends JFrame {
         lock.add(cardHeaderWithToggle("Auto Lock", Icons.G.LOCK, buttonAutoLockEnable, buttonAutoLockDisable), "growx, gapbottom 8");
         lock.add(buildLaneSelector(), "growx, gapbottom 8");
         lanePanel.setOpaque(false);
-        lanePanel.add(priorityColumn(top), "top");
-        lanePanel.add(priorityColumn(jungle), "jungle");
-        lanePanel.add(priorityColumn(mid), "mid");
-        lanePanel.add(priorityColumn(bot), "bot");
-        lanePanel.add(priorityColumn(support), "support");
+        lanePanel.add(listWithSwap(priorityColumn(top), top, buttonAutoLockSave), "top");
+        lanePanel.add(listWithSwap(priorityColumn(jungle), jungle, buttonAutoLockSave), "jungle");
+        lanePanel.add(listWithSwap(priorityColumn(mid), mid, buttonAutoLockSave), "mid");
+        lanePanel.add(listWithSwap(priorityColumn(bot), bot, buttonAutoLockSave), "bot");
+        lanePanel.add(listWithSwap(priorityColumn(support), support, buttonAutoLockSave), "support");
         lock.add(lanePanel, "growx");
         panel.add(lock, "growx");
 
         Card ban = new Card("insets 4 6 8 6, wrap 1, fillx", "[grow,fill]", "");
         ban.add(cardHeaderWithToggle("Auto Ban", Icons.G.BAN, buttonAutoBanEnable, buttonAutoBanDisable), "growx, gapbottom 8");
-        ban.add(priorityColumn(autoBan), "growx");
+        ban.add(listWithSwap(priorityColumn(autoBan), autoBan, buttonAutoBanSave), "growx");
         panel.add(ban, "growx");
         return panel;
     }
@@ -554,6 +604,19 @@ public class RiftHelperMainView extends JFrame {
     private JPanel buildAram() {
         JPanel panel = section("ARAM", "bench swaps");
 
+        // Onboarding banner (very top, above Current Champion). Sells one-time setup + sharper swaps.
+        // hidemode 3 so the "done" state collapses it entirely instead of leaving an empty gap.
+        panel.add(buildSurveyBanner(), "growx, hidemode 3");
+
+        // Current champion (what you have right now).
+        Card current = new Card("insets 4 6 8 6, wrap 1, fillx", "[grow,fill]", "");
+        current.add(cardTitle("Current Champion", Icons.G.LOCK), "growx, gapbottom 6");
+        aramCurrentLabel.setFont(fBodyBold);
+        aramCurrentLabel.setForeground(Theme.TEXT);
+        aramCurrentLabel.setIconTextGap(px(8));
+        current.add(aramCurrentLabel, "growx");
+        panel.add(current, "growx");
+
         // Quick Switch Bench on top.
         Card bench = new Card("insets 4 6 8 6, wrap 1, fillx", "[grow,fill]", "");
         bench.add(cardTitle("Quick Switch Bench", Icons.G.SWAP), "growx, gapbottom 8");
@@ -572,11 +635,49 @@ public class RiftHelperMainView extends JFrame {
         }
         bench.add(benchGrid, "growx");
         bench.add(panelQuickSwitchBench2, "growx, gaptop 6");
+
+        // Troll Swap: one-shot cosmetic cycle through the bench and back. Red + caution: ban risk.
+        bench.add(divider(), "growx, gapy 8 6");
+        JPanel trollRow = new JPanel(new MigLayout("insets 0, gap 6", "[]push[]4[]8[]4[]"));
+        trollRow.setOpaque(false);
+        styleButton(buttonTrollSwap, "Troll Swap", Icons.G.CAUTION, ButtonKind.DANGER);
+        buttonTrollSwap.setForeground(Theme.RED);
+        JLabel loopsLbl = new JLabel("Loops");
+        loopsLbl.setFont(fSub);
+        loopsLbl.setForeground(Theme.TEXT_DIM);
+        JLabel delayLbl = new JLabel("Delay (ms)");
+        delayLbl.setFont(fSub);
+        delayLbl.setForeground(Theme.TEXT_DIM);
+        trollSwapLoopsSpinner.setPreferredSize(new Dimension(px(56), px(28)));
+        trollSwapDelaySpinner.setPreferredSize(new Dimension(px(70), px(28)));
+        trollRow.add(buttonTrollSwap);
+        trollRow.add(loopsLbl);
+        trollRow.add(trollSwapLoopsSpinner);
+        trollRow.add(delayLbl);
+        trollRow.add(trollSwapDelaySpinner);
+        bench.add(trollRow, "growx");
+        JLabel trollWarn = new JLabel("<html>Cosmetic prank: cycles to every bench champion and back. "
+                + "Rapid swapping is visible to everyone and can get you banned if used blatantly. Use sparingly.</html>");
+        trollWarn.setFont(fSub);
+        trollWarn.setForeground(Theme.RED);
+        bench.add(trollWarn, "growx, gaptop 4");
+
         panel.add(bench, "growx");
 
-        // Auto Swap below.
+        // Auto Swap Priority (the manual 10-slot list). Keeps the existing toggle + save/add/subtract.
         Card swapCard = new Card("insets 4 6 8 6, wrap 1, fillx", "[grow,fill]", "");
-        swapCard.add(cardHeaderWithToggle("Auto Swap", Icons.G.SWAP, buttonAutoSwapEnable, buttonAutoSwapDisable), "gapbottom 8");
+        JButton swapPriorityBtn = new JButton();
+        styleButton(swapPriorityBtn, "Swap", Icons.G.SWAP, ButtonKind.GHOST);
+        JPanel pHead = new JPanel(new MigLayout("insets 0, gap 8, fillx", "[]push[][]"));
+        pHead.setOpaque(false);
+        pHead.add(cardTitle("Auto Swap Priority", Icons.G.SWAP));
+        pHead.add(swapPriorityBtn);
+        pHead.add(new ToggleSwitch(buttonAutoSwapEnable, buttonAutoSwapDisable));
+        swapCard.add(pHead, "growx, gapbottom 6");
+        JLabel pFoot = new JLabel("<html>Always beats the survey. For champions you specifically want right now.</html>");
+        pFoot.setFont(fSub);
+        pFoot.setForeground(Theme.TEXT_FAINT);
+        swapCard.add(pFoot, "growx, gapbottom 8");
         JPanel swapGrid = new JPanel(new MigLayout("insets 0, wrap 2, gapy 5", "[18!]8[grow,fill]"));
         swapGrid.setOpaque(false);
         for (int i = 0; i < swap.length; i++) {
@@ -593,8 +694,246 @@ public class RiftHelperMainView extends JFrame {
         swapActions.add(buttonAutoSwapAdd);
         swapCard.add(swapActions, "gaptop 8");
         panel.add(swapCard, "growx");
+        // Swapping two priority slots persists via the existing (silent) priority save button.
+        new SwapController(swapPriorityBtn, swap, buttonAutoSwapSave::doClick);
+
+        // Auto Swap Survey (the survey-generated ranked list).
+        panel.add(buildSurveyCard(), "growx");
+
+        // Default the banner to the not-started copy; the controller overrides it on refresh.
+        setSurveyOnboarding("none", 0, DDragonParser.championPoolSize());
         return panel;
     }
+
+    /** Accent-bordered onboarding banner. Text + button label are set by {@link #setSurveyOnboarding}. */
+    private JPanel buildSurveyBanner() {
+        JPanel banner = new JPanel(new MigLayout("insets 10 12 10 12, gap 12, fillx", "[grow,fill][]", "[]")) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(Theme.ACCENT_SOFT);
+                g2.fillRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 10, 10);
+                g2.setColor(Theme.ACCENT);
+                g2.drawRoundRect(0, 0, getWidth() - 1, getHeight() - 1, 10, 10);
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
+        banner.setOpaque(false);
+        surveyBannerText = new JLabel();
+        surveyBannerText.setFont(fSub);
+        surveyBannerText.setForeground(Theme.TEXT_DIM);
+        styleButton(buttonSurveyStart, "Start Survey", null, ButtonKind.PRIMARY);
+        banner.add(surveyBannerText, "growx");
+        banner.add(buttonSurveyStart, "aligny center");
+        this.surveyBanner = banner;
+        return banner;
+    }
+
+    /** The Auto Swap Survey card: metric, Refine/Redo/Revert/Undo, a scrollable ranked picker list,
+     *  and a Swap button (all over the survey pickers). */
+    private JPanel buildSurveyCard() {
+        Card card = new Card("insets 4 6 8 6, wrap 1, fillx", "[grow,fill]", "");
+
+        // Header: title + metric on the left, Refine / Redo / toggle on the right.
+        styleButton(buttonSurveyRefine, "Refine", null, ButtonKind.NORMAL);
+        styleButton(buttonSurveyRedo, "Redo", null, ButtonKind.DANGER);
+        surveyMetric.setFont(fSub);
+        surveyMetric.setForeground(Theme.TEXT_DIM);
+        JPanel head = new JPanel(new MigLayout("insets 0, gap 8, fillx", "[][]push[][][]"));
+        head.setOpaque(false);
+        head.add(cardTitle("Auto Swap Survey", Icons.G.SWAP));
+        head.add(surveyMetric);
+        head.add(buttonSurveyRefine);
+        head.add(buttonSurveyRedo);
+        head.add(new ToggleSwitch(buttonAutoSwapSurveyEnable, buttonAutoSwapSurveyDisable));
+        card.add(head, "growx, gapbottom 6");
+
+        // Action row: Revert to Original, Undo, and Swap.
+        JButton surveySwapBtn = new JButton();
+        styleButton(buttonSurveyRevert, "Revert to Original", null, ButtonKind.NORMAL);
+        styleButton(buttonSurveyUndo, "Undo", null, ButtonKind.NORMAL);
+        styleButton(surveySwapBtn, "Swap", Icons.G.SWAP, ButtonKind.GHOST);
+        JPanel actions = new JPanel(new MigLayout("insets 0, gap 8, fillx", "[][]push[]"));
+        actions.setOpaque(false);
+        // hidemode 3 so the hidden Revert button collapses (Undo slides left) instead of leaving a gap.
+        actions.add(buttonSurveyRevert, "hidemode 3");
+        actions.add(buttonSurveyUndo);
+        actions.add(surveySwapBtn);
+        card.add(actions, "growx, gapbottom 6");
+
+        // Scrollable list of numbered survey pickers, sized to the champion pool.
+        int total = DDragonParser.championPoolSize();
+        List<String> names = DDragonParser.fetchChampionNames();
+        surveyPickers = pickers(total);
+        surveyRows = new JPanel[total];
+        surveyListPanel = new JPanel(new MigLayout("insets 4, wrap 1, gapy 4, fillx", "[grow,fill]"));
+        surveyListPanel.setOpaque(false);
+        for (int i = 0; i < total; i++) {
+            surveyPickers[i].setItems(names);
+            final int index = i;
+            // A picker edit (via its dropdown) counts as a survey-list change.
+            surveyPickers[i].setOnChange(() -> {
+                if (surveyListChangeListener != null) {
+                    surveyListChangeListener.run();
+                }
+            });
+            JPanel row = new JPanel(new MigLayout("insets 0, gap 8, fillx", "[24!][grow,fill]"));
+            row.setOpaque(false);
+            row.add(numberLabel(index + 1));
+            row.add(surveyPickers[i], "growx");
+            row.setVisible(false);
+            surveyRows[i] = row;
+            // hidemode 3: unused rows take no space, so the list is exactly as tall as the ranking.
+            surveyListPanel.add(row, "growx, hidemode 3");
+        }
+        JScrollPane listScroll = new JScrollPane(surveyListPanel,
+                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        listScroll.setBorder(BorderFactory.createLineBorder(Theme.LINE));
+        listScroll.getViewport().setOpaque(false);
+        listScroll.setOpaque(false);
+        listScroll.getVerticalScrollBar().setUnitIncrement(16);
+        listScroll.setPreferredSize(new Dimension(px(260), px(230)));
+        card.add(listScroll, "growx");
+
+        JLabel foot = new JLabel("<html>Generated by the survey. Scroll the list, and reorder it with Swap. "
+                + "Never-tier champions are excluded.</html>");
+        foot.setFont(fSub);
+        foot.setForeground(Theme.TEXT_FAINT);
+        card.add(foot, "growx, gaptop 6");
+
+        // Defaults: Undo disabled, Revert hidden until the survey differs from its original snapshot.
+        buttonSurveyUndo.setEnabled(false);
+        buttonSurveyRevert.setVisible(false);
+
+        // Swapping two survey rows is a survey-list change (controller pushes undo + persists).
+        new SwapController(surveySwapBtn, surveyPickers, () -> {
+            if (surveyListChangeListener != null) {
+                surveyListChangeListener.run();
+            }
+        });
+        return card;
+    }
+
+    /** Show the champion the user currently has in ARAM (icon + name); null/blank clears it. */
+    public void setAramCurrentChampion(String name) {
+        if (name == null || name.isBlank()) {
+            aramCurrentLabel.setText("None");
+            aramCurrentLabel.setIcon(null);
+            return;
+        }
+        aramCurrentLabel.setText(name);
+        final String requested = name;
+        ChampionIcons.load(name, px(32), icon -> {
+            if (requested.equals(aramCurrentLabel.getText())) {
+                aramCurrentLabel.setIcon(icon);
+            }
+        });
+    }
+
+    // ---- Troll Swap ----
+    public void addTrollSwapListener(ActionListener l) { buttonTrollSwap.addActionListener(l); }
+    public int getTrollSwapDelayMs() { return (Integer) trollSwapDelaySpinner.getValue(); }
+    public void setTrollSwapDelayMs(int ms) { trollSwapDelaySpinner.setValue(Math.max(0, Math.min(ms, 5000))); }
+    public void addTrollSwapDelayChangeListener(Runnable r) { trollSwapDelaySpinner.addChangeListener(e -> r.run()); }
+    public int getTrollSwapLoops() { return (Integer) trollSwapLoopsSpinner.getValue(); }
+    public void setTrollSwapLoops(int n) { trollSwapLoopsSpinner.setValue(Math.max(1, Math.min(n, 20))); }
+    public void addTrollSwapLoopsChangeListener(Runnable r) { trollSwapLoopsSpinner.addChangeListener(e -> r.run()); }
+    public void addNotifyTutorialListener(ActionListener l) { buttonNotifyTutorial.addActionListener(l); }
+    public void addHideClientListener(ActionListener l) { buttonHideClient.addActionListener(l); }
+    public void addShowClientListener(ActionListener l) { buttonShowClient.addActionListener(l); }
+
+    // ---- ARAM survey API ----
+
+    /** Update the onboarding banner. State is "none", "partial", or "done"; done hides the banner.
+     *  Copy sells the one-time setup and the sharper auto-swap it unlocks. */
+    public void setSurveyOnboarding(String state, int decided, int total) {
+        if (surveyBanner == null) {
+            return;
+        }
+        if ("done".equals(state)) {
+            surveyBanner.setVisible(false);
+        } else if ("partial".equals(state)) {
+            surveyBannerText.setText("<html>You are <b>" + decided + "/" + total + "</b> through your survey. "
+                    + "Continuing sharpens auto-swap. One-time setup.</html>");
+            buttonSurveyStart.setText("Continue Survey");
+            surveyBanner.setVisible(true);
+        } else {
+            surveyBannerText.setText("<html><b>Build your auto-swap ranking.</b> A quick survey learns which "
+                    + "champions you like, so auto-swap always grabs your best available pick. "
+                    + "One-time setup, and it sharpens every game.</html>");
+            buttonSurveyStart.setText("Start Survey");
+            surveyBanner.setVisible(true);
+        }
+        if (aramSection != null) {
+            aramSection.revalidate();
+            aramSection.repaint();
+        }
+    }
+
+    /** Survey completion metric shown in the Auto Swap Survey header, e.g. "130 / 171 ranked". */
+    public void setSurveyMetric(int decided, int total) {
+        surveyMetric.setText(decided + " / " + total + " ranked");
+    }
+
+    /** Fill the first {@code names.length} survey pickers (revealing them) and hide the rest. */
+    public void setSurveyList(String[] names) {
+        if (surveyPickers == null) {
+            return;
+        }
+        int n = names == null ? 0 : names.length;
+        for (int i = 0; i < surveyPickers.length; i++) {
+            if (i < n) {
+                surveyPickers[i].setSelectedName(names[i]);
+                surveyRows[i].setVisible(true);
+            } else {
+                surveyPickers[i].clearSelection();
+                surveyRows[i].setVisible(false);
+            }
+        }
+        if (surveyListPanel != null) {
+            surveyListPanel.revalidate();
+            surveyListPanel.repaint();
+        }
+    }
+
+    /** The current, non-empty survey picks in order. */
+    public String[] getSurveyList() {
+        java.util.List<String> out = new java.util.ArrayList<>();
+        if (surveyPickers != null) {
+            for (ChampionPicker p : surveyPickers) {
+                String s = p.getSelectedName();
+                if (s != null && !s.isBlank()) {
+                    out.add(s);
+                }
+            }
+        }
+        return out.toArray(new String[0]);
+    }
+
+    public void setSurveyUndoEnabled(boolean enabled) {
+        buttonSurveyUndo.setEnabled(enabled);
+    }
+
+    public void setSurveyRevertVisible(boolean visible) {
+        buttonSurveyRevert.setVisible(visible);
+        if (buttonSurveyRevert.getParent() != null) {
+            buttonSurveyRevert.getParent().revalidate();
+            buttonSurveyRevert.getParent().repaint();
+        }
+    }
+
+    public void addSurveyStartListener(ActionListener l) { buttonSurveyStart.addActionListener(l); }
+    public void addSurveyRefineListener(ActionListener l) { buttonSurveyRefine.addActionListener(l); }
+    public void addSurveyRedoListener(ActionListener l) { buttonSurveyRedo.addActionListener(l); }
+    public void addSurveyRevertListener(ActionListener l) { buttonSurveyRevert.addActionListener(l); }
+    public void addSurveyUndoListener(ActionListener l) { buttonSurveyUndo.addActionListener(l); }
+    public void addAutoSwapSurveyEnableListener(ActionListener l) { buttonAutoSwapSurveyEnable.addActionListener(l); }
+    public void addAutoSwapSurveyDisableListener(ActionListener l) { buttonAutoSwapSurveyDisable.addActionListener(l); }
+
+    /** Fired whenever the survey list changes: a survey picker edit or a survey swap. */
+    public void addSurveyListChangeListener(Runnable r) { this.surveyListChangeListener = r; }
 
     // ---- Arena ----
 
@@ -603,7 +942,7 @@ public class RiftHelperMainView extends JFrame {
 
         Card lock = new Card("insets 4 6 8 6, wrap 1, fillx", "[grow,fill]", "");
         lock.add(cardHeaderWithToggle("Auto Lock", Icons.G.LOCK, buttonAutoLockArenaEnable, buttonAutoLockArenaDisable), "growx, gapbottom 8");
-        lock.add(priorityColumn(arenaLock), "growx");
+        lock.add(listWithSwap(priorityColumn(arenaLock), arenaLock, buttonAutoLockArenaSave), "growx");
         JLabel lockNote = new JLabel("<html>Disabled while Auto Bravery is on.</html>");
         lockNote.setFont(fSub);
         lockNote.setForeground(Theme.TEXT_FAINT);
@@ -612,7 +951,7 @@ public class RiftHelperMainView extends JFrame {
 
         Card ban = new Card("insets 4 6 8 6, wrap 1, fillx", "[grow,fill]", "");
         ban.add(cardHeaderWithToggle("Auto Ban", Icons.G.BAN, buttonAutoBanArenaEnable, buttonAutoBanArenaDisable), "growx, gapbottom 8");
-        ban.add(priorityColumn(arenaBan), "growx");
+        ban.add(listWithSwap(priorityColumn(arenaBan), arenaBan, buttonAutoBanArenaSave), "growx");
         JLabel banNote = new JLabel("<html>Disabled while Auto Ban Crowd Favorite is on.</html>");
         banNote.setFont(fSub);
         banNote.setForeground(Theme.TEXT_FAINT);
@@ -666,6 +1005,17 @@ public class RiftHelperMainView extends JFrame {
 
     private JPanel buildNotifications() {
         JPanel panel = section("Notify", "phone alerts via ntfy.sh");
+
+        // Tutorial callout at the top - most users have never used ntfy.
+        Card intro = new Card("insets 8 10 8 10, fillx", "[grow,fill][]", "");
+        JLabel introTxt = new JLabel("<html><b>New to phone alerts?</b> This walks you through the ntfy setup "
+                + "and sends a test to your phone.</html>");
+        introTxt.setFont(fSub);
+        introTxt.setForeground(Theme.TEXT_DIM);
+        styleButton(buttonNotifyTutorial, "How to set up", Icons.G.HELP, ButtonKind.PRIMARY);
+        intro.add(introTxt, "growx");
+        intro.add(buttonNotifyTutorial);
+        panel.add(intro, "growx");
 
         Card master = new Card("insets 4 6 8 6, wrap 1, fillx", "[grow,fill]", "");
         master.add(toggleRow("Enable Notifications", "Master switch for all phone notifications.",
@@ -747,6 +1097,22 @@ public class RiftHelperMainView extends JFrame {
         scaleControls.add(buttonUiScaleApply);
         window.add(spinnerRow("UI Scale (%)", "Size of everything in the app. Apply restarts to take effect.", scaleControls), "growx");
         panel.add(window, "growx");
+
+        Card client = new Card("insets 4 6 8 6, wrap 1, fillx", "[grow,fill]", "");
+        client.add(cardTitle("League Client", Icons.G.TRAY), "gapbottom 6");
+        JPanel clientBtns = new JPanel(new MigLayout("insets 0, gap 8", "[]8[]"));
+        clientBtns.setOpaque(false);
+        styleButton(buttonHideClient, "Hide Client", Icons.G.TRAY, ButtonKind.NORMAL);
+        styleButton(buttonShowClient, "Show Client", Icons.G.PIN, ButtonKind.NORMAL);
+        clientBtns.add(buttonHideClient);
+        clientBtns.add(buttonShowClient);
+        client.add(clientBtns);
+        JLabel clientNote = new JLabel("<html>Hide removes the League window entirely - the client keeps running "
+                + "in the background (still logged in and in queue). Show brings it back.</html>");
+        clientNote.setFont(fSub);
+        clientNote.setForeground(Theme.TEXT_FAINT);
+        client.add(clientNote, "growx, gaptop 8");
+        panel.add(client, "growx");
 
         Card prefs = new Card("insets 4 6 8 6, wrap 1, fillx", "[grow,fill]", "");
         prefs.add(cardTitle("Preferences", Icons.G.SAVE), "gapbottom 6");
@@ -836,6 +1202,22 @@ public class RiftHelperMainView extends JFrame {
             grid.add(group[i], "growx");
         }
         return grid;
+    }
+
+    /** Wrap a champion list with a trailing "Swap" button that exchanges two of its picks. The swap
+     *  persists via the list's existing (silent) save button, matching auto-save on any edit. */
+    private JPanel listWithSwap(JPanel list, ChampionPicker[] group, JButton saveButton) {
+        JPanel wrap = new JPanel(new MigLayout("insets 0, wrap 1, gap 6, fillx", "[grow,fill]"));
+        wrap.setOpaque(false);
+        wrap.add(list, "growx");
+        JButton swapBtn = new JButton();
+        styleButton(swapBtn, "Swap", Icons.G.SWAP, ButtonKind.GHOST);
+        JPanel row = new JPanel(new MigLayout("insets 0, gap 0, fillx", "push[]"));
+        row.setOpaque(false);
+        row.add(swapBtn);
+        wrap.add(row, "growx");
+        new SwapController(swapBtn, group, saveButton::doClick);
+        return wrap;
     }
 
     private JLabel numberLabel(int n) {
@@ -1279,29 +1661,42 @@ public class RiftHelperMainView extends JFrame {
     public void addResetListener(ActionListener l) { buttonReset.addActionListener(l); }
     public void addTestListener(ActionListener l) { buttonTest.addActionListener(l); }
 
-    /** Size the window to the content at the current UI scale, capped to the usable screen (anything
-     *  beyond that scrolls). Every section stays fully visible with no clipping at whatever scale the
-     *  user picks, instead of forcing a fixed box the dense content overflowed. Called from the
-     *  constructor, loadPreferences, and reInitialize. */
+    /** Apply the window size: the size the user last dragged to (persisted) if any, else a computed
+     *  default (~700 wide at 1080p, scaled up on higher-resolution 16:9 displays). Once the user has
+     *  resized, that size is respected and never recomputed. Content scrolls within. */
     @Override
     public void pack() {
-        super.pack();
+        validate();
+        applyWindowSize(savedOrDefaultSize());
+    }
+
+    private Dimension savedOrDefaultSize() {
         Rectangle screen = GraphicsEnvironment.getLocalGraphicsEnvironment().getMaximumWindowBounds();
-        Dimension cpPref = getContentPane().getPreferredSize();
-        int chromeW = getWidth() - cpPref.width;   // window decoration (border) width
-        int chromeH = getHeight() - cpPref.height;
+        int w, h;
+        if (PreferenceManager.hasWindowSize()) {
+            w = PreferenceManager.getWindowWidth();
+            h = PreferenceManager.getWindowHeight();
+        } else {
+            Dimension d = defaultSize();
+            w = d.width;
+            h = d.height;
+        }
+        return new Dimension(Math.min(w, screen.width), Math.min(h, screen.height));
+    }
 
-        // Width is fit to the ARAM Quick Switch Bench - the widest element that must not wrap. Every
-        // other section is single-column and narrower; long text wraps to this width.
-        int railW = railPanel != null ? railPanel.getPreferredSize().width : 0;
-        int statusW = statusStrip != null ? statusStrip.getPreferredSize().width : 0;
-        int aramW = aramSection != null ? aramSection.getPreferredSize().width : 0;
-        int mainW = Math.max(statusW, px(16) * 2 + aramW);   // content pane inner width
-        int w = Math.min(railW + mainW + chromeW, screen.width);
+    /** ~700x600 at 1920x1080, scaled by the display's fitted-16:9 width (bigger on higher res). */
+    private Dimension defaultSize() {
+        Dimension res = Toolkit.getDefaultToolkit().getScreenSize();
+        double ratio = 16.0 / 9.0;
+        double boxW = (res.width / (double) res.height >= ratio) ? res.height * ratio : res.width;
+        double factor = boxW / 1920.0;
+        return new Dimension((int) Math.round(700 * factor), (int) Math.round(600 * factor));
+    }
 
-        // Height stays compact; taller sections scroll inside their own pane.
-        int h = Math.min(Math.min(cpPref.height + chromeH, px(640)), screen.height);
-        setSize(w, h);
+    /** Set size programmatically, recording it so the resize listener doesn't mistake it for a drag. */
+    private void applyWindowSize(Dimension d) {
+        lastProgrammaticSize = d;
+        setSize(d);
     }
 
     /** A panel that fills the scroll pane's width but keeps its natural height, so content scrolls

@@ -250,6 +250,42 @@ public class PreferenceManager {
         return Math.max(50, Math.min(prefs.getInt("uiScalePercent", DEFAULT_UI_SCALE_PERCENT), 200));
     }
 
+    // Window size the user dragged to (persisted). 0 = never set -> use the computed default. Position
+    // is intentionally NOT saved; the window always spawns centered.
+    public static void setWindowSize(int w, int h) {
+        prefs.putInt("windowWidth", w);
+        prefs.putInt("windowHeight", h);
+        try {
+            prefs.flush();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    public static boolean hasWindowSize() { return prefs.getInt("windowWidth", 0) > 0; }
+    public static int getWindowWidth() { return prefs.getInt("windowWidth", 0); }
+    public static int getWindowHeight() { return prefs.getInt("windowHeight", 0); }
+
+    // Troll Swap: delay in ms between each cosmetic bench cycle step (default 100 = 0.1s).
+    public static void setTrollSwapDelayMs(int value) {
+        prefs.putInt("trollSwapDelayMs", Math.max(0, Math.min(value, 5000)));
+        try {
+            prefs.flush();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    public static int getTrollSwapDelayMs() { return Math.max(0, Math.min(prefs.getInt("trollSwapDelayMs", 100), 5000)); }
+
+    public static void setTrollSwapLoops(int value) {
+        prefs.putInt("trollSwapLoops", Math.max(1, Math.min(value, 20)));
+        try {
+            prefs.flush();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    public static int getTrollSwapLoops() { return Math.max(1, Math.min(prefs.getInt("trollSwapLoops", 3), 20)); }
+
     // ---- Auto game-start loop (all opt-in, default OFF) ----
 
     private static void putBooleanFlushed(String key, boolean value) {
@@ -309,8 +345,21 @@ public class PreferenceManager {
     public static void setAutoDecline(boolean value) { putBooleanFlushed("autoDecline", value); }
     public static boolean getAutoDecline() { return prefs.getBoolean("autoDecline", false); }
 
-    public static void setAutoSwap(boolean value) { putBooleanFlushed("autoSwapEnabled", value); }
-    public static boolean getAutoSwap() { return prefs.getBoolean("autoSwapEnabled", false); }
+    // Auto Swap Priority toggle (was "autoSwapEnabled"; migrate the old key once). Distinct from the
+    // 10-slot priority champion list above (get/setAutoSwapPriority(String[])).
+    public static void setAutoSwapPriorityEnabled(boolean value) { putBooleanFlushed("autoSwapPriorityEnabled", value); }
+    public static boolean getAutoSwapPriorityEnabled() {
+        if (prefs.get("autoSwapPriorityEnabled", null) == null && prefs.get("autoSwapEnabled", null) != null) {
+            boolean old = prefs.getBoolean("autoSwapEnabled", false);
+            putBooleanFlushed("autoSwapPriorityEnabled", old);
+            prefs.remove("autoSwapEnabled");
+        }
+        return prefs.getBoolean("autoSwapPriorityEnabled", false);
+    }
+
+    // Auto Swap Survey toggle (new).
+    public static void setAutoSwapSurveyEnabled(boolean value) { putBooleanFlushed("autoSwapSurveyEnabled", value); }
+    public static boolean getAutoSwapSurveyEnabled() { return prefs.getBoolean("autoSwapSurveyEnabled", false); }
 
     public static void setAutoReroll(boolean value) { putBooleanFlushed("autoReroll", value); }
     public static boolean getAutoReroll() { return prefs.getBoolean("autoReroll", false); }

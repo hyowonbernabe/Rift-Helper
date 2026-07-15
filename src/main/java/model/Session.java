@@ -258,6 +258,7 @@ public class Session {
         this.timer = timer;
     }
 
+    /** Parse the WebSocket event payload (wrapped as {"OnJsonApiEvent_..._session":{"data":{...}}}). */
     public static Session parseFromJson(String eventData) {
         try {
             JsonObject rootObject = JsonParser.parseString(eventData).getAsJsonObject();
@@ -267,6 +268,33 @@ public class Session {
             e.printStackTrace();
             return null;
         }
+    }
+
+    /** Parse the RAW session object returned by GET /lol-champ-select/v1/session (no event wrapper). */
+    public static Session parseFromRaw(String json) {
+        try {
+            return new Gson().fromJson(json, Session.class);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    // Self-check: java -ea model.Session
+    public static void main(String[] args) {
+        String raw = "{\"allowRerolling\":true,\"localPlayerCellId\":2,"
+                + "\"benchChampions\":[{\"championId\":11},{\"championId\":22}],"
+                + "\"myTeam\":[{\"cellId\":2,\"championId\":157}]}";
+        Session s = parseFromRaw(raw);
+        assert s != null : "raw parse returned null";
+        assert s.isAllowRerolling() : "raw allowRerolling";
+        assert s.getBenchChampions().size() == 2 : "raw bench size";
+        assert s.getBenchChampions().get(0).getChampionId() == 11;
+        assert s.getLocalPlayerCellId() == 2;
+        // The websocket-envelope parser still works on wrapped payloads.
+        String env = "{\"OnJsonApiEvent_lol-champ-select_v1_session\":{\"data\":" + raw + "}}";
+        Session e = parseFromJson(env);
+        assert e != null && e.isAllowRerolling() && e.getBenchChampions().size() == 2 : "envelope parse";
+        System.out.println("Session parse self-check passed.");
     }
 
     @Override

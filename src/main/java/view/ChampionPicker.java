@@ -17,6 +17,7 @@ import javax.swing.UIManager;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import com.formdev.flatlaf.util.UIScale;
+import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
@@ -53,6 +54,11 @@ public class ChampionPicker extends JComponent {
     private String selected;
     private ImageIcon selectedIcon;
     private Runnable onChange;
+
+    // Swap-mode hook (see SwapController). Null/false = today's behavior: a click opens the dropdown.
+    private java.util.function.BooleanSupplier swapArmedCheck;
+    private Runnable swapClickHandler;
+    private boolean swapHighlight;
 
     private JPopupMenu popup;
     private JTextField search;
@@ -115,7 +121,30 @@ public class ChampionPicker extends JComponent {
         this.onChange = r;
     }
 
+    /** When this supplier returns true, a click selects this picker for a swap instead of opening
+     *  the dropdown. Null = never armed (default). */
+    public void setSwapArmedCheck(java.util.function.BooleanSupplier b) {
+        this.swapArmedCheck = b;
+    }
+
+    /** Invoked when this picker is clicked while swap mode is armed. */
+    public void setSwapClickHandler(Runnable r) {
+        this.swapClickHandler = r;
+    }
+
+    /** Draw an accent border to mark this picker as the pending swap selection. */
+    public void setSwapHighlight(boolean on) {
+        this.swapHighlight = on;
+        repaint();
+    }
+
     private void showPopup() {
+        if (swapArmedCheck != null && swapArmedCheck.getAsBoolean()) {
+            if (swapClickHandler != null) {
+                swapClickHandler.run();
+            }
+            return;
+        }
         requestFocusInWindow();
         if (popup == null) {
             buildPopup();
@@ -231,8 +260,16 @@ public class ChampionPicker extends JComponent {
 
         g2.setColor(Theme.SURFACE_2);
         g2.fillRoundRect(0, 0, w - 1, h - 1, 7, 7);
-        g2.setColor(isFocusOwner() ? Theme.ACCENT : Theme.LINE);
-        g2.drawRoundRect(0, 0, w - 1, h - 1, 7, 7);
+        if (swapHighlight) {
+            // Pending swap selection: a bold accent border so it stands out from the focus ring.
+            g2.setColor(Theme.AMBER);
+            g2.setStroke(new BasicStroke(2f));
+            g2.drawRoundRect(1, 1, w - 3, h - 3, 7, 7);
+            g2.setStroke(new BasicStroke(1f));
+        } else {
+            g2.setColor(isFocusOwner() ? Theme.ACCENT : Theme.LINE);
+            g2.drawRoundRect(0, 0, w - 1, h - 1, 7, 7);
+        }
 
         int pad = 4;
         int iconY = (h - ICON) / 2;
