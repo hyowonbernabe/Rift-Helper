@@ -107,7 +107,6 @@ public class RiftHelperMainController {
 
             userCellId = session.getLocalPlayerCellId();
 
-            System.out.println(session);
             if (!session.isAllowRerolling()) {
                 String assignedPosition = "";
                 int actionIdPicking = 0;
@@ -1139,6 +1138,13 @@ public class RiftHelperMainController {
         lastGameflowPhase = phase;
         System.out.println("Gameflow phase: " + phase);
 
+        // Poll for bench swaps only while in champ select; stop the instant we leave it.
+        if ("ChampSelect".equals(phase)) {
+            startSwapPoll();
+        } else {
+            stopSwapPoll();
+        }
+
         switch (phase) {
             case "ChampSelect" -> {
                 autoQueueArmed = false;
@@ -1714,7 +1720,23 @@ public class RiftHelperMainController {
      *  manual Priority list (first) and the survey-generated list (second), no dedup, and swaps to
      *  the highest-ranked available bench champion that improves on the best rank reached so far. */
     public int autoSwap() {
-        if (!autoSwapPriority && !autoSwapSurvey) {
+        java.util.List<Integer> benchIds = new java.util.ArrayList<>();
+        if (benchChampions != null) {
+            for (BenchChampions b : benchChampions) {
+                benchIds.add(b.getChampionId());
+            }
+        }
+        return tryAutoSwap(benchIds);
+    }
+
+    /**
+     * Core swap decision, shared by the champ-select event handler and the poll loop. Synchronized
+     * so the two threads can never interleave a swap. Builds the combined Priority-then-Survey order
+     * (no dedup) and swaps to the best available bench champion that improves on the best rank
+     * reached so far ({@code priority}). Returns the swapped champion id, or -1.
+     */
+    private synchronized int tryAutoSwap(java.util.List<Integer> benchIds) {
+        if ((!autoSwapPriority && !autoSwapSurvey) || benchIds == null || benchIds.isEmpty()) {
             return -1;
         }
         int[] priorityIds = {
@@ -1732,10 +1754,6 @@ public class RiftHelperMainController {
         java.util.List<Integer> order = AutoSwapPlanner.buildOrder(
                 autoSwapPriority ? priorityIds : new int[0],
                 autoSwapSurvey ? surveySwapIds : java.util.List.of());
-        java.util.List<Integer> benchIds = new java.util.ArrayList<>();
-        for (BenchChampions b : benchChampions) {
-            benchIds.add(b.getChampionId());
-        }
         int[] out = {priority};
         int target = AutoSwapPlanner.pickBenchTarget(order, benchIds, priority, out);
         if (target > 0 && LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + target) == 204) {
@@ -1743,6 +1761,57 @@ public class RiftHelperMainController {
             return target;
         }
         return -1;
+    }
+
+    // ---- Auto-swap poll: during ARAM champ select only, retry grabbing the best bench champ the
+    //      moment it frees (contested benches are a race; events can lag/coalesce). Bounded to the
+    //      bench phase so nothing polls in the background. ----
+    private final java.util.concurrent.ScheduledExecutorService swapPoll =
+            java.util.concurrent.Executors.newSingleThreadScheduledExecutor(r -> {
+                Thread t = new Thread(r, "aram-swap-poll");
+                t.setDaemon(true);
+                return t;
+            });
+    private volatile java.util.concurrent.ScheduledFuture<?> swapPollTask;
+
+    private void startSwapPoll() {
+        if (swapPollTask != null && !swapPollTask.isDone()) {
+            return; // already polling
+        }
+        swapPollTask = swapPoll.scheduleWithFixedDelay(this::pollSwapTick, 300, 750,
+                java.util.concurrent.TimeUnit.MILLISECONDS);
+    }
+
+    private void stopSwapPoll() {
+        java.util.concurrent.ScheduledFuture<?> t = swapPollTask;
+        if (t != null) {
+            t.cancel(false);
+        }
+        swapPollTask = null;
+    }
+
+    /** One poll: read the live champ-select session, and if it is a bench (rerolling) mode, try a
+     *  swap off the freshest bench. Fully exception-tolerant so the loop never dies. */
+    private void pollSwapTick() {
+        try {
+            if (!autoSwapPriority && !autoSwapSurvey) {
+                return;
+            }
+            Session s = Session.parseFromJson(LCUGet.getFromClient("/lol-champ-select/v1/session"));
+            if (s == null || !s.isAllowRerolling()) {
+                return;
+            }
+            userCellId = s.getLocalPlayerCellId();
+            java.util.List<Integer> benchIds = new java.util.ArrayList<>();
+            if (s.getBenchChampions() != null) {
+                for (BenchChampions b : s.getBenchChampions()) {
+                    benchIds.add(b.getChampionId());
+                }
+            }
+            tryAutoSwap(benchIds);
+        } catch (Exception e) {
+            System.out.println("[SwapPoll] " + e.getMessage());
+        }
     }
 
     /** Load the survey's swap order (flatOrder) into champion ids for auto-swap. */
