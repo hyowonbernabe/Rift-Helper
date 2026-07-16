@@ -24,7 +24,6 @@ public class RiftHelperMainController {
     private volatile boolean benchCycling; // Troll Swap running; pauses auto-swap so they don't fight
     private volatile java.util.List<Integer> surveySwapIds = new java.util.ArrayList<>();
     private volatile int autoSwapSlots;
-    private volatile int priority;
     private volatile boolean alwaysOnTop;
     private volatile boolean centerGUI;
     private volatile boolean systemTray;
@@ -195,7 +194,6 @@ public class RiftHelperMainController {
                     for (JButton button : buttons) {
                         button.setText(null);
                     }
-                    priority = Integer.MAX_VALUE;
                     this.riftHelperMainView.panelQuickSwitchBench2.setVisible(false);
                     this.riftHelperMainView.setAramCurrentChampion(null);
                     return;
@@ -213,7 +211,7 @@ public class RiftHelperMainController {
                             "Your random champion: " + myChampName + ".", 3, "snowflake");
                 }
 
-                int swappedId = autoSwap();
+                int swappedId = autoSwap(myChampId);
                 if (swappedId >= 0) {
                     notify(notifyChampSwapAram, "Champion Swap (ARAM)",
                             "Swapped to " + DDragonParser.getChampionName(swappedId) + ".", 3, "twisted_rightwards_arrows");
@@ -1525,9 +1523,6 @@ public class RiftHelperMainController {
     }
 
     private void startProgram() {
-        // Initialize Variables (priority = best auto-swap rank reached this champ select; high = none yet)
-        this.priority = Integer.MAX_VALUE;
-
         // Store Preferences
         this.priorityChampions = PreferenceManager.getAutoSwapPriority();
         this.topChampions = PreferenceManager.getAutoSwapTopPriority();
@@ -1738,23 +1733,23 @@ public class RiftHelperMainController {
     /** Returns the champion id swapped in from the bench, or -1 if no swap happened. Combines the
      *  manual Priority list (first) and the survey-generated list (second), no dedup, and swaps to
      *  the highest-ranked available bench champion that improves on the best rank reached so far. */
-    public int autoSwap() {
+    public int autoSwap(int currentChampId) {
         java.util.List<Integer> benchIds = new java.util.ArrayList<>();
         if (benchChampions != null) {
             for (BenchChampions b : benchChampions) {
                 benchIds.add(b.getChampionId());
             }
         }
-        return tryAutoSwap(benchIds);
+        return tryAutoSwap(benchIds, currentChampId);
     }
 
     /**
      * Core swap decision, shared by the champ-select event handler and the poll loop. Synchronized
      * so the two threads can never interleave a swap. Builds the combined Priority-then-Survey order
-     * (no dedup) and swaps to the best available bench champion that improves on the best rank
-     * reached so far ({@code priority}). Returns the swapped champion id, or -1.
+     * (no dedup) and swaps to the best available bench champion that improves on the champion you
+     * currently hold. Returns the swapped champion id, or -1.
      */
-    private synchronized int tryAutoSwap(java.util.List<Integer> benchIds) {
+    private synchronized int tryAutoSwap(java.util.List<Integer> benchIds, int currentChampId) {
         if (benchCycling || (!autoSwapPriority && !autoSwapSurvey) || benchIds == null || benchIds.isEmpty()) {
             return -1;
         }
@@ -1773,10 +1768,12 @@ public class RiftHelperMainController {
         java.util.List<Integer> order = AutoSwapPlanner.buildOrder(
                 autoSwapPriority ? priorityIds : new int[0],
                 autoSwapSurvey ? surveySwapIds : java.util.List.of());
-        int[] out = {priority};
-        int target = AutoSwapPlanner.pickBenchTarget(order, benchIds, priority, out);
+        int floor = order.indexOf(currentChampId);   // rank of the champ you currently hold
+        if (floor < 0) {
+            floor = Integer.MAX_VALUE;                // not in the list -> anything listed is an upgrade
+        }
+        int target = AutoSwapPlanner.pickBenchTarget(order, benchIds, floor, null);
         if (target > 0 && LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + target) == 204) {
-            priority = out[0];
             return target;
         }
         return -1;
@@ -1827,7 +1824,8 @@ public class RiftHelperMainController {
                     benchIds.add(b.getChampionId());
                 }
             }
-            tryAutoSwap(benchIds);
+            int currentChampId = localChampionId(s.getMyTeam());
+            tryAutoSwap(benchIds, currentChampId);
         } catch (Exception e) {
             System.out.println("[SwapPoll] " + e.getMessage());
         }
