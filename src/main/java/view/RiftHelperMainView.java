@@ -4,6 +4,7 @@ import com.formdev.flatlaf.util.UIScale;
 import model.DDragonParser;
 import model.LCUAuth;
 import model.PreferenceManager;
+import model.UpdateChecker;
 import net.miginfocom.swing.MigLayout;
 
 import javax.imageio.ImageIO;
@@ -202,6 +203,10 @@ public class RiftHelperMainView extends JFrame {
     public final JButton buttonTrollSwap = new JButton();
     private final JSpinner trollSwapDelaySpinner = new JSpinner(new SpinnerNumberModel(100, 0, 5000, 50));
     private final JSpinner trollSwapLoopsSpinner = new JSpinner(new SpinnerNumberModel(3, 1, 20, 1));
+    // Troll Swap toggle (infinite loop; delay applies, loops do not; auto-stops ~1s before lock).
+    public final JButton buttonTrollSwapToggleEnable = new JButton();
+    public final JButton buttonTrollSwapToggleDisable = new JButton();
+    private final JLabel trollToggleHint = new JLabel("Troll Toggle ON: Auto Swap paused; returns to your champ ~1s before lock.");
     // Notify setup tutorial button.
     public final JButton buttonNotifyTutorial = new JButton();
     // Hide/Show the League client UX (kill-ux / launch-ux).
@@ -656,6 +661,20 @@ public class RiftHelperMainView extends JFrame {
         trollRow.add(delayLbl);
         trollRow.add(trollSwapDelaySpinner);
         bench.add(trollRow, "growx");
+        // Infinite auto-troll toggle: cycles the bench until you stop it or ~1s before lock, then
+        // returns to the champ you started on. Delay applies; loops (button-only) do not.
+        JPanel trollToggleRow = new JPanel(new MigLayout("insets 0, gap 6", "[]8[]"));
+        trollToggleRow.setOpaque(false);
+        JLabel autoTrollLbl = new JLabel("Auto Troll (loop)");
+        autoTrollLbl.setFont(fSub);
+        autoTrollLbl.setForeground(Theme.TEXT_DIM);
+        trollToggleRow.add(autoTrollLbl);
+        trollToggleRow.add(new ToggleSwitch(buttonTrollSwapToggleEnable, buttonTrollSwapToggleDisable));
+        bench.add(trollToggleRow, "growx, gaptop 4");
+        trollToggleHint.setFont(fSub);
+        trollToggleHint.setForeground(Theme.RED);
+        trollToggleHint.setVisible(false);
+        bench.add(trollToggleHint, "growx, gaptop 2");
         JLabel trollWarn = new JLabel("<html>Cosmetic prank: cycles to every bench champion and back. "
                 + "Rapid swapping is visible to everyone and can get you banned if used blatantly. Use sparingly.</html>");
         trollWarn.setFont(fSub);
@@ -840,6 +859,9 @@ public class RiftHelperMainView extends JFrame {
     public int getTrollSwapLoops() { return (Integer) trollSwapLoopsSpinner.getValue(); }
     public void setTrollSwapLoops(int n) { trollSwapLoopsSpinner.setValue(Math.max(1, Math.min(n, 20))); }
     public void addTrollSwapLoopsChangeListener(Runnable r) { trollSwapLoopsSpinner.addChangeListener(e -> r.run()); }
+    public void addTrollSwapToggleEnableListener(ActionListener l) { buttonTrollSwapToggleEnable.addActionListener(l); }
+    public void addTrollSwapToggleDisableListener(ActionListener l) { buttonTrollSwapToggleDisable.addActionListener(l); }
+    public void setTrollToggleHintVisible(boolean v) { trollToggleHint.setVisible(v); }
     public void addNotifyTutorialListener(ActionListener l) { buttonNotifyTutorial.addActionListener(l); }
     public void addHideClientListener(ActionListener l) { buttonHideClient.addActionListener(l); }
     public void addShowClientListener(ActionListener l) { buttonShowClient.addActionListener(l); }
@@ -1156,7 +1178,7 @@ public class RiftHelperMainView extends JFrame {
 
         Card facts = new Card("insets 8, wrap 2, gap 8 16", "[]16[grow,fill]", "");
         facts.add(kv("Version"));
-        facts.add(kvValue("1.3.2"));
+        facts.add(kvValue(UpdateChecker.CURRENT_VERSION));
         facts.add(kv("Data"));
         facts.add(kvValue("Data Dragon " + DDragonParser.getVersion()));
         facts.add(kv("Client link"));

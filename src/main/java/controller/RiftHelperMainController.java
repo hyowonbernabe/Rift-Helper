@@ -24,6 +24,11 @@ public class RiftHelperMainController {
     private volatile boolean benchCycling; // Troll Swap running; pauses auto-swap so they don't fight
     private volatile java.util.List<Integer> surveySwapIds = new java.util.ArrayList<>();
     private volatile int autoSwapSlots;
+    // Troll Swap toggle: infinite bench cycle that bails ~1s before lock, back to the champ you started on.
+    private volatile boolean trollToggle;
+    private volatile int trollOriginal;
+    private volatile int trollBenchIndex;
+    private volatile long trollLastSwapAt;
     private volatile boolean alwaysOnTop;
     private volatile boolean centerGUI;
     private volatile boolean systemTray;
@@ -426,6 +431,8 @@ public class RiftHelperMainController {
                 PreferenceManager.setTrollSwapDelayMs(this.riftHelperMainView.getTrollSwapDelayMs()));
         this.riftHelperMainView.addTrollSwapLoopsChangeListener(() ->
                 PreferenceManager.setTrollSwapLoops(this.riftHelperMainView.getTrollSwapLoops()));
+        this.riftHelperMainView.addTrollSwapToggleEnableListener(e -> enableTrollToggle());
+        this.riftHelperMainView.addTrollSwapToggleDisableListener(e -> disableTrollToggle(true));
         this.riftHelperMainView.addNotifyTutorialListener(e ->
                 new view.NotifyTutorialDialog(riftHelperMainView,
                         riftHelperMainView::getNotifyTopic, riftHelperMainView::setNotifyTopic).open());
@@ -1158,6 +1165,9 @@ public class RiftHelperMainController {
             startSwapPoll();
         } else {
             stopSwapPoll();
+            if (trollToggle) {
+                disableTrollToggle(false); // champ select over; no bench left to swap back on
+            }
         }
 
         switch (phase) {
@@ -1710,6 +1720,7 @@ public class RiftHelperMainController {
         applyToggleButtons(riftHelperMainView.buttonAutoBraveryArenaEnable, riftHelperMainView.buttonAutoBraveryArenaDisable, autoBravery);
         applyToggleButtons(riftHelperMainView.buttonAutoSwapEnable, riftHelperMainView.buttonAutoSwapDisable, autoSwapPriority);
         applyToggleButtons(riftHelperMainView.buttonAutoSwapSurveyEnable, riftHelperMainView.buttonAutoSwapSurveyDisable, autoSwapSurvey);
+        applyToggleButtons(riftHelperMainView.buttonTrollSwapToggleEnable, riftHelperMainView.buttonTrollSwapToggleDisable, false);
     }
 
     private void applyToggleButtons(javax.swing.JButton enable, javax.swing.JButton disable, boolean on) {
@@ -1789,6 +1800,18 @@ public class RiftHelperMainController {
                 return t;
             });
     private volatile java.util.concurrent.ScheduledFuture<?> swapPollTask;
+
+    // ---- Troll Swap toggle poll: fast (100ms) so it reliably catches the ~1s bail-out window;
+    //      runs only while the toggle is on. ----
+    private static final int TROLL_STOP_MS = 1000;
+    private static final int TROLL_POLL_MS = 100;
+    private final java.util.concurrent.ScheduledExecutorService trollPoll =
+            java.util.concurrent.Executors.newSingleThreadScheduledExecutor(r -> {
+                Thread t = new Thread(r, "troll-toggle-poll");
+                t.setDaemon(true);
+                return t;
+            });
+    private volatile java.util.concurrent.ScheduledFuture<?> trollPollTask;
 
     private void startSwapPoll() {
         if (swapPollTask != null && !swapPollTask.isDone()) {
@@ -1880,6 +1903,115 @@ public class RiftHelperMainController {
             Thread.sleep(ms);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+        }
+    }
+
+    /** Turn the infinite Troll Swap toggle on: pause auto-swap and start the fast poll. The champ to
+     *  return to is captured on the first tick (off the EDT). No-op if the one-shot Troll Swap is running. */
+    private void enableTrollToggle() {
+        if (trollToggle) {
+            return;
+        }
+        if (benchCycling) { // one-shot Troll Swap in progress; ignore and revert the switch
+            applyToggleButtons(riftHelperMainView.buttonTrollSwapToggleEnable,
+                    riftHelperMainView.buttonTrollSwapToggleDisable, false);
+            return;
+        }
+        trollOriginal = 0;    // captured on the first tick
+        trollBenchIndex = 0;
+        trollLastSwapAt = 0;  // swap on the first eligible tick
+        trollToggle = true;
+        benchCycling = true;  // pause auto-swap so they don't fight
+        applyToggleButtons(riftHelperMainView.buttonTrollSwapToggleEnable,
+                riftHelperMainView.buttonTrollSwapToggleDisable, true);
+        SwingUtilities.invokeLater(() -> riftHelperMainView.setTrollToggleHintVisible(true));
+        startTrollPoll();
+    }
+
+    /** Turn the toggle off. When requested, swap back to the champ we started on (off the EDT),
+     *  resume auto-swap, and clear the hint. */
+    private void disableTrollToggle(boolean returnToOriginal) {
+        boolean was = trollToggle;
+        trollToggle = false;
+        stopTrollPoll();
+        final int champ = trollOriginal;
+        if (was && returnToOriginal && champ > 0) {
+            Thread t = new Thread(() ->
+                    LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + champ), "troll-return");
+            t.setDaemon(true);
+            t.start();
+        }
+        benchCycling = false; // resume auto-swap
+        applyToggleButtons(riftHelperMainView.buttonTrollSwapToggleEnable,
+                riftHelperMainView.buttonTrollSwapToggleDisable, false);
+        SwingUtilities.invokeLater(() -> riftHelperMainView.setTrollToggleHintVisible(false));
+    }
+
+    private void startTrollPoll() {
+        if (trollPollTask != null && !trollPollTask.isDone()) {
+            return;
+        }
+        trollPollTask = trollPoll.scheduleWithFixedDelay(this::trollTick, 0, TROLL_POLL_MS,
+                java.util.concurrent.TimeUnit.MILLISECONDS);
+    }
+
+    private void stopTrollPoll() {
+        java.util.concurrent.ScheduledFuture<?> t = trollPollTask;
+        if (t != null) {
+            t.cancel(false);
+        }
+        trollPollTask = null;
+    }
+
+    /** One toggle tick: read the live session, capture the return champ once, then bail to it
+     *  (~1s before lock), swap to the next bench champ (delay elapsed), or wait. Exception-tolerant. */
+    private void trollTick() {
+        try {
+            if (!trollToggle) {
+                return;
+            }
+            Session s = Session.parseFromRaw(LCUGet.getFromClient("/lol-champ-select/v1/session"));
+            boolean inBench = s != null && s.isAllowRerolling();
+            java.util.List<Integer> bench = new java.util.ArrayList<>();
+            int timeLeft = Integer.MAX_VALUE;
+            if (inBench) {
+                userCellId = s.getLocalPlayerCellId();
+                if (s.getBenchChampions() != null) {
+                    for (BenchChampions b : s.getBenchChampions()) {
+                        bench.add(b.getChampionId());
+                    }
+                }
+                if (s.getTimer() != null) {
+                    timeLeft = s.getTimer().getAdjustedTimeLeftInPhase();
+                }
+                if (trollOriginal <= 0) {
+                    trollOriginal = localChampionId(s.getMyTeam());
+                }
+            }
+            boolean ready = inBench && !bench.isEmpty() && trollOriginal > 0;
+            long since = System.currentTimeMillis() - trollLastSwapAt;
+            int delay = riftHelperMainView.getTrollSwapDelayMs();
+            switch (TrollToggleDecider.decide(ready, timeLeft, TROLL_STOP_MS, since, delay)) {
+                case STOP -> {
+                    int champ = trollOriginal;
+                    disableTrollToggle(true);
+                    notify(notifyChampSwapAram, "Troll Swap stopped",
+                            "Game starting - returned to " + DDragonParser.getChampionName(champ) + ".",
+                            4, "twisted_rightwards_arrows");
+                }
+                case SWAP_NEXT -> {
+                    int held = localChampionId(s.getMyTeam());
+                    int[] pick = TrollToggleDecider.nextTarget(bench, trollOriginal, held, trollBenchIndex);
+                    trollBenchIndex = pick[1];
+                    if (pick[0] > 0) {
+                        LCUPost.postToClient("/lol-champ-select/v1/session/bench/swap/" + pick[0]);
+                        trollLastSwapAt = System.currentTimeMillis();
+                    }
+                }
+                case WAIT -> { }
+            }
+        } catch (Exception e) {
+            System.out.println("[TrollToggle] " + e.getMessage());
         }
     }
 
