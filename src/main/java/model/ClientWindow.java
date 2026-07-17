@@ -46,6 +46,32 @@ public class ClientWindow {
         HWND GetForegroundWindow();
 
         short GetAsyncKeyState(int vKey);
+
+        int GetWindowLong(HWND hWnd, int nIndex);
+
+        int SetWindowLong(HWND hWnd, int nIndex, int dwNewLong);
+    }
+
+    private static final int GWL_EXSTYLE = -20;
+    private static final int WS_EX_LAYERED = 0x00080000;
+    private static final int WS_EX_TRANSPARENT = 0x00000020;
+
+    /**
+     * Toggle mouse click-through on one of OUR overlay windows. When on, clicks pass through to the
+     * window below (the client); when off, the window receives clicks normally. Keeps WS_EX_LAYERED
+     * set (Java uses it for the per-pixel-transparent overlay) and only flips WS_EX_TRANSPARENT.
+     */
+    public static void setClickThrough(HWND hwnd, boolean on) {
+        if (hwnd == null) {
+            return;
+        }
+        try {
+            int ex = U.I.GetWindowLong(hwnd, GWL_EXSTYLE) | WS_EX_LAYERED;
+            ex = on ? (ex | WS_EX_TRANSPARENT) : (ex & ~WS_EX_TRANSPARENT);
+            U.I.SetWindowLong(hwnd, GWL_EXSTYLE, ex);
+        } catch (Throwable ignored) {
+            // user32 unavailable / non-Windows: leave the window as-is
+        }
     }
 
     /** True if the given virtual-key is physically down right now (global, no focus needed). Used to

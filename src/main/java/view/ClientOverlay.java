@@ -1,12 +1,15 @@
 package view;
 
+import com.sun.jna.Native;
 import com.sun.jna.platform.win32.WinDef.HWND;
 import model.ClientWindow;
 
 import javax.swing.JComponent;
 import javax.swing.JWindow;
+import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Graphics;
@@ -72,6 +75,8 @@ public class ClientOverlay extends JWindow {
     private java.util.function.BiConsumer<Integer, Integer> onMoved = (x, y) -> { };
 
     private boolean dragging; // glass currently active (chord held)
+    private HWND selfHwnd;
+    private Boolean lastClickThrough; // null until first applied
 
     public ClientOverlay(OverlayCard content, Anchor anchor, int margin, BooleanSupplier visibleWhen) {
         this.card = content;
@@ -167,16 +172,55 @@ public class ClientOverlay extends JWindow {
             setLocation((int) Math.round(tlPhys.x / s), (int) Math.round(tlPhys.y / s));
         }
 
-        // Hover opacity (mouse anywhere within the overlay bounds).
-        boolean nowHover = isVisible() && getBounds().contains(MouseInfo.getPointerInfo().getLocation());
-        if (nowHover != hovered) {
-            hovered = nowHover;
-            card.setOpacity(hovered ? hoveredOpacity : unhoveredOpacity);
-        }
-
         if (!isVisible()) {
             setVisible(true);
         }
+        if (selfHwnd == null) {
+            try {
+                selfHwnd = new HWND(Native.getComponentPointer(this));
+            } catch (Throwable ignored) {
+                // can't get the handle yet; try again next tick
+            }
+        }
+
+        Point mouse = MouseInfo.getPointerInfo().getLocation();
+        boolean within = getBounds().contains(mouse);
+
+        // Hover opacity (mouse anywhere within the overlay bounds).
+        if (within != hovered) {
+            hovered = within;
+            card.setOpacity(hovered ? hoveredOpacity : unhoveredOpacity);
+        }
+
+        // Click-through everywhere EXCEPT over an interactive control (or while dragging, so the glass
+        // pane can capture the drag from anywhere). Empty card / title / labels pass clicks to the client.
+        boolean overInteractable = false;
+        if (within) {
+            Point rel = new Point(mouse);
+            SwingUtilities.convertPointFromScreen(rel, getContentPane());
+            Component deep = SwingUtilities.getDeepestComponentAt(getContentPane(), rel.x, rel.y);
+            overInteractable = isInteractable(deep);
+        }
+        boolean clickThrough = !dragging && !overInteractable;
+        if (lastClickThrough == null || clickThrough != lastClickThrough) {
+            lastClickThrough = clickThrough;
+            ClientWindow.setClickThrough(selfHwnd, clickThrough);
+        }
+    }
+
+    /** An interactive control (or a descendant of one) that should capture clicks, vs. inert card/labels. */
+    private static boolean isInteractable(Component c) {
+        while (c != null) {
+            if (c instanceof javax.swing.AbstractButton
+                    || c instanceof ToggleSwitch
+                    || c instanceof javax.swing.JSpinner
+                    || c instanceof javax.swing.text.JTextComponent
+                    || c instanceof javax.swing.JComboBox) {
+                return c.isEnabled();
+            }
+            c = c.getParent();
+        }
+        return false;
     }
 
     private void hideOverlay() {
@@ -187,6 +231,7 @@ public class ClientOverlay extends JWindow {
             dragging = false;
             glass.setVisible(false);
         }
+        lastClickThrough = null; // re-assert click-through state when shown again
     }
 
     /** Physical top-left for the content given the client rect and anchor. Pure function (testable). */
