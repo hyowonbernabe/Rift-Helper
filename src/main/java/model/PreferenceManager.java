@@ -352,6 +352,10 @@ public class PreferenceManager {
     public static void setAramTop5Overlay(boolean value) { putBooleanFlushed("aramTop5Overlay", value); }
     public static boolean getAramTop5Overlay() { return prefs.getBoolean("aramTop5Overlay", true); }
 
+    // Players (scout) overlay: bottom-right, all game modes. Opt-out, default ON.
+    public static void setPlayersOverlay(boolean value) { putBooleanFlushed("playersOverlay", value); }
+    public static boolean getPlayersOverlay() { return prefs.getBoolean("playersOverlay", true); }
+
     // Overlay opacity (percent). Unhovered default 50, hovered default 80. Clamped 10..100.
     public static void setOverlayOpacity(int value) { prefs.putInt("overlayOpacity", clampPct(value)); try { prefs.flush(); } catch (Exception e) { e.printStackTrace(); } }
     public static int getOverlayOpacity() { return clampPct(prefs.getInt("overlayOpacity", 50)); }

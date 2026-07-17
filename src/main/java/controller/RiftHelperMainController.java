@@ -7,6 +7,7 @@ import view.ChampionPicker;
 import view.ClientOverlay;
 import view.FileChooserView;
 import view.LobbyOverlayPanel;
+import view.PlayersOverlayPanel;
 import view.QuickSwitchBenchOverlayPanel;
 import view.RiftHelperMainView;
 import view.Top5OverlayPanel;
@@ -60,9 +61,12 @@ public class RiftHelperMainController {
     private volatile boolean aramSwapToolsOverlay;
     private volatile boolean aramTop5Overlay;
     private volatile boolean benchModeActive; // in ARAM/reroll champ select right now (bench present)
+    private volatile boolean playersOverlay;
+    private volatile boolean scoutPresent;    // a non-empty scout report is available (any mode)
     private final java.util.List<ClientOverlay> overlays = new java.util.ArrayList<>();
     private QuickSwitchBenchOverlayPanel benchOverlayPanel;
     private Top5OverlayPanel top5OverlayPanel;
+    private PlayersOverlayPanel playersOverlayPanel;
     private volatile boolean notifyEnabled;
     private volatile String notifyTopic = "";
     private volatile boolean notifyMatchFound;
@@ -100,7 +104,12 @@ public class RiftHelperMainController {
     // Champions we've already REQUESTED a swap for this champ select. Keyed by target champion (NOT the
     // swap id) because the LCU re-issues swap ids as champ state changes; keying by id caused the poll
     // to spam a fresh request every tick. Reset on ChampSelect entry.
-    private final java.util.Set<Integer> requestedSwapChamps = java.util.concurrent.ConcurrentHashMap.newKeySet();
+    // Last time (epoch ms) we requested each trade id. We re-request a trade while it stays AVAILABLE
+    // (the teammate may have missed the first prompt) but no faster than TRADE_REQUEST_COOLDOWN_MS, so
+    // we keep trying without spamming. A trade that goes ongoing/declined leaves AVAILABLE and simply
+    // stops being requested. Cleared each champ select.
+    private final java.util.Map<Integer, Long> tradeRequestedAt = new java.util.concurrent.ConcurrentHashMap<>();
+    private static final long TRADE_REQUEST_COOLDOWN_MS = 500;
     // Deduped diagnostics so the 750ms poll logs a line only when the decision/inputs actually change.
     private volatile String lastSwapDiag = "";
     private volatile String lastTradeDiag = "";
@@ -257,25 +266,16 @@ public class RiftHelperMainController {
                 }
                 nameButtons(buttons);
 
-                // ARAM overlays: we are in a bench (reroll) champ select. Keep the overlay bench and the
-                // Top 5 Ranked view live.
-                benchModeActive = true;
+                // ARAM overlays: bench (reroll) champ select. Also set redundantly by the poll below,
+                // since this WS event can lag/coalesce.
+                setBenchModeActive(true);
                 java.util.List<Integer> benchIds = new java.util.ArrayList<>();
                 if (benchChampions != null) {
                     for (BenchChampions bc : benchChampions) {
                         benchIds.add(bc.getChampionId());
                     }
                 }
-                java.util.List<RankedChoice> top5 = computeTop5(myChampId, benchIds);
-                SwingUtilities.invokeLater(() -> {
-                    riftHelperMainView.setTop5(top5);
-                    if (top5OverlayPanel != null) {
-                        top5OverlayPanel.setChoices(top5);
-                    }
-                    if (benchOverlayPanel != null) {
-                        benchOverlayPanel.refresh();
-                    }
-                });
+                updateAramOverlayViews(myChampId, benchIds, teammateChampionIds(myTeam));
             }
         });
 
@@ -1021,6 +1021,8 @@ public class RiftHelperMainController {
         this.riftHelperMainView.addAramSwapToolsOverlayDisableListener(e -> setAramSwapToolsOverlay(false));
         this.riftHelperMainView.addAramTop5OverlayEnableListener(e -> setAramTop5Overlay(true));
         this.riftHelperMainView.addAramTop5OverlayDisableListener(e -> setAramTop5Overlay(false));
+        this.riftHelperMainView.addPlayersOverlayEnableListener(e -> setPlayersOverlay(true));
+        this.riftHelperMainView.addPlayersOverlayDisableListener(e -> setPlayersOverlay(false));
         this.riftHelperMainView.addOverlayOpacityChangeListener(() -> {
             PreferenceManager.setOverlayOpacity(riftHelperMainView.getOverlayOpacity());
             applyOverlayOpacities();
@@ -1217,7 +1219,24 @@ public class RiftHelperMainController {
         PreferenceManager.setAramTop5Overlay(on);
     }
 
-    private void registerOverlay(ClientOverlay ov, String id) {
+    private void setPlayersOverlay(boolean on) {
+        playersOverlay = on;
+        SwingUtilities.invokeLater(() -> applyToggleButtons(
+                riftHelperMainView.buttonPlayersOverlayEnable, riftHelperMainView.buttonPlayersOverlayDisable, on));
+        PreferenceManager.setPlayersOverlay(on);
+    }
+
+    /** Push a scout report to the Players tab AND the Players overlay, and track whether one is present
+     *  (drives the overlay's visibility). Call on the EDT. */
+    private void pushScoutReport(model.ScoutReport r) {
+        scoutPresent = r != null && !r.isEmpty();
+        riftHelperMainView.setScoutReport(r);
+        if (playersOverlayPanel != null) {
+            playersOverlayPanel.setReport(r);
+        }
+    }
+
+    private ClientOverlay registerOverlay(ClientOverlay ov, String id) {
         ov.setOpacities(PreferenceManager.getOverlayOpacity() / 100f, PreferenceManager.getOverlayHoverOpacity() / 100f);
         if (PreferenceManager.hasOverlayPosition(id)) {
             ov.setCustomOffset(PreferenceManager.getOverlayPosX(id), PreferenceManager.getOverlayPosY(id));
@@ -1225,6 +1244,7 @@ public class RiftHelperMainController {
         ov.setOnMoved((x, y) -> PreferenceManager.setOverlayPosition(id, x, y));
         overlays.add(ov);
         ov.start();
+        return ov;
     }
 
     private void applyOverlayOpacities() {
@@ -1235,10 +1255,59 @@ public class RiftHelperMainController {
         }
     }
 
-    /** The current effective auto-swap ranking (Priority-then-Survey), top 5, annotated for the live
-     *  view: star source, bench availability, and which one is the swap target. Empty when Auto Swap
-     *  is off. */
-    private java.util.List<RankedChoice> computeTop5(int currentChampId, java.util.List<Integer> benchIds) {
+    /** Lobby overlay shows through queue too: the lobby, matchmaking (in queue), and the ready-check. */
+    private boolean isLobbyPhase() {
+        return "Lobby".equals(lastGameflowPhase)
+                || "Matchmaking".equals(lastGameflowPhase)
+                || "ReadyCheck".equals(lastGameflowPhase);
+    }
+
+    private void setBenchModeActive(boolean on) {
+        if (on != benchModeActive) {
+            benchModeActive = on;
+            System.out.println("[Overlay] ARAM bench mode: " + on);
+        }
+    }
+
+    /** Recompute Top 5 + refresh the bench/top-5 overlays on the EDT. Called from both the champ-select
+     *  WS event and the 750ms poll so the ARAM overlays stay live even when the WS event lags. */
+    private void updateAramOverlayViews(int myChampId, java.util.List<Integer> benchIds,
+                                        java.util.List<Integer> teammateIds) {
+        java.util.List<RankedChoice> top5 = computeTop5(myChampId, benchIds, teammateIds);
+        SwingUtilities.invokeLater(() -> {
+            riftHelperMainView.setTop5(top5);
+            if (top5OverlayPanel != null) {
+                top5OverlayPanel.setChoices(top5);
+            }
+            if (benchOverlayPanel != null) {
+                benchOverlayPanel.refresh();
+            }
+        });
+    }
+
+    /** Champion ids of teammates (everyone on my team except me) currently holding a champion. */
+    private java.util.List<Integer> teammateChampionIds(List<MyTeam> myTeam) {
+        java.util.List<Integer> ids = new java.util.ArrayList<>();
+        if (myTeam != null) {
+            for (MyTeam m : myTeam) {
+                if (m.getCellId() != userCellId && m.getChampionId() > 0) {
+                    ids.add(m.getChampionId());
+                }
+            }
+        }
+        return ids;
+    }
+
+    /**
+     * Top 5 of the champions OBTAINABLE in this game (the one you hold, the bench, and teammates'
+     * champions), ranked by your preference order (Priority-then-Survey). Only champions present in
+     * the game AND in your preference are shown, best first, capped at 5. Rank 1 is the best pick you
+     * could end up on; its {@code location} says how to get it (already yours / swap from bench /
+     * trade from a teammate). Empty when you have no ranking or none of your ranked champs are in play.
+     */
+    private java.util.List<RankedChoice> computeTop5(int myChampId,
+                                                     java.util.List<Integer> benchIds,
+                                                     java.util.List<Integer> teammateIds) {
         int[] priorityIds = autoSwapPriority ? readAutoSwapPriorityIds() : new int[0];
         java.util.List<Integer> survey = autoSwapSurvey ? surveySwapIds : java.util.List.of();
         java.util.List<Integer> order = AutoSwapPlanner.buildOrder(priorityIds, survey);
@@ -1248,19 +1317,27 @@ public class RiftHelperMainController {
                 priorityCount++;
             }
         }
-        int floor = order.indexOf(currentChampId);
-        if (floor < 0) {
-            floor = Integer.MAX_VALUE; // not listed: anything listed is an upgrade
-        }
-        int target = (benchIds == null || benchIds.isEmpty())
-                ? -1 : AutoSwapPlanner.pickBenchTarget(order, benchIds, floor, null);
         java.util.List<RankedChoice> out = new java.util.ArrayList<>();
+        java.util.Set<Integer> added = new java.util.HashSet<>();
         for (int i = 0; i < order.size() && out.size() < 5; i++) {
             int id = order.get(i);
+            if (added.contains(id)) {
+                continue; // buildOrder has no dedup; show each champion once
+            }
+            RankedChoice.Location loc;
+            if (id == myChampId) {
+                loc = RankedChoice.Location.MINE;
+            } else if (benchIds != null && benchIds.contains(id)) {
+                loc = RankedChoice.Location.BENCH;
+            } else if (teammateIds != null && teammateIds.contains(id)) {
+                loc = RankedChoice.Location.TEAMMATE;
+            } else {
+                continue; // not obtainable in this game -> not in the top 5
+            }
+            added.add(id);
             boolean fromPriority = i < priorityCount;
-            boolean onBench = benchIds != null && benchIds.contains(id);
-            boolean swapTarget = target > 0 && id == target;
-            out.add(new RankedChoice(id, i + 1, fromPriority, onBench, swapTarget));
+            boolean recommended = out.isEmpty(); // the first (best) obtainable pick
+            out.add(new RankedChoice(id, out.size() + 1, fromPriority, loc, recommended));
         }
         return out;
     }
@@ -1358,7 +1435,7 @@ public class RiftHelperMainController {
      *  runs; the auto-refresh on phase changes is gated by {@code scoutEnabled}. */
     private void scoutRefresh() {
         model.ScoutReport.refreshAsync(lastGameflowPhase, report -> {
-            riftHelperMainView.setScoutReport(report);
+            pushScoutReport(report);
             maybeNotifyPlayedRecently(report);
         });
     }
@@ -1450,7 +1527,7 @@ public class RiftHelperMainController {
                 disableTrollToggle(false); // champ select over; no bench left to swap back on
             }
             // left champ select: ARAM overlays hide, Top 5 clears
-            benchModeActive = false;
+            setBenchModeActive(false);
             SwingUtilities.invokeLater(() -> {
                 riftHelperMainView.setTop5(java.util.List.of());
                 if (top5OverlayPanel != null) {
@@ -1464,7 +1541,7 @@ public class RiftHelperMainController {
         if (scoutEnabled) {
             switch (phase) {
                 case "ChampSelect", "InProgress", "Lobby" -> scoutRefresh();
-                case "None" -> SwingUtilities.invokeLater(() -> riftHelperMainView.setScoutReport(null));
+                case "None" -> SwingUtilities.invokeLater(() -> pushScoutReport(null));
                 default -> { /* WaitingForStats / EndOfGame etc.: keep the last report shown */ }
             }
         }
@@ -1477,7 +1554,7 @@ public class RiftHelperMainController {
                 notifiedAramPick = false;
                 cardPicked = false;
                 cardDumpCount = 0;
-                requestedSwapChamps.clear();
+                tradeRequestedAt.clear();
                 lastSwapDiag = "";
                 lastTradeDiag = "";
                 notifiedPlayedRecently = false;
@@ -1874,6 +1951,7 @@ public class RiftHelperMainController {
         this.aramBenchOverlay = PreferenceManager.getAramBenchOverlay();
         this.aramSwapToolsOverlay = PreferenceManager.getAramSwapToolsOverlay();
         this.aramTop5Overlay = PreferenceManager.getAramTop5Overlay();
+        this.playersOverlay = PreferenceManager.getPlayersOverlay();
         this.notifyEnabled = PreferenceManager.getNotifyEnabled();
         this.notifyTopic = PreferenceManager.getNotifyTopic();
         this.notifyMatchFound = PreferenceManager.getNotifyMatchFound();
@@ -2005,19 +2083,27 @@ public class RiftHelperMainController {
                 new LobbyOverlayPanel(riftHelperMainView),
                 ClientOverlay.Anchor.BOTTOM_LEFT, 16,
                 () -> !riftHelperMainView.buttonLobbyOverlayEnable.isEnabled()
-                        && "Lobby".equals(lastGameflowPhase)), "lobby");
+                        && isLobbyPhase()), "lobby");
 
         this.benchOverlayPanel = new QuickSwitchBenchOverlayPanel(riftHelperMainView);
         registerOverlay(new ClientOverlay(benchOverlayPanel, ClientOverlay.Anchor.TOP_CENTER, 12,
                 () -> !riftHelperMainView.buttonAramBenchOverlayEnable.isEnabled() && benchModeActive), "aram-bench");
 
-        registerOverlay(new ClientOverlay(new AramSwapToolsOverlayPanel(riftHelperMainView),
+        ClientOverlay swapToolsOverlay = registerOverlay(new ClientOverlay(new AramSwapToolsOverlayPanel(riftHelperMainView),
                 ClientOverlay.Anchor.BOTTOM_RIGHT, 16,
                 () -> !riftHelperMainView.buttonAramSwapToolsOverlayEnable.isEnabled() && benchModeActive), "aram-tools");
 
         this.top5OverlayPanel = new Top5OverlayPanel();
         registerOverlay(new ClientOverlay(top5OverlayPanel, ClientOverlay.Anchor.TOP_RIGHT, 16,
                 () -> !riftHelperMainView.buttonAramTop5OverlayEnable.isEnabled() && benchModeActive), "aram-top5");
+
+        // Players (scout) overlay: bottom-right, every mode. In ARAM the swap-tools also lives at
+        // bottom-right, so dock the players panel just to its left when it is showing.
+        this.playersOverlayPanel = new PlayersOverlayPanel();
+        ClientOverlay playersOv = registerOverlay(new ClientOverlay(playersOverlayPanel,
+                ClientOverlay.Anchor.BOTTOM_RIGHT, 16,
+                () -> !riftHelperMainView.buttonPlayersOverlayEnable.isEnabled() && scoutPresent), "players");
+        playersOv.setBesideLeftOf(swapToolsOverlay, 12);
 
         if (this.autoCheckUpdate) {
             this.riftHelperMainView.buttonAutoCheckUpdateEnable.setEnabled(false);
@@ -2052,6 +2138,7 @@ public class RiftHelperMainController {
         applyToggleButtons(riftHelperMainView.buttonAramBenchOverlayEnable, riftHelperMainView.buttonAramBenchOverlayDisable, aramBenchOverlay);
         applyToggleButtons(riftHelperMainView.buttonAramSwapToolsOverlayEnable, riftHelperMainView.buttonAramSwapToolsOverlayDisable, aramSwapToolsOverlay);
         applyToggleButtons(riftHelperMainView.buttonAramTop5OverlayEnable, riftHelperMainView.buttonAramTop5OverlayDisable, aramTop5Overlay);
+        applyToggleButtons(riftHelperMainView.buttonPlayersOverlayEnable, riftHelperMainView.buttonPlayersOverlayDisable, playersOverlay);
         this.riftHelperMainView.setNotifyTopic(notifyTopic);
         this.riftHelperMainView.setNotifyIdleSeconds(notifyIdleSeconds);
         this.riftHelperMainView.setOverlayOpacity(PreferenceManager.getOverlayOpacity());
@@ -2180,7 +2267,7 @@ public class RiftHelperMainController {
         if (swapPollTask != null && !swapPollTask.isDone()) {
             return; // already polling
         }
-        swapPollTask = swapPoll.scheduleWithFixedDelay(this::pollSwapTick, 300, 750,
+        swapPollTask = swapPoll.scheduleWithFixedDelay(this::pollSwapTick, 100, 100,
                 java.util.concurrent.TimeUnit.MILLISECONDS);
     }
 
@@ -2198,8 +2285,10 @@ public class RiftHelperMainController {
      *  card window and for trades). */
     private void pollSwapTick() {
         try {
-            if (!autoSwapPriority && !autoSwapSurvey && !autoPickCard && !autoTrade) {
-                return;
+            boolean anyAuto = autoSwapPriority || autoSwapSurvey || autoPickCard || autoTrade;
+            boolean anyAramOverlay = aramBenchOverlay || aramSwapToolsOverlay || aramTop5Overlay;
+            if (!anyAuto && !anyAramOverlay) {
+                return; // nothing to do this tick
             }
             String raw = LCUGet.getFromClient("/lol-champ-select/v1/session");
             Session s = Session.parseFromRaw(raw);
@@ -2214,8 +2303,18 @@ public class RiftHelperMainController {
                 }
             }
             int currentChampId = localChampionId(s.getMyTeam());
-            tryAutoSwap(benchIds, currentChampId);       // guarded internally by the swap toggles
-            handleAramCardsAndTrades(s, raw);            // #1 card auto-pick + #2 trades
+
+            // Reliable ARAM-overlay driver: the WS session event can lag, but this poll runs every
+            // 750ms through champ select, so gate the ARAM overlays here regardless of the auto toggles.
+            setBenchModeActive(true);
+            if (anyAramOverlay) {
+                updateAramOverlayViews(currentChampId, benchIds, teammateChampionIds(s.getMyTeam()));
+            }
+
+            if (anyAuto) {
+                tryAutoSwap(benchIds, currentChampId);   // guarded internally by the swap toggles
+                handleAramCardsAndTrades(s, raw);        // #1 card auto-pick + #2 trades
+            }
         } catch (Exception e) {
             System.out.println("[SwapPoll] " + e.getMessage());
         }
@@ -2309,10 +2408,11 @@ public class RiftHelperMainController {
         }
     }
 
-    /** POST the REST call for one champion-swap decision. A REQUEST fires at most once per TARGET
-     *  CHAMPION per champ select (swap ids churn as champ state changes, so keying by id spammed a
-     *  fresh request every 750ms tick). Endpoint is champion-swaps, NOT trades (confirmed live:
-     *  /session/trades 404s "Invalid URI format"). Success is 200/204. */
+    /** POST the REST call for one champion-swap decision. Endpoint is champion-swaps/{id}/{verb}
+     *  (confirmed live: id + verb=request is what actually sends a trade request; legacy /session/trades
+     *  and cellId variants 404). A REQUEST re-fires while the trade stays AVAILABLE but no faster than
+     *  {@link #TRADE_REQUEST_COOLDOWN_MS} (the teammate may have missed it); a trade that goes ongoing
+     *  or declined leaves AVAILABLE and TradeDecider stops requesting it. Success is 200/204. */
     private void executeTradeDecision(TradeDecider.Decision d, int targetChamp) {
         String verb = switch (d.action()) {
             case REQUEST -> "request";
@@ -2320,14 +2420,22 @@ public class RiftHelperMainController {
             case DECLINE -> "decline";
         };
         if (d.action() == TradeDecider.Action.REQUEST) {
-            if (targetChamp <= 0 || !requestedSwapChamps.add(targetChamp)) {
-                return; // unknown champ, or already requested this champ this champ select
+            if (targetChamp <= 0) {
+                return;
+            }
+            Long last = tradeRequestedAt.get(d.tradeId());
+            if (last != null && System.currentTimeMillis() - last < TRADE_REQUEST_COOLDOWN_MS) {
+                return; // requested this offer recently; wait before re-requesting
             }
         }
         int code = LCUPost.postToClient("/lol-champ-select/v1/session/champion-swaps/" + d.tradeId() + "/" + verb);
         System.out.println("[AutoTrade] " + verb + " swap " + d.tradeId() + " champ " + targetChamp + " -> " + code);
-        if ((code == 200 || code == 204) && d.action() == TradeDecider.Action.ACCEPT) {
-            dndMinimize();
+        if (code == 200 || code == 204) {
+            if (d.action() == TradeDecider.Action.REQUEST) {
+                tradeRequestedAt.put(d.tradeId(), System.currentTimeMillis());
+            } else if (d.action() == TradeDecider.Action.ACCEPT) {
+                dndMinimize();
+            }
         }
     }
 

@@ -77,6 +77,8 @@ public class ClientOverlay extends JWindow {
     private boolean dragging; // glass currently active (chord held)
     private HWND selfHwnd;
     private Boolean lastClickThrough; // null until first applied
+    private ClientOverlay besideLeftOf; // if set + visible, sit to its left (shared bottom-right corner)
+    private int besideGap;
 
     public ClientOverlay(OverlayCard content, Anchor anchor, int margin, BooleanSupplier visibleWhen) {
         this.card = content;
@@ -117,6 +119,14 @@ public class ClientOverlay extends JWindow {
     /** Called (x, y client-relative physical px) whenever the user finishes dragging. */
     public void setOnMoved(java.util.function.BiConsumer<Integer, Integer> cb) {
         this.onMoved = cb != null ? cb : (x, y) -> { };
+    }
+
+    /** When {@code sibling} is visible, dock this overlay just to its left (both share a corner, e.g.
+     *  the ARAM swap-tools sits at bottom-right and the players overlay sits beside it). Only affects
+     *  the default anchor position, not a user-dragged position. */
+    public void setBesideLeftOf(ClientOverlay sibling, int gap) {
+        this.besideLeftOf = sibling;
+        this.besideGap = gap;
     }
 
     public void start() {
@@ -163,7 +173,13 @@ public class ClientOverlay extends JWindow {
             tlPhys = new Point(b.x + offsetX, b.y + offsetY);
         } else {
             int mPhys = (int) Math.round(margin * s);
-            tlPhys = anchorTopLeftPhys(anchor, b, cwPhys, chPhys, mPhys);
+            // If docked beside a visible sibling at the same (right) corner, reserve its width + gap so
+            // this overlay lands to its left instead of on top of it.
+            int reserve = 0;
+            if (besideLeftOf != null && besideLeftOf.isVisible()) {
+                reserve = (int) Math.round((besideLeftOf.getWidth() + besideGap) * s);
+            }
+            tlPhys = anchorTopLeftPhys(anchor, b, cwPhys + reserve, chPhys, mPhys);
         }
         // physical -> Java (logical) coords. Exact at 100%; approximate for a single uniform HiDPI
         // scale. ponytail: uniform-scale ceiling; per-monitor DPI is the upgrade path.

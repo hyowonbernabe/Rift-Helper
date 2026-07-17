@@ -38,7 +38,7 @@ public class RankedChoicesView extends JPanel {
     public void setChoices(List<RankedChoice> choices) {
         removeAll();
         if (choices == null || choices.isEmpty()) {
-            JLabel none = new JLabel("Auto Swap off");
+            JLabel none = new JLabel("No ranked picks in play");
             none.setFont(fStatus);
             none.setForeground(Theme.TEXT_FAINT);
             add(none, "growx");
@@ -77,19 +77,23 @@ public class RankedChoicesView extends JPanel {
 
         JLabel status = new JLabel(statusText(c));
         status.setFont(fStatus);
-        status.setForeground(c.swapTarget() ? Theme.GREEN : c.onBench() ? Theme.TEXT_DIM : Theme.TEXT_FAINT);
+        status.setForeground(c.recommended() ? Theme.GREEN
+                : c.location() == RankedChoice.Location.MINE ? Theme.TEXT_DIM : Theme.TEXT_FAINT);
         row.add(status);
 
         return row;
     }
 
     private String statusText(RankedChoice c) {
-        if (c.swapTarget()) {
-            return "swapped in";
+        String where = switch (c.location()) {
+            case MINE -> "yours";
+            case BENCH -> "bench";
+            case TEAMMATE -> "teammate";
+        };
+        // Rank 1 is the best obtainable pick: point at how to get it.
+        if (c.recommended() && c.location() != RankedChoice.Location.MINE) {
+            return where + " ← get";
         }
-        if (c.onBench()) {
-            return "on bench";
-        }
-        return "not available";
+        return where;
     }
 }

@@ -137,6 +137,8 @@ public class RiftHelperMainView extends JFrame {
     public final JButton buttonAramSwapToolsOverlayDisable = new JButton();
     public final JButton buttonAramTop5OverlayEnable = new JButton();
     public final JButton buttonAramTop5OverlayDisable = new JButton();
+    public final JButton buttonPlayersOverlayEnable = new JButton();
+    public final JButton buttonPlayersOverlayDisable = new JButton();
     private final RankedChoicesView aramTop5View = new RankedChoicesView();
     private final JSpinner overlayOpacitySpinner = new JSpinner(new SpinnerNumberModel(50, 10, 100, 5));
     private final JSpinner overlayHoverOpacitySpinner = new JSpinner(new SpinnerNumberModel(80, 10, 100, 5));
@@ -607,6 +609,13 @@ public class RiftHelperMainView extends JFrame {
 
     private JPanel buildOverlay() {
         JPanel panel = section("Overlay", "controls drawn on the League client");
+
+        Card global = new Card("insets 4 6 4 6, wrap 1, fillx", "[grow,fill]", "");
+        global.add(cardTitle("Global", Icons.G.PLAYERS), "gapbottom 6");
+        global.add(toggleRow("Players Overlay",
+                "Scout panel (rank, form, recent games) on the client in every mode, bottom-right.",
+                buttonPlayersOverlayEnable, buttonPlayersOverlayDisable), "growx");
+        panel.add(global, "growx");
 
         Card lobby = new Card("insets 4 6 4 6, wrap 1, fillx", "[grow,fill]", "");
         lobby.add(cardTitle("Lobby", Icons.G.LOBBY), "gapbottom 6");
@@ -1956,6 +1965,8 @@ public class RiftHelperMainView extends JFrame {
     public void addAramSwapToolsOverlayDisableListener(ActionListener l) { buttonAramSwapToolsOverlayDisable.addActionListener(l); }
     public void addAramTop5OverlayEnableListener(ActionListener l) { buttonAramTop5OverlayEnable.addActionListener(l); }
     public void addAramTop5OverlayDisableListener(ActionListener l) { buttonAramTop5OverlayDisable.addActionListener(l); }
+    public void addPlayersOverlayEnableListener(ActionListener l) { buttonPlayersOverlayEnable.addActionListener(l); }
+    public void addPlayersOverlayDisableListener(ActionListener l) { buttonPlayersOverlayDisable.addActionListener(l); }
     /** Push the live Top 5 Ranked Choices into the ARAM tab panel. */
     public void setTop5(java.util.List<model.RankedChoice> choices) { aramTop5View.setChoices(choices); }
 
