@@ -6,7 +6,7 @@
 
     <groupId>com.rifthelper</groupId>
     <artifactId>rift-helper</artifactId>
-    <version>1.6.2</version>
+    <version>1.8.0</version>
 
     <repositories>
         <repository>

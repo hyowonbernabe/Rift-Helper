@@ -4,11 +4,14 @@ import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 import com.sun.jna.platform.win32.WinDef.HWND;
 import com.sun.jna.platform.win32.WinDef.LPARAM;
+import com.sun.jna.platform.win32.WinDef.RECT;
 import com.sun.jna.platform.win32.WinDef.WPARAM;
 import com.sun.jna.platform.win32.WinUser.WNDENUMPROC;
 import com.sun.jna.ptr.IntByReference;
 import com.sun.jna.win32.StdCallLibrary;
 import com.sun.jna.win32.W32APIOptions;
+
+import java.awt.Rectangle;
 
 /**
  * Minimize the League client exactly like clicking the window's "-" button: post
@@ -35,6 +38,25 @@ public class ClientWindow {
         boolean IsWindowVisible(HWND hWnd);
 
         boolean PostMessage(HWND hWnd, int msg, WPARAM wParam, LPARAM lParam);
+
+        boolean GetWindowRect(HWND hWnd, RECT rect);
+
+        boolean IsIconic(HWND hWnd);
+
+        HWND GetForegroundWindow();
+
+        short GetAsyncKeyState(int vKey);
+    }
+
+    /** True if the given virtual-key is physically down right now (global, no focus needed). Used to
+     *  detect the overlay drag chord. vk = Windows virtual-key code (which matches Java's VK_* for the
+     *  keys we care about: modifiers, letters, digits, function/caps keys). */
+    public static boolean isKeyDown(int vk) {
+        try {
+            return (U.I.GetAsyncKeyState(vk) & 0x8000) != 0;
+        } catch (Throwable t) {
+            return false;
+        }
     }
 
     public static void minimize() {
@@ -52,6 +74,61 @@ public class ClientWindow {
         } catch (Throwable t) {
             System.out.println("[AutoMinimize] unavailable: " + t);
         }
+    }
+
+    /**
+     * The client's visible top-level window handle, or null if the client is not running / not
+     * visible. Same enumerate-and-match-PID rule as {@link #minimize()}; used by the overlay to
+     * track the client's geometry. Returns the first visible LeagueClientUx-owned window.
+     */
+    public static HWND findHwnd() {
+        final HWND[] out = {null};
+        try {
+            U.I.EnumWindows((hwnd, data) -> {
+                if (U.I.IsWindowVisible(hwnd)) {
+                    IntByReference pidRef = new IntByReference();
+                    U.I.GetWindowThreadProcessId(hwnd, pidRef);
+                    if (isLeagueClient(pidRef.getValue())) {
+                        out[0] = hwnd;
+                        return false; // stop at the first match
+                    }
+                }
+                return true;
+            }, null);
+        } catch (Throwable t) {
+            return null;
+        }
+        return out[0];
+    }
+
+    /** Screen bounds (physical pixels) of the given window, or null if degenerate/unavailable. */
+    public static Rectangle boundsOf(HWND hwnd) {
+        if (hwnd == null) {
+            return null;
+        }
+        RECT r = new RECT();
+        if (!U.I.GetWindowRect(hwnd, r)) {
+            return null;
+        }
+        int w = r.right - r.left;
+        int h = r.bottom - r.top;
+        if (w <= 0 || h <= 0) {
+            return null;
+        }
+        return new Rectangle(r.left, r.top, w, h);
+    }
+
+    public static boolean isMinimizedOf(HWND hwnd) {
+        return hwnd != null && U.I.IsIconic(hwnd);
+    }
+
+    /** True if the given window (or a window handle equal to it) is the OS foreground window. */
+    public static boolean isForeground(HWND hwnd) {
+        if (hwnd == null) {
+            return false;
+        }
+        HWND fg = U.I.GetForegroundWindow();
+        return fg != null && Pointer.nativeValue(hwnd.getPointer()) == Pointer.nativeValue(fg.getPointer());
     }
 
     private static boolean isLeagueClient(int pid) {

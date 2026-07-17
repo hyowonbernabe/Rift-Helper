@@ -9,9 +9,9 @@ import java.awt.Color;
 /** Vector icons from the FontAwesome pack (via Ikonli), recolorable and crisp at any size. */
 public final class Icons {
     public enum G {
-        LOBBY, RIFT, ARAM, ARENA, LOOT, SETTINGS, INFO,
+        LOBBY, RIFT, ARAM, ARENA, LOOT, PLAYERS, SETTINGS, INFO, OVERLAY,
         ACCEPT, DECLINE, SWAP, REROLL, BAN, LOCK, BRAVERY,
-        PLUS, MINUS, SAVE, IMPORT, EXPORT, RESET, TRAY, PIN, UPDATE, TEST, CROWD, LANE, BELL, SURVEY, CAUTION, HELP,
+        PLUS, MINUS, SAVE, IMPORT, EXPORT, RESET, TRAY, PIN, UPDATE, TEST, CROWD, LANE, BELL, SURVEY, CAUTION, HELP, STAR,
         TOP, JUNGLE, MID, BOT, SUPPORT
     }
 
@@ -29,8 +29,10 @@ public final class Icons {
             case ARAM -> FontAwesomeSolid.SNOWFLAKE;
             case ARENA -> FontAwesomeSolid.TROPHY;
             case LOOT -> FontAwesomeSolid.BOX_OPEN;
+            case PLAYERS -> FontAwesomeSolid.USER_FRIENDS;
             case SETTINGS -> FontAwesomeSolid.COG;
             case INFO -> FontAwesomeSolid.INFO_CIRCLE;
+            case OVERLAY -> FontAwesomeSolid.LAYER_GROUP;
             case ACCEPT -> FontAwesomeSolid.CHECK;
             case DECLINE -> FontAwesomeSolid.TIMES;
             case SWAP -> FontAwesomeSolid.EXCHANGE_ALT;
@@ -54,6 +56,7 @@ public final class Icons {
             case SURVEY -> FontAwesomeSolid.CLIPBOARD_LIST;
             case CAUTION -> FontAwesomeSolid.EXCLAMATION_TRIANGLE;
             case HELP -> FontAwesomeSolid.QUESTION_CIRCLE;
+            case STAR -> FontAwesomeSolid.STAR;
             case TOP -> FontAwesomeSolid.CHESS_ROOK;
             case JUNGLE -> FontAwesomeSolid.TREE;
             case MID -> FontAwesomeSolid.HAT_WIZARD;

@@ -18,6 +18,9 @@ public class RiftHelperMain {
     public static void main(String[] args) {
         setupUiScale();
         FlatDarkLaf.setup();
+        // Replace FlatLaf's stock 1px minimize glyph, which renders invisible at the app's fractional
+        // UI scale (default 90%), with a >=2px bar that shows at any scale. See view.MinimizeIcon.
+        UIManager.put("TitlePane.iconifyIcon", new view.MinimizeIcon());
         SSLBypass.disableSSLVerification();
 
         if (!LCUAuth.getLCUAuth()) {

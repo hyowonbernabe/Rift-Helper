@@ -329,6 +329,9 @@ public class PreferenceManager {
         return prefs.getBoolean(PREF_SOLO_AUTO_QUEUE, false);
     }
 
+    public static void setAutoClaimPasses(boolean value) { putBooleanFlushed("autoClaimPasses", value); }
+    public static boolean getAutoClaimPasses() { return prefs.getBoolean("autoClaimPasses", false); }
+
     public static void setAutoMinimize(boolean value) {
         putBooleanFlushed(PREF_AUTO_MINIMIZE, value);
     }
@@ -336,6 +339,60 @@ public class PreferenceManager {
     public static boolean getAutoMinimize() {
         return prefs.getBoolean(PREF_AUTO_MINIMIZE, false);
     }
+
+    // Lobby Overlay: draw the lobby controls on the client during the lobby. Opt-out, default ON.
+    public static void setLobbyOverlay(boolean value) { putBooleanFlushed("lobbyOverlay", value); }
+    public static boolean getLobbyOverlay() { return prefs.getBoolean("lobbyOverlay", true); }
+
+    // ARAM overlays (each independent, opt-out, default ON): bench, swap tools, top-5 ranked.
+    public static void setAramBenchOverlay(boolean value) { putBooleanFlushed("aramBenchOverlay", value); }
+    public static boolean getAramBenchOverlay() { return prefs.getBoolean("aramBenchOverlay", true); }
+    public static void setAramSwapToolsOverlay(boolean value) { putBooleanFlushed("aramSwapToolsOverlay", value); }
+    public static boolean getAramSwapToolsOverlay() { return prefs.getBoolean("aramSwapToolsOverlay", true); }
+    public static void setAramTop5Overlay(boolean value) { putBooleanFlushed("aramTop5Overlay", value); }
+    public static boolean getAramTop5Overlay() { return prefs.getBoolean("aramTop5Overlay", true); }
+
+    // Overlay opacity (percent). Unhovered default 50, hovered default 80. Clamped 10..100.
+    public static void setOverlayOpacity(int value) { prefs.putInt("overlayOpacity", clampPct(value)); try { prefs.flush(); } catch (Exception e) { e.printStackTrace(); } }
+    public static int getOverlayOpacity() { return clampPct(prefs.getInt("overlayOpacity", 50)); }
+    public static void setOverlayHoverOpacity(int value) { prefs.putInt("overlayHoverOpacity", clampPct(value)); try { prefs.flush(); } catch (Exception e) { e.printStackTrace(); } }
+    public static int getOverlayHoverOpacity() { return clampPct(prefs.getInt("overlayHoverOpacity", 80)); }
+    private static int clampPct(int v) { return Math.max(10, Math.min(v, 100)); }
+
+    // Overlay drag chord as CSV of Windows virtual-key codes. Default 18,20 = Alt + Caps Lock.
+    public static void setOverlayDragKeys(int[] keys) {
+        StringBuilder sb = new StringBuilder();
+        if (keys != null) {
+            for (int k : keys) {
+                if (sb.length() > 0) sb.append(',');
+                sb.append(k);
+            }
+        }
+        prefs.put("overlayDragKeys", sb.length() == 0 ? "18,20" : sb.toString());
+        try { prefs.flush(); } catch (Exception e) { e.printStackTrace(); }
+    }
+    public static int[] getOverlayDragKeys() {
+        String csv = prefs.get("overlayDragKeys", "18,20");
+        String[] parts = csv.split(",");
+        java.util.List<Integer> out = new java.util.ArrayList<>();
+        for (String p : parts) {
+            try { out.add(Integer.parseInt(p.trim())); } catch (NumberFormatException ignored) { }
+        }
+        if (out.isEmpty()) { return new int[]{18, 20}; }
+        int[] arr = new int[out.size()];
+        for (int i = 0; i < arr.length; i++) { arr[i] = out.get(i); }
+        return arr;
+    }
+
+    // Per-overlay dragged position, stored client-relative in physical px. MIN = never dragged.
+    public static void setOverlayPosition(String id, int relX, int relY) {
+        prefs.putInt("overlayPosX." + id, relX);
+        prefs.putInt("overlayPosY." + id, relY);
+        try { prefs.flush(); } catch (Exception e) { e.printStackTrace(); }
+    }
+    public static boolean hasOverlayPosition(String id) { return prefs.getInt("overlayPosX." + id, Integer.MIN_VALUE) != Integer.MIN_VALUE; }
+    public static int getOverlayPosX(String id) { return prefs.getInt("overlayPosX." + id, 0); }
+    public static int getOverlayPosY(String id) { return prefs.getInt("overlayPosY." + id, 0); }
 
     // ---- On/off state for the remaining auto toggles (so every choice survives a restart) ----
 
@@ -360,6 +417,22 @@ public class PreferenceManager {
     // Auto Swap Survey toggle (new).
     public static void setAutoSwapSurveyEnabled(boolean value) { putBooleanFlushed("autoSwapSurveyEnabled", value); }
     public static boolean getAutoSwapSurveyEnabled() { return prefs.getBoolean("autoSwapSurveyEnabled", false); }
+
+    // Auto Pick Card toggle (2026 ARAM champion-card offer at champ-select start).
+    public static void setAutoPickCard(boolean value) { putBooleanFlushed("autoPickCard", value); }
+    public static boolean getAutoPickCard() { return prefs.getBoolean("autoPickCard", false); }
+
+    // Auto Trade toggle (ARAM teammate trades: accept upgrades, decline the rest, request the best).
+    public static void setAutoTrade(boolean value) { putBooleanFlushed("autoTrade", value); }
+    public static boolean getAutoTrade() { return prefs.getBoolean("autoTrade", false); }
+
+    // Players (scout) tab: background player-intel lookups. Default ON so the tab works out of the box.
+    public static void setScoutEnabled(boolean value) { putBooleanFlushed("scoutEnabled", value); }
+    public static boolean getScoutEnabled() { return prefs.getBoolean("scoutEnabled", true); }
+
+    // Notify when someone in your game was also in your last 3 games. Default ON.
+    public static void setNotifyPlayedRecently(boolean value) { putBooleanFlushed("notifyPlayedRecently", value); }
+    public static boolean getNotifyPlayedRecently() { return prefs.getBoolean("notifyPlayedRecently", true); }
 
     public static void setAutoReroll(boolean value) { putBooleanFlushed("autoReroll", value); }
     public static boolean getAutoReroll() { return prefs.getBoolean("autoReroll", false); }

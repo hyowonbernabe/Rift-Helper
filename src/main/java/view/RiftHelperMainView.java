@@ -78,6 +78,10 @@ public class RiftHelperMainView extends JFrame {
     private JPanel railPanel;
     private JPanel statusStrip;
     private JPanel aramSection;
+    // Players (scout) tab: scoutBody is rebuilt each refresh from a ScoutReport; the empty label shows
+    // when there is no active game.
+    private JPanel scoutBody;
+    private final JLabel scoutEmptyLabel = new JLabel();
     private Dimension lastProgrammaticSize; // to tell our own setSize apart from a user drag
 
     // ---- Enable/Disable buttons: never shown, kept so the controller wiring is unchanged. ----
@@ -93,6 +97,10 @@ public class RiftHelperMainView extends JFrame {
     public final JButton buttonAutoSwapDisable = new JButton();
     public final JButton buttonAutoSwapSurveyEnable = new JButton();
     public final JButton buttonAutoSwapSurveyDisable = new JButton();
+    public final JButton buttonAutoPickCardEnable = new JButton();
+    public final JButton buttonAutoPickCardDisable = new JButton();
+    public final JButton buttonAutoTradeEnable = new JButton();
+    public final JButton buttonAutoTradeDisable = new JButton();
     public final JButton buttonAlwaysOnTopEnable = new JButton();
     public final JButton buttonAlwaysOnTopDisable = new JButton();
     public final JButton buttonCenterGUIEnable = new JButton();
@@ -117,8 +125,24 @@ public class RiftHelperMainView extends JFrame {
     public final JButton buttonGroupAutoQueueDisable = new JButton();
     public final JButton buttonSoloAutoQueueEnable = new JButton();
     public final JButton buttonSoloAutoQueueDisable = new JButton();
+    public final JButton buttonAutoClaimPassesEnable = new JButton();
+    public final JButton buttonAutoClaimPassesDisable = new JButton();
     public final JButton buttonAutoMinimizeEnable = new JButton();
     public final JButton buttonAutoMinimizeDisable = new JButton();
+    public final JButton buttonLobbyOverlayEnable = new JButton();
+    public final JButton buttonLobbyOverlayDisable = new JButton();
+    public final JButton buttonAramBenchOverlayEnable = new JButton();
+    public final JButton buttonAramBenchOverlayDisable = new JButton();
+    public final JButton buttonAramSwapToolsOverlayEnable = new JButton();
+    public final JButton buttonAramSwapToolsOverlayDisable = new JButton();
+    public final JButton buttonAramTop5OverlayEnable = new JButton();
+    public final JButton buttonAramTop5OverlayDisable = new JButton();
+    private final RankedChoicesView aramTop5View = new RankedChoicesView();
+    private final JSpinner overlayOpacitySpinner = new JSpinner(new SpinnerNumberModel(50, 10, 100, 5));
+    private final JSpinner overlayHoverOpacitySpinner = new JSpinner(new SpinnerNumberModel(80, 10, 100, 5));
+    private int[] overlayDragKeys = {0x12, 0x14}; // Windows VK: Alt + Caps Lock
+    private final JButton overlayKeybindButton = new JButton();
+    private Runnable overlayKeybindChanged = () -> { };
     public final JButton buttonNotifyEnable = new JButton();
     public final JButton buttonNotifyDisable = new JButton();
     public final JButton buttonNotifyMatchFoundEnable = new JButton();
@@ -141,6 +165,12 @@ public class RiftHelperMainView extends JFrame {
     public final JButton buttonNotifyAutoQueueDisable = new JButton();
     public final JButton buttonNotifyGameStartingEnable = new JButton();
     public final JButton buttonNotifyGameStartingDisable = new JButton();
+    public final JButton buttonNotifyPlayedRecentlyEnable = new JButton();
+    public final JButton buttonNotifyPlayedRecentlyDisable = new JButton();
+    // Players (scout) tab controls.
+    public final JButton buttonScoutRefresh = new JButton();
+    public final JButton buttonScoutEnable = new JButton();
+    public final JButton buttonScoutDisable = new JButton();
 
     // ntfy topic name (persisted). Live-persisted via a DocumentListener, no Save button.
     private final JTextField notifyTopicField = new JTextField();
@@ -206,7 +236,7 @@ public class RiftHelperMainView extends JFrame {
     // Troll Swap toggle (infinite loop; delay applies, loops do not; auto-stops ~1s before lock).
     public final JButton buttonTrollSwapToggleEnable = new JButton();
     public final JButton buttonTrollSwapToggleDisable = new JButton();
-    private final JLabel trollToggleHint = new JLabel("Troll Toggle ON: Auto Swap paused; returns to your champ ~1s before lock.");
+    private final JLabel trollToggleHint = new JLabel("Troll Toggle ON: Auto Swap paused; returns to your champ ~2s before lock.");
     // Notify setup tutorial button.
     public final JButton buttonNotifyTutorial = new JButton();
     // Hide/Show the League client UX (kill-ux / launch-ux).
@@ -280,6 +310,8 @@ public class RiftHelperMainView extends JFrame {
         buttonAutoBanDisable.setEnabled(false);
         buttonAutoSwapDisable.setEnabled(false);
         buttonAutoSwapSurveyDisable.setEnabled(false);
+        buttonAutoPickCardDisable.setEnabled(false);
+        buttonAutoTradeDisable.setEnabled(false);
         buttonAutoBraveryArenaDisable.setEnabled(false);
         buttonAutoLockArenaDisable.setEnabled(false);
         buttonAutoBanArenaDisable.setEnabled(false);
@@ -368,7 +400,9 @@ public class RiftHelperMainView extends JFrame {
         rail.add(navButton("ARAM", Icons.G.ARAM, "aram", false), "growx");
         rail.add(navButton("Arena", Icons.G.ARENA, "arena", false), "growx");
         rail.add(navButton("Loot", Icons.G.LOOT, "loot", false), "growx");
+        rail.add(navButton("Players", Icons.G.PLAYERS, "players", false), "growx");
         rail.add(navButton("Notify", Icons.G.BELL, "notifications", false), "growx");
+        rail.add(navButton("Overlay", Icons.G.OVERLAY, "overlay", false), "growx");
         rail.add(Box.createGlue(), "growy, push");
         rail.add(navButton("Settings", Icons.G.SETTINGS, "settings", false), "growx");
         rail.add(navButton("Info", Icons.G.INFO, "info", false), "growx");
@@ -420,7 +454,9 @@ public class RiftHelperMainView extends JFrame {
         content.add(scrollWrap(aramSection), "aram");
         content.add(scrollWrap(buildArena()), "arena");
         content.add(scrollWrap(buildLoot()), "loot");
+        content.add(scrollWrap(buildPlayers()), "players");
         content.add(scrollWrap(buildNotifications()), "notifications");
+        content.add(scrollWrap(buildOverlay()), "overlay");
         content.add(scrollWrap(buildSettings()), "settings");
         content.add(scrollWrap(buildInfo()), "info");
     }
@@ -555,6 +591,9 @@ public class RiftHelperMainView extends JFrame {
         loop.add(divider(), "growx, gapy 2 2");
         loop.add(toggleRow("Solo Auto Queue", "Auto Find Match when you are alone. Warning: loops games unattended.",
                 buttonSoloAutoQueueEnable, buttonSoloAutoQueueDisable), "growx");
+        loop.add(divider(), "growx, gapy 2 2");
+        loop.add(toggleRow("Auto Claim Passes", "Automatically claim all event and battlepass rewards, so unclaimed-reward notifications stay cleared. Covers new passes automatically.",
+                buttonAutoClaimPassesEnable, buttonAutoClaimPassesDisable), "growx");
         panel.add(loop, "growx, gaptop 6");
 
         JLabel loopNote = new JLabel("<html>Group and Solo Auto Queue are mutually exclusive.</html>");
@@ -562,6 +601,98 @@ public class RiftHelperMainView extends JFrame {
         loopNote.setForeground(Theme.TEXT_FAINT);
         panel.add(loopNote, "growx, gapx 4");
         return panel;
+    }
+
+    // ---- Overlay ----
+
+    private JPanel buildOverlay() {
+        JPanel panel = section("Overlay", "controls drawn on the League client");
+
+        Card lobby = new Card("insets 4 6 4 6, wrap 1, fillx", "[grow,fill]", "");
+        lobby.add(cardTitle("Lobby", Icons.G.LOBBY), "gapbottom 6");
+        lobby.add(toggleRow("Lobby Overlay",
+                "Show the lobby controls (bottom-left) while you are in the lobby.",
+                buttonLobbyOverlayEnable, buttonLobbyOverlayDisable), "growx");
+        panel.add(lobby, "growx");
+
+        Card aram = new Card("insets 4 6 4 6, wrap 1, fillx", "[grow,fill]", "");
+        aram.add(cardTitle("ARAM", Icons.G.ARAM), "gapbottom 6");
+        aram.add(toggleRow("Bench", "Quick Switch Bench on the client (top-center) during ARAM champ select.",
+                buttonAramBenchOverlayEnable, buttonAramBenchOverlayDisable), "growx");
+        aram.add(divider(), "growx, gapy 2 2");
+        aram.add(toggleRow("Swap Tools", "Auto Swap Priority / Survey / Troll toggles and the Troll Swap button (bottom-right).",
+                buttonAramSwapToolsOverlayEnable, buttonAramSwapToolsOverlayDisable), "growx");
+        aram.add(divider(), "growx, gapy 2 2");
+        aram.add(toggleRow("Top 5 Ranked", "Live top-5 auto-swap ranking with reasons (top-right).",
+                buttonAramTop5OverlayEnable, buttonAramTop5OverlayDisable), "growx");
+        panel.add(aram, "growx, gaptop 6");
+
+        Card appearance = new Card("insets 4 6 4 6, wrap 1, fillx", "[grow,fill]", "");
+        appearance.add(cardTitle("Appearance", Icons.G.OVERLAY), "gapbottom 6");
+        appearance.add(spinnerRow("Opacity (%)", "How see-through the overlay is when you are not pointing at it.",
+                overlayOpacitySpinner), "growx");
+        appearance.add(divider(), "growx, gapy 2 2");
+        appearance.add(spinnerRow("Opacity when hovered (%)", "Opacity while the mouse is over the overlay.",
+                overlayHoverOpacitySpinner), "growx");
+        panel.add(appearance, "growx, gaptop 6");
+
+        Card drag = new Card("insets 4 6 4 6, wrap 1, fillx", "[grow,fill]", "");
+        drag.add(cardTitle("Move overlays", Icons.G.LANE), "gapbottom 6");
+        overlayKeybindButton.setText(keybindText(overlayDragKeys));
+        overlayKeybindButton.addActionListener(e -> beginOverlayKeybindCapture());
+        drag.add(spinnerRow("Drag keybind", "Hold this to drag any overlay anywhere. Click to change. Positions are saved.",
+                overlayKeybindButton), "growx");
+        panel.add(drag, "growx, gaptop 6");
+        return panel;
+    }
+
+    // Human-readable keybind, e.g. "Alt + Caps Lock", from Windows VK codes (which match Java VK_* here).
+    private String keybindText(int[] keys) {
+        if (keys == null || keys.length == 0) {
+            return "(none)";
+        }
+        StringBuilder sb = new StringBuilder();
+        for (int k : keys) {
+            if (sb.length() > 0) {
+                sb.append(" + ");
+            }
+            sb.append(java.awt.event.KeyEvent.getKeyText(k));
+        }
+        return sb.toString();
+    }
+
+    // Capture the next held chord (modifiers + one main key). Requires a non-modifier key to finalize,
+    // so holding Alt then pressing Caps Lock yields Alt + Caps Lock rather than Alt alone.
+    private void beginOverlayKeybindCapture() {
+        overlayKeybindButton.setText("Press keys...");
+        overlayKeybindButton.requestFocusInWindow();
+        java.awt.event.KeyAdapter ka = new java.awt.event.KeyAdapter() {
+            @Override
+            public void keyPressed(java.awt.event.KeyEvent e) {
+                int kc = e.getKeyCode();
+                boolean isMod = kc == java.awt.event.KeyEvent.VK_CONTROL
+                        || kc == java.awt.event.KeyEvent.VK_SHIFT
+                        || kc == java.awt.event.KeyEvent.VK_ALT
+                        || kc == java.awt.event.KeyEvent.VK_ALT_GRAPH
+                        || kc == java.awt.event.KeyEvent.VK_META
+                        || kc == java.awt.event.KeyEvent.VK_UNDEFINED;
+                if (isMod) {
+                    return; // wait for the main key
+                }
+                java.util.LinkedHashSet<Integer> keys = new java.util.LinkedHashSet<>();
+                int mods = e.getModifiersEx();
+                if ((mods & java.awt.event.KeyEvent.CTRL_DOWN_MASK) != 0) keys.add(0x11);
+                if ((mods & java.awt.event.KeyEvent.SHIFT_DOWN_MASK) != 0) keys.add(0x10);
+                if ((mods & java.awt.event.KeyEvent.ALT_DOWN_MASK) != 0) keys.add(0x12);
+                keys.add(kc);
+                overlayDragKeys = keys.stream().mapToInt(Integer::intValue).toArray();
+                overlayKeybindButton.setText(keybindText(overlayDragKeys));
+                overlayKeybindButton.removeKeyListener(this);
+                e.consume();
+                overlayKeybindChanged.run();
+            }
+        };
+        overlayKeybindButton.addKeyListener(ka);
     }
 
     // ---- Summoner's Rift ----
@@ -621,6 +752,26 @@ public class RiftHelperMainView extends JFrame {
         aramCurrentLabel.setIconTextGap(px(8));
         current.add(aramCurrentLabel, "growx");
         panel.add(current, "growx");
+
+        // Top 5 Ranked Choices: live view of the auto-swap decision (Priority-then-Survey), with a star
+        // for Priority-sourced picks and a status showing what is on the bench / swapped in.
+        Card top5 = new Card("insets 4 6 8 6, wrap 1, fillx", "[grow,fill]", "");
+        top5.add(cardTitle("Top 5 Ranked Choices", Icons.G.STAR), "growx, gapbottom 6");
+        top5.add(aramTop5View, "growx");
+        panel.add(top5, "growx");
+
+        // Cards & Trades (2026 ARAM): auto-pick the best offered champion card at champ-select start,
+        // and auto-handle teammate trades. Both use your Priority + Survey ranking (same as auto-swap).
+        Card cardsTrades = new Card("insets 4 6 8 6, wrap 1, fillx", "[grow,fill]", "");
+        cardsTrades.add(cardTitle("Cards & Trades", Icons.G.REROLL), "growx, gapbottom 8");
+        cardsTrades.add(toggleRow("Auto Pick Card",
+                "At the start of ARAM champ select, pick the highest-ranked of your offered champion cards.",
+                buttonAutoPickCardEnable, buttonAutoPickCardDisable), "growx");
+        cardsTrades.add(divider(), "growx, gapy 2 2");
+        cardsTrades.add(toggleRow("Auto Trade",
+                "Accept incoming trades that upgrade you, decline the rest, and request a teammate's champion when it ranks higher than yours.",
+                buttonAutoTradeEnable, buttonAutoTradeDisable), "growx");
+        panel.add(cardsTrades, "growx");
 
         // Quick Switch Bench on top.
         Card bench = new Card("insets 4 6 8 6, wrap 1, fillx", "[grow,fill]", "");
@@ -861,6 +1012,22 @@ public class RiftHelperMainView extends JFrame {
     public void addTrollSwapLoopsChangeListener(Runnable r) { trollSwapLoopsSpinner.addChangeListener(e -> r.run()); }
     public void addTrollSwapToggleEnableListener(ActionListener l) { buttonTrollSwapToggleEnable.addActionListener(l); }
     public void addTrollSwapToggleDisableListener(ActionListener l) { buttonTrollSwapToggleDisable.addActionListener(l); }
+
+    // ---- Overlay appearance + drag keybind ----
+    public int getOverlayOpacity() { return (Integer) overlayOpacitySpinner.getValue(); }
+    public void setOverlayOpacity(int v) { overlayOpacitySpinner.setValue(Math.max(10, Math.min(v, 100))); }
+    public void addOverlayOpacityChangeListener(Runnable r) { overlayOpacitySpinner.addChangeListener(e -> r.run()); }
+    public int getOverlayHoverOpacity() { return (Integer) overlayHoverOpacitySpinner.getValue(); }
+    public void setOverlayHoverOpacity(int v) { overlayHoverOpacitySpinner.setValue(Math.max(10, Math.min(v, 100))); }
+    public void addOverlayHoverOpacityChangeListener(Runnable r) { overlayHoverOpacitySpinner.addChangeListener(e -> r.run()); }
+    public int[] getOverlayDragKeys() { return overlayDragKeys.clone(); }
+    public void setOverlayDragKeys(int[] keys) {
+        if (keys != null && keys.length > 0) {
+            overlayDragKeys = keys.clone();
+            overlayKeybindButton.setText(keybindText(overlayDragKeys));
+        }
+    }
+    public void addOverlayKeybindChangeListener(Runnable r) { overlayKeybindChanged = r != null ? r : () -> { }; }
     public void setTrollToggleHintVisible(boolean v) { trollToggleHint.setVisible(v); }
     public void addNotifyTutorialListener(ActionListener l) { buttonNotifyTutorial.addActionListener(l); }
     public void addHideClientListener(ActionListener l) { buttonHideClient.addActionListener(l); }
@@ -953,6 +1120,10 @@ public class RiftHelperMainView extends JFrame {
     public void addSurveyUndoListener(ActionListener l) { buttonSurveyUndo.addActionListener(l); }
     public void addAutoSwapSurveyEnableListener(ActionListener l) { buttonAutoSwapSurveyEnable.addActionListener(l); }
     public void addAutoSwapSurveyDisableListener(ActionListener l) { buttonAutoSwapSurveyDisable.addActionListener(l); }
+    public void addAutoPickCardEnableListener(ActionListener l) { buttonAutoPickCardEnable.addActionListener(l); }
+    public void addAutoPickCardDisableListener(ActionListener l) { buttonAutoPickCardDisable.addActionListener(l); }
+    public void addAutoTradeEnableListener(ActionListener l) { buttonAutoTradeEnable.addActionListener(l); }
+    public void addAutoTradeDisableListener(ActionListener l) { buttonAutoTradeDisable.addActionListener(l); }
 
     /** Fired whenever the survey list changes: a survey picker edit or a survey swap. */
     public void addSurveyListChangeListener(Runnable r) { this.surveyListChangeListener = r; }
@@ -1025,6 +1196,143 @@ public class RiftHelperMainView extends JFrame {
 
     // ---- Notifications ----
 
+    // ---- Players (scout) tab ----
+    private JPanel buildPlayers() {
+        JPanel panel = section("Players", "scout the lobby");
+
+        Card head = new Card("insets 4 6 8 6, wrap 1, fillx", "[grow,fill]", "");
+        JPanel headRow = new JPanel(new MigLayout("insets 0, gap 8, fillx", "[]push[][]"));
+        headRow.setOpaque(false);
+        headRow.add(cardTitle("Scout", Icons.G.PLAYERS));
+        styleButton(buttonScoutRefresh, "Refresh", Icons.G.UPDATE, ButtonKind.GHOST);
+        headRow.add(buttonScoutRefresh);
+        headRow.add(new ToggleSwitch(buttonScoutEnable, buttonScoutDisable));
+        head.add(headRow, "growx, gapbottom 2");
+        JLabel hint = new JLabel("<html>Rank, recent form, and mastery for everyone in your game. Auto-refreshes "
+                + "on each phase; toggle off to stop background lookups. Anyone from your last 3 games is flagged.</html>");
+        hint.setFont(fSub);
+        hint.setForeground(Theme.TEXT_FAINT);
+        head.add(hint, "growx");
+        panel.add(head, "growx");
+
+        scoutEmptyLabel.setText("<html>No active game. Player intel appears in champ select and in-game.</html>");
+        scoutEmptyLabel.setFont(fSub);
+        scoutEmptyLabel.setForeground(Theme.TEXT_FAINT);
+        panel.add(scoutEmptyLabel, "growx, gapx 4, gaptop 4, hidemode 3");
+
+        scoutBody = new JPanel(new MigLayout("insets 0, wrap 1, gapy 6, fillx", "[grow,fill]"));
+        scoutBody.setOpaque(false);
+        scoutBody.setVisible(false);
+        panel.add(scoutBody, "growx, hidemode 3");
+        return panel;
+    }
+
+    /** Rebuild the Players tab from a scout report. Safe to call off the EDT? No - call on the EDT
+     *  (ScoutReport.refreshAsync already delivers on the EDT). */
+    public void setScoutReport(model.ScoutReport r) {
+        if (scoutBody == null) {
+            return;
+        }
+        scoutBody.removeAll();
+        boolean empty = (r == null || r.isEmpty());
+        scoutEmptyLabel.setVisible(empty);
+        scoutBody.setVisible(!empty);
+        if (!empty) {
+            java.util.List<model.ScoutPlayer> recent = r.playedRecentlyPlayers();
+            if (recent != null && !recent.isEmpty()) {
+                scoutBody.add(scoutAlert(recent), "growx");
+            }
+            if (r.allies != null && !r.allies.isEmpty()) {
+                scoutBody.add(scoutTeamCard("Your Team", r.allies), "growx");
+            }
+            if (r.enemies != null && !r.enemies.isEmpty()) {
+                scoutBody.add(scoutTeamCard("Enemy Team", r.enemies), "growx");
+            }
+        }
+        scoutBody.revalidate();
+        scoutBody.repaint();
+    }
+
+    private JPanel scoutAlert(java.util.List<model.ScoutPlayer> recent) {
+        StringBuilder names = new StringBuilder();
+        for (int i = 0; i < recent.size(); i++) {
+            if (i > 0) {
+                names.append(", ");
+            }
+            model.ScoutPlayer p = recent.get(i);
+            names.append(p.summonerName == null || p.summonerName.isBlank() ? "(hidden)" : p.summonerName);
+        }
+        JLabel l = new JLabel("<html><b>Played recently:</b> " + names + "</html>");
+        l.setFont(fSub);
+        l.setForeground(Theme.ACCENT);
+        JPanel wrap = new JPanel(new MigLayout("insets 6 10 6 10, fillx", "[grow,fill]"));
+        wrap.setOpaque(false);
+        wrap.add(l, "growx");
+        return wrap;
+    }
+
+    private JPanel scoutTeamCard(String title, java.util.List<model.ScoutPlayer> players) {
+        Card card = new Card("insets 4 6 8 6, wrap 1, fillx", "[grow,fill]", "");
+        card.add(cardTitle(title, Icons.G.PLAYERS), "growx, gapbottom 4");
+        for (int i = 0; i < players.size(); i++) {
+            if (i > 0) {
+                card.add(divider(), "growx, gapy 2 2");
+            }
+            card.add(scoutRow(players.get(i)), "growx");
+        }
+        return card;
+    }
+
+    private JPanel scoutRow(model.ScoutPlayer p) {
+        JPanel row = new JPanel(new MigLayout("insets 6 2 6 2, gap 8, fillx", "[grow,fill][]"));
+        row.setOpaque(false);
+        JPanel col = new JPanel(new MigLayout("insets 0, wrap 1, gap 1", "[grow,fill]"));
+        col.setOpaque(false);
+        String name = (p.summonerName == null || p.summonerName.isBlank()) ? "(hidden)" : p.summonerName;
+        String champ = (p.championName() != null && !p.championName().isBlank()) ? "  •  " + p.championName() : "";
+        JLabel nameLbl = new JLabel(name + champ);
+        nameLbl.setFont(fBodyBold);
+        nameLbl.setForeground(Theme.TEXT);
+        col.add(nameLbl, "growx");
+        StringBuilder sub = new StringBuilder("<html>");
+        sub.append(p.hasAnyRank() ? scoutRankText(p) : "Unranked");
+        sub.append(" &nbsp;•&nbsp; ").append(p.recentWins).append("W ").append(p.recentLosses).append("L");
+        if (p.topMasteryChampId != null && p.topMasteryChampName() != null && !p.topMasteryChampName().isBlank()) {
+            sub.append(" &nbsp;•&nbsp; ").append(p.topMasteryChampName())
+               .append(' ').append(scoutPoints(p.topMasteryPoints));
+        }
+        sub.append("</html>");
+        JLabel subLbl = new JLabel(sub.toString());
+        subLbl.setFont(fSub);
+        subLbl.setForeground(Theme.TEXT_DIM);
+        col.add(subLbl, "growx");
+        row.add(col, "growx");
+        if (p.playedRecently) {
+            JLabel badge = new JLabel(p.playedRecentlyCount + "x recent");
+            badge.setFont(fSub);
+            badge.setForeground(Theme.ACCENT);
+            row.add(badge, "aligny top");
+        }
+        return row;
+    }
+
+    private String scoutRankText(model.ScoutPlayer p) {
+        if (p.soloRank != null && !p.soloRank.isBlank()) {
+            return p.soloRank;
+        }
+        if (p.flexRank != null && !p.flexRank.isBlank()) {
+            return p.flexRank + " (Flex)";
+        }
+        return "Unranked";
+    }
+
+    private String scoutPoints(long pts) {
+        if (pts >= 1000) {
+            return (pts / 1000) + "k";
+        }
+        return String.valueOf(pts);
+    }
+
     private JPanel buildNotifications() {
         JPanel panel = section("Notify", "phone alerts via ntfy.sh");
 
@@ -1090,6 +1398,9 @@ public class RiftHelperMainView extends JFrame {
         events.add(divider(), "growx, gapy 2 2");
         events.add(toggleRow("Game Starting", "When the game loads (In Progress).",
                 buttonNotifyGameStartingEnable, buttonNotifyGameStartingDisable), "growx");
+        events.add(divider(), "growx, gapy 2 2");
+        events.add(toggleRow("Played Recently", "When someone in your game was also in your last 3 games.",
+                buttonNotifyPlayedRecentlyEnable, buttonNotifyPlayedRecentlyDisable), "growx");
         panel.add(events, "growx");
 
         JLabel note = new JLabel("<html>The master switch and a topic must both be set for any notification to send.</html>");
@@ -1633,8 +1944,20 @@ public class RiftHelperMainView extends JFrame {
     public void addGroupAutoQueueDisableListener(ActionListener l) { buttonGroupAutoQueueDisable.addActionListener(l); }
     public void addSoloAutoQueueEnableListener(ActionListener l) { buttonSoloAutoQueueEnable.addActionListener(l); }
     public void addSoloAutoQueueDisableListener(ActionListener l) { buttonSoloAutoQueueDisable.addActionListener(l); }
+    public void addAutoClaimPassesEnableListener(ActionListener l) { buttonAutoClaimPassesEnable.addActionListener(l); }
+    public void addAutoClaimPassesDisableListener(ActionListener l) { buttonAutoClaimPassesDisable.addActionListener(l); }
     public void addAutoMinimizeEnableListener(ActionListener l) { buttonAutoMinimizeEnable.addActionListener(l); }
     public void addAutoMinimizeDisableListener(ActionListener l) { buttonAutoMinimizeDisable.addActionListener(l); }
+    public void addLobbyOverlayEnableListener(ActionListener l) { buttonLobbyOverlayEnable.addActionListener(l); }
+    public void addLobbyOverlayDisableListener(ActionListener l) { buttonLobbyOverlayDisable.addActionListener(l); }
+    public void addAramBenchOverlayEnableListener(ActionListener l) { buttonAramBenchOverlayEnable.addActionListener(l); }
+    public void addAramBenchOverlayDisableListener(ActionListener l) { buttonAramBenchOverlayDisable.addActionListener(l); }
+    public void addAramSwapToolsOverlayEnableListener(ActionListener l) { buttonAramSwapToolsOverlayEnable.addActionListener(l); }
+    public void addAramSwapToolsOverlayDisableListener(ActionListener l) { buttonAramSwapToolsOverlayDisable.addActionListener(l); }
+    public void addAramTop5OverlayEnableListener(ActionListener l) { buttonAramTop5OverlayEnable.addActionListener(l); }
+    public void addAramTop5OverlayDisableListener(ActionListener l) { buttonAramTop5OverlayDisable.addActionListener(l); }
+    /** Push the live Top 5 Ranked Choices into the ARAM tab panel. */
+    public void setTop5(java.util.List<model.RankedChoice> choices) { aramTop5View.setChoices(choices); }
 
     // ---- Notifications ----
     public String getNotifyTopic() { return notifyTopicField.getText().trim(); }
@@ -1676,6 +1999,11 @@ public class RiftHelperMainView extends JFrame {
     public void addNotifyAutoQueueDisableListener(ActionListener l) { buttonNotifyAutoQueueDisable.addActionListener(l); }
     public void addNotifyGameStartingEnableListener(ActionListener l) { buttonNotifyGameStartingEnable.addActionListener(l); }
     public void addNotifyGameStartingDisableListener(ActionListener l) { buttonNotifyGameStartingDisable.addActionListener(l); }
+    public void addNotifyPlayedRecentlyEnableListener(ActionListener l) { buttonNotifyPlayedRecentlyEnable.addActionListener(l); }
+    public void addNotifyPlayedRecentlyDisableListener(ActionListener l) { buttonNotifyPlayedRecentlyDisable.addActionListener(l); }
+    public void addScoutRefreshListener(ActionListener l) { buttonScoutRefresh.addActionListener(l); }
+    public void addScoutEnableListener(ActionListener l) { buttonScoutEnable.addActionListener(l); }
+    public void addScoutDisableListener(ActionListener l) { buttonScoutDisable.addActionListener(l); }
     public void addAutoBanCrowdFavoriteEnableListener(ActionListener l) { buttonAutoBanCrowdFavoriteEnable.addActionListener(l); }
     public void addAutoBanCrowdFavoriteDisableListener(ActionListener l) { buttonAutoBanCrowdFavoriteDisable.addActionListener(l); }
     public void addExportListener(ActionListener l) { buttonExport.addActionListener(l); }

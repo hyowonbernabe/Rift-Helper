@@ -32,6 +32,9 @@ public class Session {
     private boolean skipChampionSelect;
     private List<TheirTeam> theirTeam;
     private Timer timer;
+    // ARAM teammate trades. Gson populates this by field reflection; not in the positional
+    // constructor on purpose (leaving that signature stable for existing callers).
+    private List<Trades> trades;
 
     public Session() {}
 
@@ -256,6 +259,14 @@ public class Session {
 
     public void setTimer(Timer timer) {
         this.timer = timer;
+    }
+
+    public List<Trades> getTrades() {
+        return trades;
+    }
+
+    public void setTrades(List<Trades> trades) {
+        this.trades = trades;
     }
 
     /** Parse the WebSocket event payload (wrapped as {"OnJsonApiEvent_..._session":{"data":{...}}}). */
